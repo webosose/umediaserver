@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.webos.media
+Exec=@WEBOS_INSTALL_SBINDIR@/umediaserver
+Type=static

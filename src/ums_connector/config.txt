@@ -1,0 +1,80 @@
+# Example application configuration file
+     
+version = "1.0";
+
+resources = (
+    {   id = "VDEC";
+		name = "Video Decoder";
+		qty = 2;
+	},
+    	
+    {   id = "ADEC";
+		name = "Audio Decoder";
+		qty = 2;
+	},
+	
+    {   id = "TV_AN";
+		name = "TV ananlog tuner";
+		qty = 1;
+	},
+    	
+    {  id = "TV_DIG";
+		name = "TV digital tuner";
+		qty = 3;
+	},
+	
+    {  id = "HDMI";
+		name = "HDMI paths";
+		qty = 4;
+	}
+);
+
+pipelines = (
+    {
+        id = "video_playback";
+		name = "Video playback pipeline.";
+		bin  = "/usr/bin/videoplayback.exe";
+		resources = "VDEC,ADEC,DISPLAY_VIDEO_PLANE";
+					 
+		timing = {	enabled = 1; };
+		logging = {	enabled = 1;level = "TRACE";};
+	},
+
+    {
+        id = "tv_an";
+		name = "TV tuner analog";
+		bin  = "/usr/bin/tv_analog.exe";
+		resources = "VDEC,ADEC,TV_AN,DISPLAY_VIDEO_PLANE";
+					 
+		timing = {	enabled = 1; };
+		logging = {	enabled = 1;level = "TRACE";};
+	},
+
+	{
+        id = "tv_dig";
+		name = "TV tuner digital";
+		bin  = "/usr/bin/tv_digital.exe";
+		resources = "VDEC,ADEC,TV_DIG,DISPLAY_VIDEO_PLANE,HDMI";
+		timing = {	enabled = 1; };
+		logging = {	enabled = 1;level = "TRACE";};
+	
+	}
+);
+    
+TEST_MODULE =
+{
+	name = "test_module";
+	timing =
+	{
+		enabled = 1;   # enable/disable timing of module
+	};
+	logging =
+	{
+		# logging is based on log4cxx.  Levels are ordered. 
+		# Standard levels: TRACE, DEBUG, INFO, WARN, ERROR, FATAL.
+		# Logic:  if( curr_msg >= setLevel)  // display message
+		enabled = 1;       # enable/disable logging of module
+		level = "TRACE";     # set output logging level. 
+	};
+};
+

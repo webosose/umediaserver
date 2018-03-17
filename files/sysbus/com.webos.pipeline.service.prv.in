@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.webos.pipeline.*
+Exec=field_not_used
+Type=static

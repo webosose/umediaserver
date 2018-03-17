@@ -1,0 +1,14 @@
+{
+    "role": {
+        "exeName":"/usr/bin/python2.7",
+        "type": "regular",
+        "allowedNames": ["com.webos.media.client.*"]
+    },
+    "permissions": [
+        {
+            "service":"com.webos.media.client.*",
+			"inbound":["*"],
+			"outbound":["*"]
+        }
+    ]
+}

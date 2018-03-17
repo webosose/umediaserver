@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.webos.rm.client.*
+Exec=field_not_used
+Type=static

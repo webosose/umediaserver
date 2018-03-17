@@ -1,0 +1,4 @@
+#!/bin/sh
+
+export NODE_PATH=/usr/lib/nodejs
+/usr/bin/node @WEBOS_INSTALL_PREFIX@/share/@CMAKE_PROJECT_NAME@/ums-status/ums-status-server.js 8080

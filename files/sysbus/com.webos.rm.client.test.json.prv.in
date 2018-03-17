@@ -1,0 +1,14 @@
+{
+    "role": {
+        "exeName":"@WEBOS_INSTALL_BINDIR@/rmc",
+        "type": "regular",
+        "allowedNames": ["com.webos.rm.client.*"]
+    },
+    "permissions": [
+        {
+            "service":"com.webos.rm.client.*",
+            "inbound":["com.webos.media"],
+            "outbound":["com.webos.media"]
+        }
+    ]
+}

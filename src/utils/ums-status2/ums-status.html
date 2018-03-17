@@ -1,0 +1,113 @@
+<!DOCCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet prefetch"
+              href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+        <style  type="text/css">
+            h2 {
+                margin-top: 2;
+                margin-bottom: 2;
+            }
+            .truncate {
+                overflow: hidden;
+                white-space: nowrap;
+            }
+            .panel {
+                min-height: 35;
+                margin-bottom: 2;
+            }
+            .panel-heading {
+                min-height: 35;
+            }
+            .panel-title {
+                margin-left: -12;
+            }
+            .spin {
+                -webkit-animation:spin 400ms linear infinite;
+                -moz-animation:spin 400ms linear infinite;
+                animation:spin 400ms linear infinite;
+            }
+            @-moz-keyframes spin { 100% { -moz-transform: rotate(360deg); } }
+            @-webkit-keyframes spin { 100% { -webkit-transform: rotate(360deg); } }
+            @keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }
+        </style>
+    </head>
+    <body>
+    <p></p>
+    <div class="container" ng-app="ums-status" ng-controller="appCtrl">
+      <div class="panel">
+        <h2 class="col-xs-4"><label class="label label-primary">UMS Status</label></h2>
+        <div class="btn-group pull-right">
+          <button class="btn btn-primary" ng-click="update()">
+            <span ng-class="{'glyphicon glyphicon-refresh spin':ui.global.updating,
+                             'glyphicon glyphicon-refresh':!ui.global.updating}"></span>
+          </button>
+          <button class="btn btn-primary" ng-click="autoupdate()">
+            <span ng-class="{'glyphicon glyphicon-pause':ui.global.autoupdate,
+                             'glyphicon glyphicon-play':!ui.global.autoupdate}"></span>
+          </button>
+        </div>
+      </div>
+      <div ng-repeat="pipeline in data | orderBy:'-timestamp' track by pipeline.id"
+           ng-class="{'panel panel-success':type(pipeline)==='foreground',
+                      'panel panel-default':type(pipeline)==='unmanaged',
+                      'panel panel-info':type(pipeline)==='running',
+                      'panel panel-warning':type(pipeline)==='suspended'}">
+        <div class="panel-heading">
+            <div class="col-xs-11 truncate">
+                <h4 class="panel-title">
+                    <span ng-class="{'glyphicon glyphicon-expand':ui[pipeline.id].collapsed,
+                                     'glyphicon glyphicon-collapse-down':!ui[pipeline.id].collapsed}"
+                          ng-click="ui[pipeline.id].collapsed = !ui[pipeline.id].collapsed">
+                    </span>
+                    <span><b>{{pipeline.appId || pipeline.type}}</b></span>
+                    <span style="text-overflow:ellipsis"><small>{{pipeline.uri || ""}}</small></span>
+                </h4>
+            </div>
+            <div class="btn-group pull-right">
+                <!-- video connection -->
+                <b ng-show="pipeline.mdc && pipeline.mdc.connections.indexOf('main') != -1">M</b>
+                <b ng-show="pipeline.mdc && pipeline.mdc.connections.indexOf('sub') != -1">S</b>
+                <!-- audio connection -->
+                <i ng-class="{'glyphicon glyphicon-volume-up':pipeline.mdc &&
+                                                              pipeline.mdc.connections.indexOf('sound') != -1}">
+                </i>
+                <!-- media focus -->
+                <i ng-class="{'glyphicon glyphicon-star':pipeline.is_focus,
+                              '':!pipeline.is_focus}">
+                </i>
+                <!-- playstate -->
+                <i ng-class="{'glyphicon glyphicon-play':pipeline.mediaState === 'play',
+                              'glyphicon glyphicon-pause':pipeline.mediaState === 'pause'}">
+                </i>
+            </div>
+        </div>
+        <div collapse="ui[pipeline.id].collapsed">
+          <div class="panel-body">
+            <ul class="col-xs-4" style="list-style-type:none">
+                <li ng-repeat="attr in ui[pipeline.id].detail.rm">
+                    <span style="width:80;text-align:right;float:left">{{attr[0] + " :"}}</span>
+                    <span><small>&nbsp; {{attr[1]}}</small></span>
+                </li>
+            </ul>
+            <ul class="col-xs-4" style="list-style-type:none">
+                <li ng-repeat="attr in ui[pipeline.id].detail.ums">
+                    <span style="width:64;text-align:right;float:left">{{attr[0] + " :"}}</span>
+                    <span style="word-break:break-all"><small>&nbsp; {{attr[1]}}</small></span>
+                </li>
+            </ul>
+            <ul class="col-xs-4" style="list-style-type:none">
+                <li ng-repeat="attr in ui[pipeline.id].detail.mdc">
+                    <span style="width:64;text-align:right;float:left">{{attr[0] + " :"}}</span>
+                    <span><small>&nbsp; {{attr[1].join(', ')}}</small></span>
+                </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/0.10.0/ui-bootstrap-tpls.min.js"></script>
+    <script src="ums-status-client.js"></script>
+    </body>
+</html>

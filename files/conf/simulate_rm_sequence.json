@@ -1,0 +1,103 @@
+{
+    "client" : [
+    {
+        "name" : "digital_channel",
+        "type" : "tv"
+    },
+    {
+        "name" : "HDMI_mode",
+        "type" : "media"
+    },
+    {
+	"name" : "DVI_mode",
+	"type" : "media"
+    },
+    {
+	"name" : "camera",
+	"type" : "media"
+    },
+    {
+	"name" : "3D",
+	"type" : "media"
+    }	
+    ],
+    "simulated_sequence" :
+    [
+	{
+            "client"   : "digital_channel",
+            "command"  : "acquire",
+            "resources": [{"type" : "ADTU", "index" : 0},
+			 {"type" : "SDEC", "index" : 0},
+			 {"type" : "ATP", "index" : 0},
+			 {"type" : "VDEC"},
+			 {"type" : "ADEC"}]
+        },
+	{
+            "client"   : "digital_channel",
+            "command"  : "acquire",
+            "resources": [{"type" : "DTU", "index" : 0},
+			  {"type" : "SDEC", "index" : 1}]
+        },
+	{
+	    "client"   : "digital_channel",
+	    "command"  : "release",
+	    "resources": [{"type" : "DTU", "index" : 0},
+			  {"type" : "SDEC", "index" : 1}]
+	},
+	{
+            "client"   : "3D",
+            "command"  : "acquire",
+            "resources": [{"type" : "ADEC"},
+			  {"type" : "VDEC", "count" : 2}]
+        },
+	{
+	    "client"   : "digital_channel",
+	    "command"  : "policyActionDeny"
+	},
+	{
+            "client"   : "DVI_mode",
+            "command"  : "acquire",
+            "resources": [{"type" : "VHDMIRX", "index" : 0},
+			  {"type" : "AADC", "index" : 0},
+			  {"type" : "ADEC"}]
+        },
+	{
+            "client"   : "HDMI_mode",
+            "command"  : "acquire",
+            "resources": [{"type" : "VHDMIRX", "index" : 0},
+			  {"type" : "AADC", "index" : 0},
+			  {"type" : "ADEC"}]
+        },
+	{
+            "client"   : "HDMI_mode",
+            "command"  : "release",
+            "resources": [{"type" : "VHDMIRX", "index" : 0},
+			  {"type" : "ADEC"},
+			  {"type" : "AADC", "index" : 0}]
+        },
+	{
+	    "client"   : "HDMI_mode",
+	    "command"  : "acquire",
+	    "resources": [{"type" : "VHDMIRX"},
+			  {"type" : "AHDMIRX"},
+			  {"type" : "ADEC"}]
+	},
+	{
+	    "client"   : "DVI_mode",
+	    "command"  : "acquire",
+	    "resources": [{"type" : "VHDMIRX"},
+			  {"type" : "AHDMIRX"},
+			  {"type" : "ADEC"}]
+	},
+	{
+	    "client"   : "camera",
+	    "command"  : "acquire",
+	    "resources": [{"type" : "VDEC"}]
+	},
+	{
+	    "client"   : "camera",
+	    "command"  : "release",
+	    "resources": [{"type" : "VDEC"}]
+	}
+       ]
+}

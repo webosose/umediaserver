@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: MDCClient
+Description: Provides access to Media Display Controller from C++ applications
+Requires: pbnjson_cpp PmLogLib
+Version: 0.1
+Libs: -L${libdir} -lmdc_client
+Cflags: -I${includedir}

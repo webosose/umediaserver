@@ -1,0 +1,113 @@
+{
+	"outputs" : [
+		{
+			"name" : "ums-log",
+			"file" : "@WEBOS_INSTALL_LOGDIR@/ums.log",
+			"maxSize" : 20000,
+			"rotations" : 9
+		}
+	],
+
+	"contexts" : [
+		{
+			"name" : "ums.default",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		},
+		{
+			"name" : "ums.server",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		},
+		{
+			"name" : "ums.resource_mgr",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		},
+		{
+			"name" : "ums.resource_mgr_client",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		},
+		{
+			"name" : "ums.pipeline_mgr",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		},
+		{
+			"name" : "ums.pipeline",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		},
+		{
+			"name" : "ums.pipeline_ctrl",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		},
+		{
+			"name" : "ums.process_ctrl",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		},
+		{
+			"name" : "ums.client",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		},
+		{
+			"name" : "ums.connector",
+			"level" : "info",
+			"logProcessIds" : true,
+			"logThreadIds" : true,
+			"logToConsole" : false,
+			"rules" : [
+				{"filter" : "*.*", "output" : "ums-log"}
+			]
+		}
+	]
+}

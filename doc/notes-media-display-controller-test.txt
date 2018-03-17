@@ -1,0 +1,28 @@
+// Test and Simulation
+
+// load media file with specific application ID to simulate launch by application
+// pass in appId from command line tool
+load file:////media_files/rat.mp4 ref {"option":{"appId":"app1"}}
+
+// --- Simulate Windowing Events (foreground)
+// LSM FG event
+luna-send -n 1 palm://com.webos.media/testFGEvent '{"foregroundAppInfo": [{"appId": "app1","processId": "1112","windowId": "","windowType": "_dont_care_"}]}'
+
+// --- Framework commands
+// focus(s)
+luna-send -n 1 palm://com.webos.media/focus '{"mediaId": ""}'
+luna-send -n 1 palm://com.webos.media/audioFocus '{"mediaId": ""}'
+luna-send -n 1 palm://com.webos.media/videoFocus '{"mediaId": ""}'
+
+// display
+luna-send -n 1 palm://com.webos.pipelinectrl._mdc/setDisplayWindow '{"source":{"x" : 0, "y" : 0, "width" : 1920, "height" : 1080},"destination":{"x" : 0, "y" : 0, "width" : 1920, "height" : 1080},  "mediaId":""}'
+luna-send -n 1 palm://com.webos.media/switchToFullScreen '{"mediaId":""}'
+
+// ----  Simulate Media Content Provider events
+//
+// mediaContentReady. 1=true, 0=false. Media Content Provider
+luna-send -n 1 palm://com.webos.media/testPipelineEvent '{ "mediaContentReady" : {"state":<1/0>,"mediaId":""}}'
+
+// videoInfo
+luna-send -n 1 palm://com.webos.media/testPipelineEvent '{"videoInfo":{"width":320,"height":240,"aspectRatio":"4:3","frameRate":15,"bitRate":0,"mode3D":"2d","actual3D":"2d","scanType":"progressive","pixelAspectRatio":"1:1", "mediaId":""}}'
+

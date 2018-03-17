@@ -1,0 +1,6 @@
+$RepeatedMsgReduction off
+$SystemLogRateLimitInterval 0
+$SystemLogRateLimitBurst 0
+$template ums-fmt, "%TIMESTAMP:::date-rfc3339% %syslogfacility-text%.%syslogseverity-text% %programname%%msg:2:2048:drop-last-lf%\n"
+:msg, regex, "ums\\.[a-z_]\\{5,20\\}" @CONF_UMS_LOG_FILE@;ums-fmt
+& ~

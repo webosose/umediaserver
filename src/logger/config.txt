@@ -1,0 +1,59 @@
+# Example application configuration file
+     
+version = "1.0";
+
+CORE_MODULE =
+{
+	name = "core";
+	timing =
+	{
+		enabled = 1;
+	};
+	logging =
+	{
+		enabled = 1;
+	};
+};
+
+     
+GISDB_HAL_MODULE =
+{
+	name = "gisdb_hal";
+	timing = {
+		enabled = 1; 
+	};
+	logging = {	
+		enabled = 1; 
+	};
+};
+
+CORE_HAL_MODULE =
+{
+	name = "core_hal";
+	timing =
+	{
+		enabled = 1;
+	};
+	logging =
+	{
+		enabled = 1;
+	};
+};
+
+TEST_MODULE =
+{
+	name = "test_module";
+	timing =
+	{
+		enabled = 1;   # enable/disable timing of module
+	};
+	logging =
+	{
+		# logging is based on log4cxx.  Levels are ordered. 
+		# Standard levels: TRACE, DEBUG, INFO, WARN, ERROR, FATAL.
+		# Logic:  if( curr_msg >= setLevel)  // display message
+		enabled = 1;       # enable/disable logging of module
+		level = "TRACE";     # set output logging level. 
+	};
+};
+
