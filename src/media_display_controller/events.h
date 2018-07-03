@@ -59,10 +59,17 @@ struct FullscreenEvent : EventDataBaseType {
 	bool state;
 };
 
+#if UMS_INTERNAL_API_VERSION == 2
+struct VideoInfoEvent : EventDataBaseType {
+	VideoInfoEvent(const ums::video_info_t &info) : video_info(info) {}
+	ums::video_info_t video_info;
+};
+#else
 struct VideoInfoEvent : EventDataBaseType {
 	VideoInfoEvent(const mdc::video_info_t &info) : video_info(info) {}
 	mdc::video_info_t video_info;
 };
+#endif
 
 struct VisibilityEvent : EventDataBaseType {
 	explicit VisibilityEvent(bool state) : state(state) {}
@@ -95,10 +102,18 @@ struct SetOpacity           : boost::statechart::event< SetOpacity > {
 };
 
 // pipeline events
+#if UMS_INTERNAL_API_VERSION == 2
+struct MediaVideoData       : boost::statechart::event< MediaVideoData > {
+	MediaVideoData(const ums::video_info_t & info) : video_info(info) {}
+        ums::video_info_t video_info;
+};
+#else
 struct MediaVideoData       : boost::statechart::event< MediaVideoData > {
 	MediaVideoData(const video_info_t & info) : video_info(info) {}
 	video_info_t video_info;
 };
+#endif
+
 struct Acquire              : boost::statechart::event< Acquire > {
 	Acquire(const res_info_t & res) : resources(res) {}
 	res_info_t resources;

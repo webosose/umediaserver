@@ -86,6 +86,36 @@ bool MDCContentProvider::mediaContentReady(bool state)
 	return connector_->sendMessage(cmd, serialized, nullptr, this);
 }
 
+bool MDCContentProvider::setVideoInfo(const ums::video_info_t &video_info)
+{
+	JGenerator serializer(nullptr);
+	string serialized;
+
+	JValue args = Object();
+	JValue video_info_json = Object();
+	JValue frame_rate = Object();
+
+	video_info_json.put("mediaId", media_id_);
+	video_info_json.put("width", (int32_t)video_info.width);
+	video_info_json.put("height", (int32_t)video_info.height);
+	frame_rate.put("num", (int32_t)video_info.frame_rate.num);
+	frame_rate.put("den", (int32_t)video_info.frame_rate.den);
+	video_info_json.put("frameRate", frame_rate);
+	video_info_json.put("codec", video_info.codec);
+	video_info_json.put("bitRate", (int64_t)video_info.bit_rate);
+
+	args.put("videoInfo", video_info_json);
+
+	if (!serializer.toString(args,  pbnjson::JSchema::AllSchema(), serialized)) {
+		LOG_ERROR(_log, MSGERR_JSON_SERIALIZE, "Failed to serialize request.");
+		return false;
+	}
+
+	LOG_DEBUG(_log, "mediaVideoData %s", serialized.c_str());
+	string cmd = mdc_uri_ + "/setVideoInfo";
+	return connector_->sendMessage(cmd, serialized, nullptr, this);
+}
+
 bool MDCContentProvider::setVideoInfo(const video_info_t &video_info)
 {
 	JGenerator serializer(nullptr);

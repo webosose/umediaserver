@@ -271,15 +271,16 @@ public :
 	typedef std::function<void()> generic_callback_t;
 	typedef std::function<void(bool)> flag_callback_t;
 	typedef std::function<void(const ums::error_t &)> error_callback_t;
-	typedef std::function<void(const ums::audio_info_t &)> audio_info_callback_t;
 #if UMS_INTERNAL_API_VERSION == 2
 	typedef std::function<void(const ums::source_info_t &)> source_info_callback_t;
 	typedef std::function<void(const ums::time_t &)> time_update_callback_t;
 	typedef std::function<void(const ums::video_info_t &)> video_info_callback_t;
+	typedef std::function<void(const ums::audio_info_t &)> audio_info_callback_t;
 #else
 	typedef std::function<void(const source_info_t &)> source_info_callback_t;
 	typedef std::function<void(const long long &)> time_update_callback_t;
 	typedef std::function<void(const video_info_t &)> video_info_callback_t;
+	typedef std::function<void(const audio_info_t &)> audio_info_callback_t;
 #endif // UMS_INTERNAL_API_VERSION == 2
 
 	void set_load_completed_callback(generic_callback_t && handler) {
@@ -337,10 +338,16 @@ public :
 	virtual bool onTrackSelected(const std::string &type, int index) { return true; }
 	virtual bool onBufferRange(const buffer_range_t &bufferRange) { return true; }
 	virtual bool onVideoFrame() { return true; }
+#if UMS_INTERNAL_API_VERSION == 2
+	virtual bool onSourceInfo(const ums::source_info_t &sourceInfo) { return true; }
+	virtual bool onVideoInfo(const ums::video_info_t &videoInfo) { return true; }
+	virtual bool onAudioInfo(const ums::audio_info_t &audioInfo) { return true; }
+#else
 	virtual bool onSourceInfo(const source_info_t &sourceInfo) { return true; }
-	virtual bool onStreamingInfo(const streaming_info_t &streamingInfo) { return true; }
 	virtual bool onVideoInfo(const video_info_t &videoInfo) { return true; }
 	virtual bool onAudioInfo(const audio_info_t &audioInfo) { return true; }
+#endif // UMS_INTERNAL_API_VERSION == 2
+	virtual bool onStreamingInfo(const streaming_info_t &streamingInfo) { return true; }
 	virtual bool onActiveRegion(const rect_t &activeRegion) { return true; }
 	virtual bool onError(long long onPlayingerrorCode, const std::string &errorText) { return true; }
 	virtual bool onSnapshotDone() { return true; }

@@ -28,7 +28,11 @@ public:
 	typedef std::function<void(const std::string &, const mdc::display_out_t &)> layout_change_callback_t;
 	LayoutManager(const mdc::IConnectionPolicy & policy, int width, int height);
 
+#if UMS_INTERNAL_API_VERSION == 2
+	virtual mdc::display_out_t suggest_layout(const ums::video_info_t & vi, const std::string & id) const override;
+#else
 	virtual mdc::display_out_t suggest_layout(const mdc::video_info_t & vi, const std::string & id) const override;
+#endif
 	void set_layout_change_callback(layout_change_callback_t && callback);
 
 private:

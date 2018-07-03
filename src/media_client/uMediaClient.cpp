@@ -358,13 +358,15 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 		video_info.height = value["height"].asNumber<int32_t>();
 		video_info.frame_rate.num = value["frame_rate"]["num"].asNumber<int32_t>();
 		video_info.frame_rate.den = value["frame_rate"]["den"].asNumber<int32_t>();
-		if (_video_info_callback)
-			_video_info_callback(video_info);
-
 		LOG_INFO(_log, "video_info", "codec=%s, bitrate=%lld, width=%d, height=%d, framerate = %d/%d",
 				video_info.codec.c_str(), video_info.bit_rate, video_info.width, video_info.height, video_info.frame_rate.num, video_info.frame_rate.den);
 
-		return true;
+		if (_video_info_callback) {
+			_video_info_callback(video_info);
+			return true;
+		}
+
+		return onVideoInfo(video_info);
 #else
 		video_info_t videoInfo = {};
 		videoInfo.width = unmarshalllong(value["width"]);
@@ -435,13 +437,15 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 		audio_info.bit_rate = value["bitrate"].asNumber<int64_t>();
 		audio_info.sample_rate = value["sample_rate"].asNumber<int32_t>();
 
-		if (_audio_info_callback)
-			_audio_info_callback(audio_info);
-
 		LOG_INFO(_log, "audio_info", "codec=%s, bitrate=%lld, samplerate = %d",
 				audio_info.codec.c_str(), audio_info.bit_rate, audio_info.sample_rate);
 
-		return true;
+		if (_audio_info_callback) {
+			_audio_info_callback(audio_info);
+			return true;
+		}
+
+		return onAudioInfo(audio_info);
 #else
 		audio_info_t audioInfo = {};
 		audioInfo.dualMono = unmarshallboolean(value["dualMono"]);

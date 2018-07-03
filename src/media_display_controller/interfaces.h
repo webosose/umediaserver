@@ -55,7 +55,11 @@ struct ITVDisplay {
 	virtual void avblock_set_muted_callback(callback_t &&) = 0;
 
 	virtual void display_set_window(const std::string & id, const display_out_t & display_out) = 0;
+#if UMS_INTERNAL_API_VERSION == 2
+	virtual void display_set_video_info(const std::string & id, const ums::video_info_t & video_info) = 0;
+#else
 	virtual void display_set_video_info(const std::string & id, const video_info_t & video_info) = 0;
+#endif
 	virtual void display_set_alpha(const std::string & id, double alpha) = 0;
 	virtual void display_set_alpha(sink_t sink, double alpha) = 0;
 	virtual void display_set_sub_overlay_mode(SubOverlayMode mode) = 0;
@@ -118,7 +122,11 @@ struct IAcbObserver {
 
 // Interface for video overlay layout manager
 struct ILayoutManager {
+#if UMS_INTERNAL_API_VERSION == 2
+	virtual display_out_t suggest_layout(const ums::video_info_t & vi, const std::string & id) const = 0;
+#else
 	virtual display_out_t suggest_layout(const video_info_t & vi, const std::string & id) const = 0;
+#endif
 };
 
 }} // namespace uMediaServer::mdc

@@ -202,7 +202,13 @@ void TVDisplayConnector::display_set_window(const std::string &id, const mdc::di
 
 	connector->sendMessage(display_ctrl_uri, serialized, display_config_handler, this);
 }
-
+#if UMS_INTERNAL_API_VERSION == 2
+void TVDisplayConnector::display_set_video_info(const std::string &id, const ums::video_info_t &video_info) {
+	// UMS INTERNAL API VERSION 2 is only used on raspberrypi currently.
+    // so we don't need to implement this function.
+	return;
+}
+#else
 void TVDisplayConnector::display_set_video_info(const std::string &id, const mdc::video_info_t &video_info) {
 	// TV API : Video Info (meta data)
 	// {
@@ -258,6 +264,7 @@ void TVDisplayConnector::display_set_video_info(const std::string &id, const mdc
 
 	connector->sendMessage(ControlInterface::set_video_info, serialized, nullptr, nullptr);
 }
+#endif
 
 void TVDisplayConnector::display_set_alpha(const std::string &id, double alpha) {
 	auto sink = video_channel.connected(id);

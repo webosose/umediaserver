@@ -54,7 +54,11 @@ namespace uMediaServer {
 		virtual void avblock_mute(const std::string &id, size_t channel);
 		virtual void avblock_unmute(const std::string &id, size_t channel);
 		virtual void display_set_window(const std::string &id, const mdc::display_out_t &display_out);
+#if UMS_INTERNAL_API_VERSION == 2
+		virtual void display_set_video_info(const std::string &id, const ums::video_info_t &video_info);
+#else
 		virtual void display_set_video_info(const std::string &id, const mdc::video_info_t &video_info);
+#endif
 		virtual void display_set_alpha(const std::string &id, double alpha);
 		virtual void sound_connect(const std::string & id);
 		virtual void sound_disconnect(const std::string & id);

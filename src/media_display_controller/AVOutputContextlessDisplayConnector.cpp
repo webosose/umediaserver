@@ -670,7 +670,28 @@ bool AVOutputContextlessDisplayConnector::display_config_cb(UMSConnectorHandle *
 	}
 	return false;
 }
+#if UMS_INTERNAL_API_VERSION == 2
+void AVOutputContextlessDisplayConnector::display_set_video_info(const std::string &id, const ums::video_info_t &video_info) {
+	video_state_t* video_state = id_to_vsink(id);
+	if (!video_state)
+	{
+		LOG_ERROR(_log, MSGERR_MEDIA_ID_NOT_CONNECTED, "Cannot set video info, id not connected");
+		return;
+	}
 
+	// bitRate and codec information doesn't needed from avoutputD.
+	pbnjson::JValue payload = pbnjson::JObject{
+			{"sink", video_state->name},
+			{"frameRate", (double)video_info.frame_rate.num / (double)video_info.frame_rate.den},
+			{"width", (int32_t)video_info.width},
+			{"height", (int32_t)video_info.height},
+			{"codec", video_info.codec},
+			{"bitRate", (int64_t)video_info.bit_rate}
+	};
+
+	connector->sendMessage(AVoutputd::video_set_media_data, payload.stringify(), nullptr, nullptr);
+}
+#else
 void AVOutputContextlessDisplayConnector::display_set_video_info(const std::string &id, const mdc::video_info_t &video_info) {
 	video_state_t* video_state = id_to_vsink(id);
 	if (!video_state)
@@ -691,6 +712,7 @@ void AVOutputContextlessDisplayConnector::display_set_video_info(const std::stri
 
 	connector->sendMessage(AVoutputd::video_set_media_data, payload.stringify(), nullptr, nullptr);
 }
+#endif
 
 void AVOutputContextlessDisplayConnector::display_set_alpha(const std::string &id, double alpha) {
 

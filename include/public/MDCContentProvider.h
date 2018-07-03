@@ -54,6 +54,8 @@ public:
 
 	// @f setVideoInfo
 	// @b Media Video Meta Data
+	// TODO: libndl-directMedia2 uses UMS_INTERNAP_API_VERSION 1.
+	bool setVideoInfo(const ums::video_info_t &video_info);
 	bool setVideoInfo(const uMediaServer::mdc::video_info_t &video_info);
 
 	// @f registerPlaneIdCb

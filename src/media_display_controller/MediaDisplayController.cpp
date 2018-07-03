@@ -1048,8 +1048,7 @@ mdc::media_element_state_t MediaDisplayController::getMediaElementState(const st
 //
 
 bool MediaDisplayController::setVideoInfo(const pbnjson::JValue & parsed) {
-	string media_id;
-	media_id = parsed["videoInfo"]["mediaId"].asString();
+	string media_id = parsed["videoInfo"]["mediaId"].asString();
 
 	auto e = media_elements_.find(media_id);
 	RETURN_IF(e == media_elements_.end(), false, MSGERR_INVALID_ARG,
@@ -1062,6 +1061,25 @@ bool MediaDisplayController::setVideoInfo(const pbnjson::JValue & parsed) {
 	//        json updates. PBNJson will not update the video_info.<parameter>
 	//        if the field doesn't exist in the JSON string.
 	//
+#if UMS_INTERNAL_API_VERSION == 2
+        ums::video_info_t video_info = {};
+        // pbnjson in webos was not implemented for unsigned types.
+        video_info.width = parsed["videoInfo"]["width"].asNumber<int32_t>();
+        video_info.height = parsed["videoInfo"]["height"].asNumber<int32_t>();
+        video_info.frame_rate.num = parsed["videoInfo"]["frameRate"]["num"].asNumber<int32_t>();
+        video_info.frame_rate.den = parsed["videoInfo"]["frameRate"]["den"].asNumber<int32_t>();
+        video_info.codec = parsed["videoInfo"]["codec"].asString();
+        video_info.bit_rate = parsed["videoInfo"]["bitRate"].asNumber<int64_t>();
+
+	LOG_DEBUG(log, "videoInfo - width[%d], height[%d], frameRate[%d/%d] codec[%s], bitRate[%llu]",
+            video_info.width, video_info.height,
+            video_info.frame_rate.num, video_info.frame_rate.den,
+            video_info.codec, video_info.bit_rate);
+
+	static auto validate_video_info = [](const ums::video_info_t & vi) {
+		return vi.width && vi.height;
+	};
+#else
 	video_info_t video_info;
 	parsed["videoInfo"]["width"].asNumber(video_info.width);
 	parsed["videoInfo"]["height"].asNumber(video_info.height);
@@ -1095,7 +1113,7 @@ bool MediaDisplayController::setVideoInfo(const pbnjson::JValue & parsed) {
 	static auto validate_video_info = [](const video_info_t & vi) {
 		return vi.width && vi.height;
 	};
-
+#endif
 	auto video_info_valid = validate_video_info(video_info);
 
 	if (video_info_valid) {

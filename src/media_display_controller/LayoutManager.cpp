@@ -25,9 +25,12 @@ namespace uMediaServer {
 LayoutManager::LayoutManager(const mdc::IConnectionPolicy & policy, int width, int height)
 	: _connection_policy(policy), _width(width), _height(height) {}
 
-mdc::display_out_t LayoutManager::suggest_layout(const mdc::video_info_t & vi, const std::string & id) const {
+#if UMS_INTERNAL_API_VERSION == 2
+mdc::display_out_t LayoutManager::suggest_layout(const ums::video_info_t & vi, const std::string & id) const {
 	static int number_of_autolayouted_videos;
-	number_of_autolayouted_videos = MediaDisplayController::instance()->numberOfAutoLayoutedVideos() ? MediaDisplayController::instance()->numberOfAutoLayoutedVideos() : 1;
+        number_of_autolayouted_videos = MediaDisplayController::instance()->numberOfAutoLayoutedVideos();
+        if (!number_of_autolayouted_videos)
+                number_of_autolayouted_videos = 1;
 
 	static auto fit_frame = [this](int width, int height)->rect_t {
 		if (width <= 0 || height <= 0) return {};
@@ -47,10 +50,44 @@ mdc::display_out_t LayoutManager::suggest_layout(const mdc::video_info_t & vi, c
 			fit_rc.x += _width/number_of_autolayouted_videos;
 			result = mdc::display_out_t(fit_rc);
 			break;
+                default:
+			break;
 	}
 	if (_layout_change_callback) _layout_change_callback(id, result);
 	return result;
 }
+#else
+mdc::display_out_t LayoutManager::suggest_layout(const mdc::video_info_t & vi, const std::string & id) const {
+	static int number_of_autolayouted_videos;
+        number_of_autolayouted_videos = MediaDisplayController::instance()->numberOfAutoLayoutedVideos();
+        if (!number_of_autolayouted_videos)
+                number_of_autolayouted_videos = 1;
+
+	static auto fit_frame = [this](int width, int height)->rect_t {
+		if (width <= 0 || height <= 0) return {};
+		double factor = std::min((1.0/number_of_autolayouted_videos) * _width / width, double(_height) / height);
+		return {0, 0, int(factor * width), int(factor * height)};
+	};
+	rect_t fit_rc = fit_frame(vi.width, vi.height);
+	auto sink = _connection_policy.video().connected(id);
+	mdc::display_out_t result;
+	switch (sink) {
+		case mdc::sink_t::MAIN:
+			result = mdc::display_out_t(fit_rc);
+			break;
+		case mdc::sink_t::SUB:
+		case mdc::sink_t::SUB1:
+		case mdc::sink_t::SUB2:
+			fit_rc.x += _width/number_of_autolayouted_videos;
+			result = mdc::display_out_t(fit_rc);
+			break;
+                default:
+			break;
+	}
+	if (_layout_change_callback) _layout_change_callback(id, result);
+	return result;
+}
+#endif
 
 void LayoutManager::set_layout_change_callback(layout_change_callback_t && callback) {
 	_layout_change_callback = callback;

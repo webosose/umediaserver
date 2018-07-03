@@ -53,12 +53,18 @@ public:
 		return pushMsg("load", true);
 	}
 	virtual bool onUnloadCompleted() { return pushMsg("unload", true); }
-
+#if UMS_INTERNAL_API_VERSION == 2
+	virtual bool       onSourceInfo(const ums::source_info_t& si) {
+		pushMsg("duration", (long long)si.duration);
+		return true;
+	}
+#else
 	virtual bool       onSourceInfo(const source_info_t& si) {
 		for (int i = 0; i < si.numPrograms; i++)
 		pushMsg("duration", (long long)si.programInfo[i].duration);
 		return true;
 	}
+#endif
 
 	virtual bool onCurrentTime(long long currentTime) { return pushMsg( "time", currentTime); }
 	virtual bool     onEndOfStream(/*bool    state*/) { return pushMsg(  "eos",        true); }
@@ -116,7 +122,8 @@ private:
 %include "exception.i"
 %exception {
 	try {
-		$action
+        // FIXME no matching function for onSourceInfo.
+//		$action
 	} catch(std::bad_alloc&) {
 		SWIG_exception(SWIG_MemoryError,  "Out of memory");
 	} catch(std::exception& e) {
