@@ -32,6 +32,8 @@
 	return rv;  } \
 	bool _member_(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx);
 
+#define MAX_VIDEO_SINK 4
+
 namespace uMediaServer {
 
 	class AVOutputContextlessDisplayConnector : public mdc::ITVDisplay {
@@ -123,7 +125,7 @@ namespace uMediaServer {
 		callback_t display_config_completed_callback;
 
 		std::unordered_map<std::string, registration_t> registrations;
-		video_state_t video_states[2]; // Main and sub
+		video_state_t video_states[MAX_VIDEO_SINK]; // Main and sub
 		std::unordered_map<std::string, audio_connection_t> audio_connections;
 	};
 

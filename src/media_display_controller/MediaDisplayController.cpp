@@ -55,6 +55,10 @@ namespace uMediaServer {
 using namespace mdc;
 using namespace mdc::event;
 
+namespace {
+	Logger log(UMS_LOG_CONTEXT_MDC);
+}
+
 #define RETURN_IF(exp,rv,msgid,format,args...) \
 { if(exp) { \
 	LOG_ERROR(log, msgid, format, ##args); \
@@ -75,7 +79,7 @@ MediaDisplayController::MediaDisplayController(UMSConnector *connector)
 	: connector_(connector), acb_spy(connector), layout_manager(connection_policy, 1920, 1080)
 	, app_observer(connector, [this](const std::set<std::string> & fg){ foregroundEvent(fg); })
 	, tv_display(new WEBOS_CONNECTOR_IMPLEMENTATION(connector_, connection_policy.video()))
-	, connection_policy(acb_spy, audio_connections), log(UMS_LOG_CONTEXT_MDC)
+	, connection_policy(acb_spy, audio_connections)
 {
 	LOG_DEBUG(log, "[MediaDisplayController]");
 
@@ -166,11 +170,13 @@ MediaDisplayController::MediaDisplayController(UMSConnector *connector)
 		notifyActiveRegion(id, d);
 	});
 
+#if !USE_RPI_RESOURCE
 	LOG_DEBUG(log, "subscribe to TV service for screen saver Events");
 	connector_->subscribe("palm://com.webos.service.tvpower/power/registerScreenSaverRequest",
 						  "{\"clientName\":\"com.webos.media\", \"subscribe\":true}",
 						  screenSaverEventCallBack, (void*)this);
         connector_->sendMessage(ControlInterface::get_timer_info, "{\"subscribe\":true}", nopTimerInfoCallBack, (void*)this);
+#endif
 
 }
 
@@ -416,8 +422,10 @@ bool MediaDisplayController::pipelineEvents(UMSConnectorHandle* handle, UMSConne
 		LOG_DEBUG(log, "Pipeline Event: event(%s).", event.c_str());
 		string mediaId = parsed["playing"]["mediaId"].asString();
 		auto e = media_elements_.find(mediaId);
-                if(e != media_elements_.end() && e->second.is_fullScreen)
+		if(e != media_elements_.end() && e->second.is_fullScreen)
+#if !USE_RPI_RESOURCE
 			turnOnScreen();
+#endif
 		updatePipelineState(mediaId, PLAYBACK_PLAYING);
 	} else if (parsed.hasKey("paused")){
 		LOG_DEBUG(log, "Pipeline Event: event(%s).", event.c_str());

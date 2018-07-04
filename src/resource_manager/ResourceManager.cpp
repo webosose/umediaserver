@@ -24,6 +24,8 @@
 #include <ResourceManager.h>
 #include <Logger_macro.h>
 
+//#define RESOURCE_MANAGER_DEBUG 1
+
 using namespace std;
 using namespace libconfig;
 using namespace pbnjson;
@@ -441,7 +443,7 @@ bool ResourceManager::resetPipeline(const std::string &connection_id)
 		return false;
 
 	connection->policy_state = resource_manager_connection_t::policy_state_t::READY;
-	
+
 	if (!connection->resources.empty()) {
 		resource_list_t released = connection->resources;
 		system_resources->release(connection->resources);

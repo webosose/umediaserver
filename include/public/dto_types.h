@@ -246,7 +246,9 @@ struct display_out_t {
 enum class sink_t {
 	VOID = 0, // not connected
 	MAIN,     // video connected to main
-	SUB,      // video connected to sub
+	SUB,      // video connected to sub0
+	SUB1,      // video connected to sub1
+	SUB2,      // video connected to sub2
 	SOUND     // audio only
 };
 

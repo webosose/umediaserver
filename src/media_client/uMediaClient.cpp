@@ -361,6 +361,9 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 		if (_video_info_callback)
 			_video_info_callback(video_info);
 
+		LOG_INFO(_log, "video_info", "codec=%s, bitrate=%lld, width=%d, height=%d, framerate = %d/%d",
+				video_info.codec.c_str(), video_info.bit_rate, video_info.width, video_info.height, video_info.frame_rate.num, video_info.frame_rate.den);
+
 		return true;
 #else
 		video_info_t videoInfo = {};
@@ -424,7 +427,22 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 		return onVideoInfo(videoInfo);
 #endif
 	}
+
 	else if (name == "audioInfo") {
+#if UMS_INTERNAL_API_VERSION == 2
+		ums::audio_info_t audio_info = {};
+		audio_info.codec = value["codec"].asString();
+		audio_info.bit_rate = value["bitrate"].asNumber<int64_t>();
+		audio_info.sample_rate = value["sample_rate"].asNumber<int32_t>();
+
+		if (_audio_info_callback)
+			_audio_info_callback(audio_info);
+
+		LOG_INFO(_log, "audio_info", "codec=%s, bitrate=%lld, samplerate = %d",
+				audio_info.codec.c_str(), audio_info.bit_rate, audio_info.sample_rate);
+
+		return true;
+#else
 		audio_info_t audioInfo = {};
 		audioInfo.dualMono = unmarshallboolean(value["dualMono"]);
 		audioInfo.track = unmarshalllong(value["track"]);
@@ -447,7 +465,9 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 		}
 
 		return onAudioInfo(audioInfo);
+#endif
 	}
+
 	else if (name == "activeRegion") {
 		rect_t active_rc {
 			unmarshalllong(value["x"]),

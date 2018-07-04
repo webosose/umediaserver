@@ -228,6 +228,7 @@ private:
 	MediaDisplayController * mdc_;
 	AcquireQueue acquire_queue;
 	std::unique_ptr<pwr::PowerManager> power_manager_;
+	std::string bus_route_key_;
 
 	static bool policyResponseCallback(UMSConnectorHandle * handle,
 			UMSConnectorMessage * message, void * ctx);

@@ -179,7 +179,6 @@ public:
 private:
 	MediaDisplayController(UMSConnector * connector);
 
-	Logger log;
 	UMSConnector *connector_;
 
 	AcbObserver acb_spy;

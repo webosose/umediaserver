@@ -24,6 +24,7 @@ namespace uMediaServer {
 
 namespace {
 	Logger _log(UMS_LOG_CONTEXT_MDC);
+	Logger audiod_log(UMS_LOG_CONTEXT_AUDIOD);
 }
 
 namespace AVoutputd
@@ -37,13 +38,18 @@ namespace AVoutputd
 	const char* video_set_media_data = "palm://com.webos.service.avoutput/video/setMediaData";
 	const char* display_set_compositing = "palm://com.webos.service.avoutput/video/display/setCompositing";
 
-	// Audio
-	static const char* audio_get_status = "palm://com.webos.service.avoutput/audio/getStatus";
-	const char* audio_connect = "palm://com.webos.service.avoutput/audio/connect";
-	const char* audio_disconnect = "palm://com.webos.service.avoutput/audio/disconnect";
-	const char* audio_mute = "palm://com.webos.service.avoutput/audio/mute";
-
 	const std::string LOGGER_NAME = "ums.avoutput";
+}
+
+namespace Audiod
+{
+	// Audio
+	const char* audio_connect = "palm://com.webos.service.audio/UMI/connect";
+	const char* audio_disconnect = "palm://com.webos.service.audio/UMI/disconnect";
+	const char* audio_get_status = "palm://com.webos.service.audio/UMI/getStatus";
+	const char* audio_mute = "palm://com.webos.service.audio/UMI/mute";
+
+	const std::string LOGGER_NAME = "ums.audio";
 }
 
 AVOutputContextlessDisplayConnector::AVOutputContextlessDisplayConnector(UMSConnector * umc, const mdc::IChannelConnection &)
@@ -55,11 +61,21 @@ AVOutputContextlessDisplayConnector::AVOutputContextlessDisplayConnector(UMSConn
 	video_states[0].alpha = 255;
 	video_states[0].connected = false;
 	video_states[0].id = "";
-	video_states[1].name = "SUB";
+	video_states[1].name = "SUB0";
 	video_states[1].z = 1;
 	video_states[1].alpha = 255;
 	video_states[1].connected = false;
 	video_states[1].id = "";
+	video_states[2].name = "SUB1";
+	video_states[2].z = 2;
+	video_states[2].alpha = 255;
+	video_states[2].connected = false;
+	video_states[2].id = "";
+	video_states[3].name = "SUB2";
+	video_states[3].z = 3;
+	video_states[3].alpha = 255;
+	video_states[3].connected = false;
+	video_states[3].id = "";
 
 	// subscribe to video sink status
 	size_t token = connector->subscribe(AVoutputd::video_get_status,
@@ -71,7 +87,8 @@ AVOutputContextlessDisplayConnector::AVOutputContextlessDisplayConnector(UMSConn
 	}
 
 	// subscribe to audio sink status
-	token = connector->subscribe(AVoutputd::audio_get_status,
+        LOG_DEBUG(audiod_log, "Subcribe to Audiod getStatus");
+	token = connector->subscribe(Audiod::audio_get_status,
                                  pbnjson::JObject{{"subscribe", true}}.stringify(),
                                  audioConnectionStatusChange_cb, this);
 	if (!token)
@@ -147,20 +164,19 @@ void AVOutputContextlessDisplayConnector::vsm_connect(const std::string &id, mdc
 	video_state_t* sink_state;
 	std::string source_name;
 	int source_port;
+	int sink_port=-1;
 
-	if (sink == mdc::sink_t::MAIN)
+	if ( mdc::sink_t::MAIN <= sink && sink <= mdc::sink_t::SUB2 )
 	{
-		sink_state = &video_states[0];
-	}
-	else if (sink == mdc::sink_t::SUB)
-	{
-		sink_state = &video_states[1];
+		sink_state = &video_states[static_cast<int>(sink)-1];
 	}
 	else
 	{
 		LOG_ERROR(_log, MSGERR_AVOUTPUTD_INVALID_PARAMS, "Invalid parameters for video connect: sink");
 		return;
 	}
+
+	LOG_DEBUG(log, "sink id:%d, name:%s, reg size:%d", sink, sink_state->name.c_str(), registrations.size());
 
 	if (reg->vdec.unit == "HDMI_INPUT")
 	{
@@ -204,19 +220,23 @@ void AVOutputContextlessDisplayConnector::vsm_connect(const std::string &id, mdc
 	context->connector = this;
 
 	connector->sendMessage(AVoutputd::video_connect,
-	                       pbnjson::JObject{{"source",     source_name},
-	                                        {"sourcePort", source_port},
-	                                        {"sink",       sink_state->name},
-	                                        {"outputMode",      "DISPLAY"}}
-			                       .stringify(),
-	                       videoConnectResult_cb, context);
+			pbnjson::JObject{{"source",     source_name},
+			{"sourcePort", source_port},
+			{"sink",       sink_state->name},
+			{"outputMode",      "DISPLAY"}}
+			.stringify(),
+			videoConnectResult_cb, context);
 	// Now wait for message response, see next method.
 }
 
 int32_t AVOutputContextlessDisplayConnector::get_plane_id(const std::string & id) const {
-    if (video_states[0].id == id) return video_states[0].planeId;
-    if (video_states[1].id == id) return video_states[1].planeId;
-    return -1;
+	for(int i = 0; i < MAX_VIDEO_SINK; i++) {
+		if (video_states[i].id == id) {
+			LOG_DEBUG(_log, "idx:%d, plane_id:%d", i, video_states[i].planeId);
+			return video_states[i].planeId;
+		}
+	}
+	return -1;
 }
 
 bool AVOutputContextlessDisplayConnector::videoConnectResult_cb(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
@@ -247,13 +267,13 @@ bool AVOutputContextlessDisplayConnector::videoConnectResult_cb(UMSConnectorHand
 	{
 		if (success)
 		{
-                        state->planeId = parsed["planeID"].asNumber<int32_t>();
+			state->planeId = parsed["planeID"].asNumber<int32_t>();
 			self->notifyVideoConnectedChanged(*state, true);
 		}
 		else
 		{
 			//Force notify disconnected
-                        state->planeId = -1;
+			state->planeId = -1;
 			state->connected = true;
 			self->notifyVideoConnectedChanged(*state, false);
 		}
@@ -263,9 +283,8 @@ bool AVOutputContextlessDisplayConnector::videoConnectResult_cb(UMSConnectorHand
 }
 
 void AVOutputContextlessDisplayConnector::vsm_disconnect(const std::string &id) {
-
 	video_state_t* vstate = id_to_vsink(id);
-	LOG_DEBUG(log, "Call vsm_disconnect. mediaId=%s", id.c_str());
+	LOG_DEBUG(log, "Call vsm_disconnect. mediaId=%s, sinkname:%s", id.c_str(), vstate->name.c_str());
 
 	if (vstate)
 	{
@@ -296,16 +315,21 @@ void AVOutputContextlessDisplayConnector::sound_connect(const std::string & id){
 	audio_connection_t& connection = (*audio_connections.emplace(id, audio_connection_t()).first).second;
 
 	connection.id = id;
-	connection.sink = "MAIN";
-	connection.source = "ADEC";
+	connection.sink = "ALSA";
+	connection.source = "AMIXER";
 	connection.sourcePort = reg->adec.index;
-
-	connector->sendMessage(AVoutputd::audio_connect,
+        LOG_DEBUG(audiod_log, "Sound connect to Audiod, source=%s, sourcePort=%d sink=%s context=%s",
+                        connection.source.c_str(),
+                        connection.sourcePort,
+                        connection.sink.c_str(),
+                        connection.id.c_str());
+        connector->sendMessage(Audiod::audio_connect,
 	                       pbnjson::JObject{{"sink", connection.sink},
 	                                        {"source", connection.source},
 	                                        {"sourcePort", connection.sourcePort},
-	                                        {"outputMode", "tv_speaker"},
-	                                        {"audioType", "media"}}
+	                                        {"outputMode", "alsa"},
+	                                        {"audioType", "umimedia"},
+                                                {"context", connection.id.c_str()}}
 			                       .stringify(),
 	                       nullptr, nullptr);
 
@@ -321,10 +345,17 @@ void AVOutputContextlessDisplayConnector::sound_disconnect(const std::string & i
 		return;
 	}
 
-	connector->sendMessage(AVoutputd::audio_disconnect,
+        LOG_DEBUG(audiod_log, "Sound disconnect to Audiod, source=%s, sourcePort=%d sink=%s context=%s",
+                        connection->source.c_str(),
+                        connection->sourcePort,
+                        connection->sink.c_str(),
+                        connection->id.c_str());
+	connector->sendMessage(Audiod::audio_disconnect,
 	                       pbnjson::JObject{{"source",  connection->source},
 	                                        {"sourcePort", connection->sourcePort},
-	                                        {"sink",  connection->sink}}
+	                                        {"sink",  connection->sink},
+                                                {"audioType", "umimedia"},
+                                                {"context", connection->id.c_str()}}
 			                       .stringify(),
 	                       nullptr, nullptr);
 
@@ -506,28 +537,29 @@ void AVOutputContextlessDisplayConnector::avblock_unmute(const std::string &id, 
 void AVOutputContextlessDisplayConnector::mute_video_impl(const std::string & id, bool mute)
 {
 	video_state_t* video_state = id_to_vsink(id);
-        // FIXME: mute video may be called before connect
-        std::string sink_name = "MAIN";
-        if (video_state)
+	// FIXME: mute video may be called before connect
+	std::string sink_name = "MAIN";
+	if (video_state)
 	{
-                sink_name = video_state->name;
+		sink_name = video_state->name;
 	}
+
 	connect_context_t* context = new connect_context_t();
 	context->id = id;
 	context->connector = this;
 	if (mute)
 	{
 		connector->sendMessage(AVoutputd::video_blank,
-                                       pbnjson::JObject{{"sink",  sink_name},
-		                                        {"blank", mute}}.stringify(),
-		                       avmuted_cb, context);
+				pbnjson::JObject{{"sink",  sink_name},
+				{"blank", mute}}.stringify(),
+				avmuted_cb, context);
 	}
 	else
 	{
 		connector->sendMessage(AVoutputd::video_blank,
-                                       pbnjson::JObject{{"sink",  sink_name},
-		                                        {"blank", mute}}.stringify(),
-		                       nullptr, nullptr);
+				pbnjson::JObject{{"sink",  sink_name},
+				{"blank", mute}}.stringify(),
+				nullptr, nullptr);
 	}
 }
 
@@ -566,7 +598,12 @@ void AVOutputContextlessDisplayConnector::mute_audio_impl(const std::string & id
 		return;
 	}
 
-	connector->sendMessage(AVoutputd::audio_mute,
+        LOG_DEBUG(audiod_log, "Sound mute to Audiod, source=%s, sourcePort=%d sink=%s mute=%d",
+                      audio_state->source.c_str(),
+                      audio_state->sourcePort,
+                      audio_state->sink.c_str(),
+                      mute);
+	connector->sendMessage(Audiod::audio_mute,
 	                       pbnjson::JObject{{"source",  audio_state->source},
 	                                        {"sink", audio_state->sink},
 	                                        {"sourcePort", audio_state->sourcePort},
@@ -694,7 +731,7 @@ AVOutputContextlessDisplayConnector::registration_t* AVOutputContextlessDisplayC
 
 AVOutputContextlessDisplayConnector::video_state_t* AVOutputContextlessDisplayConnector::id_to_vsink(const std::string& id)
 {
-	for (int i = 0; i < 2; i ++)
+	for (int i = 0; i < MAX_VIDEO_SINK; i ++)
 	{
 		if (video_states[i].id == id)
 		{
@@ -706,7 +743,7 @@ AVOutputContextlessDisplayConnector::video_state_t* AVOutputContextlessDisplayCo
 
 AVOutputContextlessDisplayConnector::video_state_t* AVOutputContextlessDisplayConnector::name_to_vsink(const std::string& name)
 {
-	for (int i = 0; i < 2; i ++)
+	for (int i = 0; i < MAX_VIDEO_SINK; i ++)
 	{
 		if (video_states[i].name == name)
 		{

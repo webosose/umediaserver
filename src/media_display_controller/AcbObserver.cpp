@@ -23,10 +23,11 @@
 namespace uMediaServer {
 
 namespace {
-	Logger _log;
+	Logger _log(UMS_LOG_CONTEXT_MDC);
 }
 
 AcbObserver::AcbObserver(UMSConnector * umc) : connector(umc) {
+#if !USE_RPI_RESOURCE
 	connector->subscribe(ControlInterface::acb_service_observer, "{\"subscribe\":true}",
 						 [](UMSConnectorHandle *, UMSConnectorMessage * message, void * ctx)->bool {
 		AcbObserver * self = static_cast<AcbObserver *>(ctx);
@@ -45,6 +46,7 @@ AcbObserver::AcbObserver(UMSConnector * umc) : connector(umc) {
 			self->blacklist.insert(dom["appId"].asString());
 		}
 	}, this);
+#endif
 }
 
 bool AcbObserver::check_blacklist(const std::string & app) const {

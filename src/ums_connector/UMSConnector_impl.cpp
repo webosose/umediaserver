@@ -427,24 +427,14 @@ bool UMSConnector::UMSConnector_impl::sendResponseObject(UMSConnectorHandle *sen
 	return false;
 }
 
-bool UMSConnector::UMSConnector_impl::addRoute(UMSConnectorMessage* message)
+void UMSConnector::UMSConnector_impl::addRoute(const std::string &key, UMSConnectorMessage *message)
 {
-	if ( message == NULL ) return false;
-
-	UMSConnectorBusType bus  = getMessageBusType(message);
-	const char * uri  = getSenderServiceName(message);
-	bus_routes[uri] = bus;
-	return true;
+	bus_routes[key] = getMessageBusType(message);
 }
 
-bool UMSConnector::UMSConnector_impl::addRoute(UMSConnectorMessage* message,
-		const std::string &key)
+void UMSConnector::UMSConnector_impl::delRoute(const std::string &key)
 {
-	if ( message == NULL ) return false;
-
-	UMSConnectorBusType bus  = getMessageBusType(message);
-	bus_routes[key] = bus;
-	return true;
+	bus_routes.erase(key);
 }
 
 UMSConnectorBusType UMSConnector::UMSConnector_impl::getRoute(const std::string &key)
@@ -726,7 +716,7 @@ bool UMSConnector::UMSConnector_impl::addSubscriber (UMSConnectorHandle *subscri
 		success = false;
 	}
 
-	addRoute(message,key);
+	addRoute(key, message);
 
 	std::stringstream result; result << "{\"subscription\":" << (success ? "true" : "false") << "}";
 	sendResponseObject(subscriber, message, result.str());

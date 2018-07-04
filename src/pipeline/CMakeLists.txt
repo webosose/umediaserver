@@ -14,7 +14,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-message(STATUS "BUILDING pipeline")
+message(STATUS "BUILDING ums_pipeline")
 
 include_directories(
                    ${CMAKE_CURRENT_SOURCE_DIR}
@@ -45,7 +45,7 @@ set(
 
 ## ---
 # build libraries
-set(LIB_PIPELINE_NAME "pipeline")
+set(LIB_PIPELINE_NAME "ums_pipeline")
 set(TARGET_SRCS "Pipeline.cpp")
 add_library(${LIB_PIPELINE_NAME} SHARED ${TARGET_SRCS})
 # confirming link language here avoids linker confusion and prevents errors seen previously
@@ -53,8 +53,8 @@ set_target_properties(${LIB_PIPELINE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries (${LIB_PIPELINE_NAME} ${LINK_DEPS})
 webos_build_library(NAME ${LIB_PIPELINE_NAME})
 
-set(LIB_PIPELINE_MGR_NAME "pipeline_mgr")
+set(LIB_PIPELINE_MGR_NAME "ums_pipeline_mgr")
 set(TARGET_SRCS "PipelineManager.cpp")
 add_library(${LIB_PIPELINE_MGR_NAME} SHARED ${TARGET_SRCS})
-target_link_libraries(${LIB_PIPELINE_MGR_NAME} pipeline)
+target_link_libraries(${LIB_PIPELINE_MGR_NAME} ums_pipeline)
 webos_build_library(NAME ${LIB_PIPELINE_MGR_NAME})

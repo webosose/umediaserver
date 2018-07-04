@@ -15,6 +15,7 @@ mdc::sink_t VideoChannelConnection::try_connect(mdc::IMediaObject::ptr_t media) 
 	_policy.log_connections("Video connection request", media->id());
 	// TODO: remove these checks once mdc has full control over all media
 	// this will make connection policy more aggressive
+
 	if (!media->foreground())
 		return mdc::sink_t::VOID;
 	if (_policy._acb_spy.check_blacklist(media->appId()))
@@ -31,8 +32,8 @@ mdc::sink_t VideoChannelConnection::try_connect(mdc::IMediaObject::ptr_t media) 
 				return mdc::sink_t::VOID;
 		}
 		it->second = media;
-		LOG_DEBUG(_log, "Connecting video (%s) to %s", media->id().c_str(),
-				  (it->first == mdc::sink_t::MAIN ? "MAIN" : "SUB"));
+		LOG_DEBUG(_log, "Connecting video (%s) to %s, first:%d", media->id().c_str(),
+				  (it->first == mdc::sink_t::MAIN ? "MAIN" : "SUB"), it->first);
 		return it->first;
 	}
 	return mdc::sink_t::VOID;
@@ -187,9 +188,14 @@ ConnectionPolicy::ConnectionPolicy(const mdc::IAcbObserver & acb_spy,
 	, _audio_channel(*this), _video_channel(*this) {
 	_requested[mdc::sink_t::MAIN]  = mdc::IMediaObject::ptr_t();
 	_requested[mdc::sink_t::SUB]   = mdc::IMediaObject::ptr_t();
+	_requested[mdc::sink_t::SUB1]   = mdc::IMediaObject::ptr_t();
+	_requested[mdc::sink_t::SUB2]   = mdc::IMediaObject::ptr_t();
 	_requested[mdc::sink_t::SOUND] = mdc::IMediaObject::ptr_t();
+
 	_connected[mdc::sink_t::MAIN]  = mdc::IMediaObject::ptr_t();
 	_connected[mdc::sink_t::SUB]   = mdc::IMediaObject::ptr_t();
+	_connected[mdc::sink_t::SUB1]   = mdc::IMediaObject::ptr_t();
+	_connected[mdc::sink_t::SUB2]   = mdc::IMediaObject::ptr_t();
 	_connected[mdc::sink_t::SOUND] = mdc::IMediaObject::ptr_t();
 }
 

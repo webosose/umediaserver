@@ -271,6 +271,7 @@ public :
 	typedef std::function<void()> generic_callback_t;
 	typedef std::function<void(bool)> flag_callback_t;
 	typedef std::function<void(const ums::error_t &)> error_callback_t;
+	typedef std::function<void(const ums::audio_info_t &)> audio_info_callback_t;
 #if UMS_INTERNAL_API_VERSION == 2
 	typedef std::function<void(const ums::source_info_t &)> source_info_callback_t;
 	typedef std::function<void(const ums::time_t &)> time_update_callback_t;
@@ -307,6 +308,9 @@ public :
 	}
 	void set_video_info_callback(video_info_callback_t && handler) {
 		_video_info_callback = handler;
+	}
+	void set_audio_info_callback(audio_info_callback_t && handler) {
+		_audio_info_callback = handler;
 	}
 	void set_error_callback(error_callback_t && handler) {
 		_error_callback = handler;
@@ -519,6 +523,7 @@ private :
 	source_info_callback_t	_source_info_callback;
 	time_update_callback_t	_stream_time_callback;
 	video_info_callback_t	_video_info_callback;
+	audio_info_callback_t _audio_info_callback;
 	error_callback_t		_error_callback;
 #endif
 

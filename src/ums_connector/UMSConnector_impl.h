@@ -39,6 +39,7 @@
 #include <memory>
 #include <list>
 #include <deque>
+#include <unordered_map>
 
 const int MAX_EVENT_NAME_SIZE = 20;
 
@@ -84,8 +85,9 @@ public:
 	bool sendResponseObject(UMSConnectorHandle *sender,
 			UMSConnectorMessage* message, const std::string &object);
 
-	// route for incoming messages
-	bool addRoute(UMSConnectorMessage* message);
+	// route for incoming messages and subscription requests
+	void addRoute(const std::string &key, UMSConnectorMessage *message);
+	void delRoute(const std::string &key);
 
 	// Subscription methods
 	// client side usage
@@ -139,7 +141,7 @@ private:
 	static pbnjson::JSchema emptySchema;
 
 	// map of URI's associated with public or private bus routes
-	std::map<std::string, UMSConnectorBusType> bus_routes;
+	std::unordered_map<std::string, UMSConnectorBusType> bus_routes;
 
 	// need to keep track of luna service methods because
 	// LSUnregister doesn't free the method structures
@@ -153,9 +155,6 @@ private:
 
 	UMSConnectorBusType getMessageBusType(UMSConnectorMessage *message);
 	LSHandle * getBusHandle(const std::string &key);
-
-	// route for subscription requests
-	bool addRoute(UMSConnectorMessage* message, const std::string &key);
 
 	// look for route based on URI(messages) or key(subscriptions)
 	UMSConnectorBusType getRoute(const std::string &uri_key);

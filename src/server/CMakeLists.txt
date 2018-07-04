@@ -35,8 +35,8 @@ include_directories(
 set(
    LIBS
    rt
-   pipeline
-   pipeline_mgr
+   ums_pipeline
+   ums_pipeline_mgr
    resource_mgr
    ums_connector
    ums_connector_impl

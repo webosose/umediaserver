@@ -42,6 +42,8 @@ mdc::display_out_t LayoutManager::suggest_layout(const mdc::video_info_t & vi, c
 			result = mdc::display_out_t(fit_rc);
 			break;
 		case mdc::sink_t::SUB:
+		case mdc::sink_t::SUB1:
+		case mdc::sink_t::SUB2:
 			fit_rc.x += _width/number_of_autolayouted_videos;
 			result = mdc::display_out_t(fit_rc);
 			break;

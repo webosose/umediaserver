@@ -158,6 +158,7 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 
 	pm->pipeline_removed.connect([&](const std::string & id) {
 		rm->unregisterPipeline(id);
+		connector->delRoute(id);
 	});
 
 	pm->pipeline_pid_update.connect([this](const string &appid, pid_t pid, bool exec) {
@@ -333,9 +334,11 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 		}
 	});
 
+#if !USE_RPI_RESOURCE
 	// register with power manager
 	power_manager_.reset(new pwr::PowerManager(connector));
 	power_manager_->set_shutdown_handler([this](){ rm->reclaimResources(); });
+#endif
 
 } // end uMediaServer
 
@@ -485,41 +488,45 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 	string payload = JGenerator::serialize(parsed["payload"], pbnjson::JSchema::AllSchema());
 
 	string connection_id;   // id returned by load
-        bool preloaded = false;
-        bool isPreload = false;
+	bool preloaded = false;
+	bool isPreload = false;
 
-        if (parsed.hasKey("mediaId")) {
-           connection_id = parsed["mediaId"].asString();   // id returned by dispatch
-           preloaded = true;
-        }
+	if (parsed.hasKey("mediaId")) {
+		connection_id = parsed["mediaId"].asString();   // id returned by dispatch
+		preloaded = true;
+	}
 
-        LOG_DEBUG(log, "connection_id : %s", connection_id.c_str());
+	LOG_DEBUG(log, "connection_id : %s", connection_id.c_str());
 
-        if(preloaded)
-          isPreload = false;
+	if(preloaded)
+		isPreload = false;
 
 	bool rv = pm->load(connection_id, type, uri, payload, app_id, connector, isPreload);
 
-        if (!parsed["payload"]["option"]["preload"]) {
-           preloaded = false;
-        }
+	if (!parsed["payload"]["option"]["preload"]) {
+		preloaded = false;
+	}
 
-        if (!preloaded) {
-	  // register pipeline as managed with Resource Manager
-	  UMSTRACE_BEFORE((connection_id+"_load").c_str());
-	  rm->registerPipeline(connection_id, type);
+	if (!preloaded) {
+		// register pipeline as managed with Resource Manager
+		UMSTRACE_BEFORE((connection_id+"_load").c_str());
+		rm->registerPipeline(connection_id, type);
 
-	  // register with Media Display Controller
-	  if (!is_nabs(transport))
-            mdc_->registerMedia(connection_id, app_id);
+		// register with Media Display Controller
+		if (!is_nabs(transport))
+		{
+			LOG_DEBUG(log, "registerMedia by umediaserver media_id:%s, app_id:%s",
+					connection_id.c_str(), app_id.c_str());
+			mdc_->registerMedia(connection_id, app_id);
+		}
 
-	  LOG_INFO_EX(log, MSGNFO_LOAD_REQUEST, __KV({ {KVP_MEDIA_ID, connection_id},
-		{KVP_PIPELINE_TYPE, type} }), "");
+		LOG_INFO_EX(log, MSGNFO_LOAD_REQUEST, __KV({ {KVP_MEDIA_ID, connection_id},
+					{KVP_PIPELINE_TYPE, type} }), "");
 
-	  connector->addClientWatcher(sender, message, bind(unload_functor_,connection_id));
-          connection_message_map_[connection_id] = message;
-          connector->refMessage(message);
-        }
+		connector->addClientWatcher(sender, message, bind(unload_functor_,connection_id));
+		connection_message_map_[connection_id] = message;
+		connector->refMessage(message);
+	}
 
 	string retObject = createRetObject(rv, connection_id);
 	connector->sendResponseObject(sender,message,retObject);
@@ -741,6 +748,8 @@ bool uMediaserver::unloadCommand(UMSConnectorHandle* sender, UMSConnectorMessage
 		connector->unrefMessage(connection_message_map_[connection_id]);
 		connection_message_map_.erase(connection_id);
 	}
+	connector->delRoute(bus_route_key_);
+	bus_route_key_ = std::string();
 
 	string retObject = createRetObject(rv, connection_id);
 	connector->sendResponseObject(sender,message,retObject);
@@ -3511,7 +3520,7 @@ bool uMediaserver::getActivePipelinesCommand(UMSConnectorHandle* sender,
 			JValue mdc_connections = Array();
 			if (mdc_info.connections.first == mdc::sink_t::MAIN)
 				mdc_connections << "main";
-			else if (mdc_info.connections.first == mdc::sink_t::SUB)
+			else if (mdc_info.connections.first >= mdc::sink_t::SUB && mdc_info.connections.first <= mdc::sink_t::SUB2)
 				mdc_connections << "sub";
 			if (mdc_info.connections.second == mdc::sink_t::SOUND)
 				mdc_connections << "sound";
@@ -3651,9 +3660,8 @@ bool uMediaserver::registerPipelineCommand(UMSConnectorHandle* sender,
 		return false;
 	}
 
-	connector->addRoute(message);
-
 	string service_name = service;
+	connector->addRoute(service_name, message);
 	rm->setServiceName(connection_id,service_name);
 
 	LOG_DEBUG(log, "connection_id=%s, type = %s, service_name=%s",
@@ -3776,7 +3784,8 @@ bool uMediaserver::acquireCommand(UMSConnectorHandle* sender,
 	// TODO: optimize to avoid double lookup - later we'll do same map
 	// lookup with rm->findConnection(...)
 	rm->setServiceName(connection_id,service);
-	connector->addRoute(message);
+	bus_route_key_ = std::string(service);
+	connector->addRoute(bus_route_key_, message);
 
 	// get connection information
 	auto connection = rm->findConnection(connection_id);
@@ -3959,7 +3968,8 @@ bool uMediaserver::tryAcquireCommand(UMSConnectorHandle* sender,
 	// TODO: optimize to avoid double lookup - later we'll do same map
 	// lookup with rm->findConnection(...)
 	rm->setServiceName(connection_id,service);
-	connector->addRoute(message);
+	bus_route_key_ = std::string(service);
+	connector->addRoute(bus_route_key_, message);
 
 	// get connection information
 	auto connection = rm->findConnection(connection_id);

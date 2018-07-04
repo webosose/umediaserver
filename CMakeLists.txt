@@ -68,6 +68,11 @@ else()
     message(STATUS "Using INTERNAL API v.1")
 endif()
 
+if("${WEBOS_TARGET_MACHINE}" MATCHES "raspberrypi*")
+    message(STATUS "Using raspberry machine")
+    add_definitions(-DUSE_RPI_RESOURCE)
+endif()
+
 # ---
 #  build components
 add_subdirectory(src/logger)

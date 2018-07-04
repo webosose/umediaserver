@@ -228,15 +228,26 @@ bool UMSConnector::sendResponseObject(UMSConnectorHandle *sender, UMSConnectorMe
 
 /**
  * @f addRoute
- * Determine uri and bus of message. Add route to routing table
+ * Add route to routing table
  *
  */
-bool UMSConnector::addRoute(UMSConnectorMessage* message)
+void UMSConnector::addRoute(const std::string &key, UMSConnectorMessage *message)
 {
-	if( pImpl ) {
-		return pImpl->addRoute(message);
+	if (pImpl) {
+		pImpl->addRoute(key, message);
 	}
-	return false;
+}
+
+/**
+ * @f delRoute
+ * Delete route from routing table
+ *
+ */
+void UMSConnector::delRoute(const std::string &key)
+{
+	if (pImpl) {
+		pImpl->delRoute(key);
+	}
 }
 
 /**
