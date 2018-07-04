@@ -41,7 +41,6 @@ typedef struct LSErrorWrapper : LSError {
 UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 		GMainLoop *mainLoop,   // nullptr, will create new main loop unless use_default_context = true
 		void * user_data,
-		UMSConnectorBusType bus_type,
 		bool use_default_context)
 
    : log(new Logger(UMS_LOG_CONTEXT_CONNECTOR)),
@@ -49,7 +48,6 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
      subscription_key(name),
      user_data(user_data),
      m_callbackManager(new CallbackManager(user_data, log)),
-     m_bus_type(bus_type),
      stopped_(false),
 	 run_state_altered(false),
 	 mainLoop_(mainLoop),
@@ -103,69 +101,41 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 			throw std::runtime_error("LSSubscriptionSetCancelFunction FAILED");
 		}
 	};
-	if (bus_type == UMS_CONNECTOR_DUAL_BUS) {
-		// register as a palm service since we are on both priv and pub buses
-		ret = LSRegisterPalmService(name.c_str(), &m_service.palmservice, &lserror);
-		if (!ret) {
-			LOG_LS_ERROR(MSGERR_SERVICE_REGISTER, lserror,
-					"LSRegisterPalmService FAILED for name=%s !!", name.c_str());
-			throw std::runtime_error("LSRegisterPalmService FAILED");
-		}
 
-		LOG_DEBUG((*log), "LSRegisterPalmService was successful - returned m_service=%p name=%s",
-				m_service.palmservice, name.c_str());
-
-		ret = LSPalmServiceRegisterCategory(m_service.palmservice,"/",NULL,NULL,NULL,
-				user_data,&lserror);
-		if (!ret) {
-			LOG_LS_ERROR(MSGERR_CATEGORY_REGISTER, lserror,
-					"LSPalmServiceRegisterCategory FAILED for name=%s !!", name.c_str());
-			throw std::runtime_error("LSPalmServiceRegisterCategory FAILED");
-		}
-		ret = LSGmainContextAttachPalmService(m_service.palmservice, main_context, &lserror);
-		if( !ret ) {
-			LOG_LS_ERROR(MSGERR_GMAIN_ATTACH, lserror,
-					"LSGmainAttachPalmService FAILED for name=%s !!", service_name.c_str());
-			throw std::runtime_error("LSGmainAttachPalmService FAILED");
-		}
-		f_set_sub_cancel(LSPalmServiceGetPublicConnection(m_service.palmservice));
-		f_set_sub_cancel(LSPalmServiceGetPrivateConnection(m_service.palmservice));
+	ret = LSRegister(name.c_str(), &m_service.lshandle, &lserror);
+	if (!ret) {
+		LOG_LS_ERROR(MSGERR_SERVICE_REGISTER, lserror,
+				"LSRegister FAILED for name=%s !!", name.c_str());
+		throw std::runtime_error("LSRegister FAILED");
 	}
-	else {
-		ret = LSRegisterPubPriv(name.c_str(), &m_service.lshandle, bus_type, &lserror);
-		if (!ret) {
-			LOG_LS_ERROR(MSGERR_SERVICE_REGISTER, lserror,
-					"LSRegisterPubPriv FAILED for name=%s !!", name.c_str());
-			throw std::runtime_error("LSRegisterPubPriv FAILED");
-		}
 
-		LOG_DEBUG((*log), "LSRegister was successful - returned m_service=%p name=%s",
-				m_service.lshandle, name.c_str());
+	LOG_DEBUG((*log), "LSRegister was successful - returned m_service=%p name=%s",
+			m_service.lshandle, name.c_str());
 
-		ret = LSRegisterCategory(m_service.lshandle,"/",NULL,NULL,NULL,&lserror);
-		if (!ret) {
-			LOG_LS_ERROR(MSGERR_CATEGORY_REGISTER, lserror,
-					"LSRegister FAILED for name=%s !!", name.c_str());
-			throw std::runtime_error("LSRegister FAILED");
-		}
-
-		if( user_data ) {
-			ret = LSCategorySetData(m_service.lshandle, "/", user_data, &lserror);
-			if (!ret) {
-				LOG_LS_ERROR(MSGERR_CATEGORY_DATA, lserror,
-						"LSCategorySetData() FAILED for name=%s !!", name.c_str());
-				throw std::runtime_error("LSCategorySetData FAILED");
-			}
-		}
-
-		ret = LSGmainContextAttach(m_service.lshandle, main_context, &lserror);
-		if( !ret ) {
-			LOG_LS_ERROR(MSGERR_GMAIN_ATTACH, lserror,
-					"LSGmainAttach FAILED for name=%s !!", service_name.c_str());
-			throw std::runtime_error("LSGmainAttach FAILED");
-		}
-		f_set_sub_cancel(m_service.lshandle);
+	ret = LSRegisterCategory(m_service.lshandle,"/",NULL,NULL,NULL,&lserror);
+	if (!ret) {
+		LOG_LS_ERROR(MSGERR_CATEGORY_REGISTER, lserror,
+				"LSRegister FAILED for name=%s !!", name.c_str());
+		throw std::runtime_error("LSRegister FAILED");
 	}
+
+	if( user_data ) {
+		ret = LSCategorySetData(m_service.lshandle, "/", user_data, &lserror);
+		if (!ret) {
+			LOG_LS_ERROR(MSGERR_CATEGORY_DATA, lserror,
+					"LSCategorySetData() FAILED for name=%s !!", name.c_str());
+			throw std::runtime_error("LSCategorySetData FAILED");
+		}
+	}
+
+	ret = LSGmainContextAttach(m_service.lshandle, main_context, &lserror);
+	if( !ret ) {
+		LOG_LS_ERROR(MSGERR_GMAIN_ATTACH, lserror,
+				"LSGmainAttach FAILED for name=%s !!", service_name.c_str());
+		throw std::runtime_error("LSGmainAttach FAILED");
+	}
+	f_set_sub_cancel(m_service.lshandle);
+
 	g_main_context_unref(main_context);
 	log->setLogLevel(kPmLogLevel_Debug);
 }
@@ -229,17 +199,10 @@ UMSConnector::UMSConnector_impl::~UMSConnector_impl()
 	if (idle_task_ != 0)
 		g_source_remove(idle_task_);
 
-	if (m_bus_type == UMS_CONNECTOR_DUAL_BUS) {
-		if (!LSUnregisterPalmService(m_service.palmservice, &lsError)) {
-			LOG_LS_ERROR(MSGERR_UNREGISTER, lsError, "failed to unregister from hub")
-		}
+	if (!LSUnregister(m_service.lshandle, &lsError)) {
+		LOG_LS_ERROR(MSGERR_UNREGISTER, lsError, "failed to unregister from hub")
 	}
-	else {
-		if (!LSUnregister(m_service.lshandle, &lsError)) {
-			LOG_LS_ERROR(MSGERR_UNREGISTER, lsError, "failed to unregister from hub")
-		}
-	}
-
+	
 	if( mainLoop_ )
 		g_main_loop_unref(mainLoop_);
 
@@ -310,40 +273,21 @@ bool UMSConnector::UMSConnector_impl::addEventHandler(string event, UMSConnector
 	// setup callback proxy
 	void * context = m_callbackManager->registerCommandHandler(strCategory, event, func);
 
-	if (m_bus_type == UMS_CONNECTOR_DUAL_BUS && bus == UMS_CONNECTOR_DUAL_BUS) {
-		rv = LSPalmServiceRegisterCategory(m_service.palmservice, strCategory.c_str(), lsmethod, lsmethod, NULL, context, &lserror);
-		if( !rv) {
-			LOG_LS_ERROR(MSGERR_CATEGORY_APPEND, lserror, "LSPalmServiceRegisterCategory() failed.");
-			goto fail;
-		}
-	}
-	else {
-		LSHandle *lshandle;
-		if (m_bus_type == UMS_CONNECTOR_DUAL_BUS) {
-			if (bus == UMS_CONNECTOR_PRIVATE_BUS)
-				lshandle = LSPalmServiceGetPrivateConnection(m_service.palmservice);
-			else
-				lshandle = LSPalmServiceGetPublicConnection(m_service.palmservice);
-		}
-		else if (bus == UMS_CONNECTOR_DUAL_BUS || m_bus_type == bus){
-			lshandle = m_service.lshandle;
-		}
-		else {
-			LOG_LS_ERROR(MSGERR_CATEGORY_APPEND, lserror, "Cannot register %s on bus of type %d.", event.c_str(), m_bus_type);
-			goto fail;
-		}
-		rv = LSRegisterCategoryAppend(lshandle, strCategory.c_str(), lsmethod, NULL, &lserror);
-		if( !rv) {
-			LOG_LS_ERROR(MSGERR_CATEGORY_APPEND, lserror, "LSRegisterCategoryAppend() failed.");
-			goto fail;
-		}
-
-		rv = LSCategorySetData(lshandle, strCategory.c_str(), context, &lserror);
-		if (!rv) {
-			LOG_LS_ERROR(MSGERR_CATEGORY_DATA, lserror, "LSCategorySetData() FAILED !!");
-			goto fail;
-		}
-	}
+  LSHandle *lshandle = m_service.lshandle;
+  if (lshandle == nullptr) {
+    LOG_LS_ERROR(MSGERR_CATEGORY_APPEND, lserror, "Cannot register %s on bus.", event.c_str());
+    goto fail;
+  }
+  rv = LSRegisterCategoryAppend(lshandle, strCategory.c_str(), lsmethod, NULL, &lserror);
+  if( !rv) {
+    LOG_LS_ERROR(MSGERR_CATEGORY_APPEND, lserror, "LSRegisterCategoryAppend() failed.");
+    goto fail;
+  }
+  rv = LSCategorySetData(lshandle, strCategory.c_str(), context, &lserror);
+  if (!rv) {
+    LOG_LS_ERROR(MSGERR_CATEGORY_DATA, lserror, "LSCategorySetData() FAILED !!");
+    goto fail;
+  }
 	eventHandlers.push_back(&lsmethod[0]);   // store for later clean up
 
 	return true;
@@ -382,20 +326,6 @@ const char * UMSConnector::UMSConnector_impl::getSenderServiceName(UMSConnectorM
 	return LSMessageGetSenderServiceName(reinterpret_cast<LSMessage*>(message));
 }
 
-UMSConnectorBusType UMSConnector::UMSConnector_impl::getMessageBusType(UMSConnectorMessage *message)
-{
-	LSMessage * msg = reinterpret_cast<LSMessage*>(message);
-
-	if ( m_bus_type != UMS_CONNECTOR_DUAL_BUS ) {
-		return m_bus_type;
-	}
-
-	if (LSMessageIsPublic(m_service.palmservice, msg))
-		return UMS_CONNECTOR_PUBLIC_BUS;
-	else
-		return UMS_CONNECTOR_PRIVATE_BUS;
-}
-
 bool UMSConnector::UMSConnector_impl::sendSimpleResponse(UMSConnectorHandle *sender,UMSConnectorMessage* message, bool resp)
 {
 	std::string response = (resp) ? "{\"returnValue\":true}" : "{\"returnValue\":false}";
@@ -427,37 +357,8 @@ bool UMSConnector::UMSConnector_impl::sendResponseObject(UMSConnectorHandle *sen
 	return false;
 }
 
-void UMSConnector::UMSConnector_impl::addRoute(const std::string &key, UMSConnectorMessage *message)
-{
-	bus_routes[key] = getMessageBusType(message);
-}
-
-void UMSConnector::UMSConnector_impl::delRoute(const std::string &key)
-{
-	bus_routes.erase(key);
-}
-
-UMSConnectorBusType UMSConnector::UMSConnector_impl::getRoute(const std::string &key)
-{
-	auto it = bus_routes.find(key);
-	if(it != bus_routes.end()) {
-		return it->second;
-	}
-
-	return UMS_CONNECTOR_PRIVATE_BUS;
-}
-
 LSHandle * UMSConnector::UMSConnector_impl::getBusHandle(const std::string &key)
 {
-	if ( m_bus_type == UMS_CONNECTOR_DUAL_BUS ) {
-		UMSConnectorBusType bus = getRoute(key);
-		if (bus == UMS_CONNECTOR_PUBLIC_BUS )
-			return LSPalmServiceGetPublicConnection(m_service.palmservice);
-
-		if (bus == UMS_CONNECTOR_PRIVATE_BUS )
-			return LSPalmServiceGetPrivateConnection(m_service.palmservice);
-	}
-
 	return m_service.lshandle;
 }
 
@@ -543,8 +444,7 @@ size_t UMSConnector::UMSConnector_impl::subscribe(const string &uri, const std::
 	// setup callback proxy
 	void * context = m_callbackManager->registerSubscriptionHandler(ls_uri, cb, ctx);
 
-	LSHandle * handle = m_bus_type == UMS_CONNECTOR_DUAL_BUS ?
-				LSPalmServiceGetPrivateConnection(m_service.palmservice) : m_service.lshandle;
+	LSHandle * handle = m_service.lshandle;
 
 	bool rv = LSCall(handle, ls_uri.c_str(), payload.c_str(),
 				CallbackManager::SubscriptionHandlerProxy,
@@ -715,8 +615,6 @@ bool UMSConnector::UMSConnector_impl::addSubscriber (UMSConnectorHandle *subscri
 		LOG_LS_ERROR(MSGERR_COMM_SUBSCRIBE, lserror, "LSSubscriptionAdd failed: %s", lserror.message);
 		success = false;
 	}
-
-	addRoute(key, message);
 
 	std::stringstream result; result << "{\"subscription\":" << (success ? "true" : "false") << "}";
 	sendResponseObject(subscriber, message, result.str());

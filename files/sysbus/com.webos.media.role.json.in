@@ -1,0 +1,28 @@
+{
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/umediaserver",
+    "type": "regular",
+    "allowedNames": [
+        "com.webos.media",
+        "com.webos.pipelinectrl.*"
+    ],
+    "permissions": [
+        {
+            "service":"com.webos.media",
+            "outbound":[
+                "com.webos.service.avoutput",
+                "com.webos.surfacemanager",
+                "com.webos.applicationManager",
+                "com.webos.media.client.*",
+                "com.webos.pipeline.*",
+                "com.webos.rm.client.*",
+                "com.webos.ums-status"
+            ]
+        },
+        {
+            "service":"com.webos.pipelinectrl.*",
+            "outbound":[
+                "com.webos.pipeline.*"
+            ]
+        }
+    ]
+}

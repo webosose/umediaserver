@@ -158,7 +158,6 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 
 	pm->pipeline_removed.connect([&](const std::string & id) {
 		rm->unregisterPipeline(id);
-		connector->delRoute(id);
 	});
 
 	pm->pipeline_pid_update.connect([this](const string &appid, pid_t pid, bool exec) {
@@ -748,8 +747,6 @@ bool uMediaserver::unloadCommand(UMSConnectorHandle* sender, UMSConnectorMessage
 		connector->unrefMessage(connection_message_map_[connection_id]);
 		connection_message_map_.erase(connection_id);
 	}
-	connector->delRoute(bus_route_key_);
-	bus_route_key_ = std::string();
 
 	string retObject = createRetObject(rv, connection_id);
 	connector->sendResponseObject(sender,message,retObject);
@@ -3661,7 +3658,6 @@ bool uMediaserver::registerPipelineCommand(UMSConnectorHandle* sender,
 	}
 
 	string service_name = service;
-	connector->addRoute(service_name, message);
 	rm->setServiceName(connection_id,service_name);
 
 	LOG_DEBUG(log, "connection_id=%s, type = %s, service_name=%s",
@@ -3784,8 +3780,6 @@ bool uMediaserver::acquireCommand(UMSConnectorHandle* sender,
 	// TODO: optimize to avoid double lookup - later we'll do same map
 	// lookup with rm->findConnection(...)
 	rm->setServiceName(connection_id,service);
-	bus_route_key_ = std::string(service);
-	connector->addRoute(bus_route_key_, message);
 
 	// get connection information
 	auto connection = rm->findConnection(connection_id);
@@ -3968,8 +3962,6 @@ bool uMediaserver::tryAcquireCommand(UMSConnectorHandle* sender,
 	// TODO: optimize to avoid double lookup - later we'll do same map
 	// lookup with rm->findConnection(...)
 	rm->setServiceName(connection_id,service);
-	bus_route_key_ = std::string(service);
-	connector->addRoute(bus_route_key_, message);
 
 	// get connection information
 	auto connection = rm->findConnection(connection_id);

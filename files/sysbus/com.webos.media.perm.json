@@ -1,0 +1,14 @@
+{
+  "com.webos.media": [
+    "applications.internal",
+    "launcher.status",
+    "surfaces.status",
+    "media",
+    "media.pipeline"
+  ],
+  "com.webos.pipelinectrl.*": [
+    "media.pipeline"
+  ]
+
+}
+

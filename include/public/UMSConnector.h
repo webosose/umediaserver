@@ -71,10 +71,6 @@ public:
 	bool sendResponseObject(UMSConnectorHandle *sender, UMSConnectorMessage* message,
 			const std::string &object);
 
-	// route for incoming messages and subscription requests
-	void addRoute(const std::string &key, UMSConnectorMessage *message);
-	void delRoute(const std::string &key);
-
 	GMainLoop * getMainLoop();
 
 	// Subscription methods

@@ -59,7 +59,6 @@ public:
 	explicit UMSConnector_impl(const std::string& name,
 			GMainLoop *mainLoop_ = nullptr,
 			void * user_data = nullptr,
-			UMSConnectorBusType bus_type = UMS_CONNECTOR_PUBLIC_BUS,
 			bool use_default_context = false);
 
 	~UMSConnector_impl();
@@ -84,10 +83,6 @@ public:
 						const std::string &key, const std::string &value);
 	bool sendResponseObject(UMSConnectorHandle *sender,
 			UMSConnectorMessage* message, const std::string &object);
-
-	// route for incoming messages and subscription requests
-	void addRoute(const std::string &key, UMSConnectorMessage *message);
-	void delRoute(const std::string &key);
 
 	// Subscription methods
 	// client side usage
@@ -130,18 +125,13 @@ private:
 	GMainLoop *mainLoop_;
 	union {
 		LSHandle *lshandle;
-		LSPalmService *palmservice;
 	} m_service;
 	// false if we have loop shared between several connectors
 	bool run_state_altered;
 
-	UMSConnectorBusType m_bus_type;
 	LSMessageToken m_token;
 	void * user_data;
 	static pbnjson::JSchema emptySchema;
-
-	// map of URI's associated with public or private bus routes
-	std::unordered_map<std::string, UMSConnectorBusType> bus_routes;
 
 	// need to keep track of luna service methods because
 	// LSUnregister doesn't free the method structures
@@ -153,11 +143,7 @@ private:
 	// callback manager
 	CallbackManager::ptr_t m_callbackManager;
 
-	UMSConnectorBusType getMessageBusType(UMSConnectorMessage *message);
 	LSHandle * getBusHandle(const std::string &key);
-
-	// look for route based on URI(messages) or key(subscriptions)
-	UMSConnectorBusType getRoute(const std::string &uri_key);
 
 	// get LS uri from uri
 	std::string getLSUri(const std::string & uri);

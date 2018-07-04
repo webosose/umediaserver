@@ -69,7 +69,7 @@ UMSConnector::UMSConnector(const string& name,
 	: log(UMS_LOG_CONTEXT_CONNECTOR), name(name) {
 	LOG_TRACE(log, "UMSConnector interface initialized");
 
-	pImpl = new UMSConnector_impl(name, mainLoop_, user_data, bus_type, use_default_context);
+	pImpl = new UMSConnector_impl(name, mainLoop_, user_data, use_default_context);
 }
 
 UMSConnector::~UMSConnector() {
@@ -224,30 +224,6 @@ bool UMSConnector::sendResponseObject(UMSConnectorHandle *sender, UMSConnectorMe
 		return pImpl->sendResponseObject(sender, message, object);
 	}
 	return false;
-}
-
-/**
- * @f addRoute
- * Add route to routing table
- *
- */
-void UMSConnector::addRoute(const std::string &key, UMSConnectorMessage *message)
-{
-	if (pImpl) {
-		pImpl->addRoute(key, message);
-	}
-}
-
-/**
- * @f delRoute
- * Delete route from routing table
- *
- */
-void UMSConnector::delRoute(const std::string &key)
-{
-	if (pImpl) {
-		pImpl->delRoute(key);
-	}
 }
 
 /**
