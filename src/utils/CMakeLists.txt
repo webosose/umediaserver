@@ -23,7 +23,7 @@ include_directories(
 
 # ---
 # create test executable
-set(BIN_NAME "rmc")
+set(BIN_NAME "ums_rmc")
 set(test_exe_src rmc.cpp)
 add_executable (${BIN_NAME} ${test_exe_src})
 set_target_properties(${BIN_NAME} PROPERTIES LINKER_LANGUAGE CXX)
