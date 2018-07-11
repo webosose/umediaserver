@@ -861,6 +861,12 @@ bool MediaDisplayController::contentReady(UMSConnectorHandle* handle, UMSConnect
 //
 bool MediaDisplayController::registerMedia(const string &media_id, const string &app_id)
 {
+	if (media_id.empty() || app_id.empty()) {
+		LOG_DEBUG(log, "failed registration because of empty string: media_id=%s, app_id=%s",
+				media_id.c_str(), app_id.c_str());
+		return false;
+	}
+
 	auto e = media_elements_.find(media_id);
 	if(e != media_elements_.end()) {
 		LOG_DEBUG(log, "existing media id. failed registration. media_id=%s, app_id=%s",

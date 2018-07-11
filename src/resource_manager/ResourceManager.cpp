@@ -391,8 +391,12 @@ void ResourceManager::setLogLevel(const std::string & level) {
 // @ return : connection_id
 //
 bool ResourceManager::registerPipeline(const string &connection_id, const string &type)
-
 {
+	if (type.empty()) {
+		LOG_DEBUG(_log, "registerPipeline: type string is empty");
+		return false;
+	}
+
 	lock_t l(mutex);
 
 	resource_manager_connection_t connection;
