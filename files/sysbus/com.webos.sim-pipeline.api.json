@@ -1,0 +1,13 @@
+{
+    "media.pipeline": [
+        "com.webos.pipeline.*/load",
+        "com.webos.pipeline.*/unload",
+        "com.webos.pipeline.*/play",
+        "com.webos.pipeline.*/pause",
+        "com.webos.pipeline.*/seek",
+        "com.webos.pipeline.*/stateChange",
+        "com.webos.pipeline.*/debug"
+    ]
+}
+
+

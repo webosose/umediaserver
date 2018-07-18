@@ -1,0 +1,11 @@
+{
+    "exeName":"@WEBOS_INSTALL_BINDIR@/mdc_content_provider_official",
+    "type": "regular",
+    "allowedNames": ["com.webos.rm.client.*"],
+    "permissions": [
+        {
+            "service":"com.webos.rm.client.*",
+            "outbound":["com.webos.media"]
+        }
+    ]
+}

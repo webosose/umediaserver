@@ -1,0 +1,15 @@
+{
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/simulated_pipeline",
+    "type": "regular",
+    "allowedNames": ["com.webos.pipeline.*"],
+    "permissions": [
+        {
+            "service":"com.webos.pipeline.*",
+            "outbound":[
+                "com.webos.media",
+                "com.webos.pipelinectrl.*",
+                "com.webos.media.client.*"
+            ]
+        }
+    ]
+}

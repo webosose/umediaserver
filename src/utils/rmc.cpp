@@ -134,6 +134,7 @@ bool policyActionEvent(const char * action, const char * resources,
 int main(int argc, char *argv[])
 {
 	string cmd;
+       bool result = false;
 	bool exit = false;
 
 	printf("ResourceManagerClient : START\n");
@@ -169,11 +170,11 @@ int main(int argc, char *argv[])
 			if( args.size() > 1 ) {
 				type = args[1];
 			}
-			rmc.registerPipeline(type);
+			result = rmc.registerPipeline(type);
 		}
 		else if( args[0] == "unregisterPipline" || args[0] == "up" ) {
 			printf("command :  %s\n",cmd.c_str());
-			rmc.unregisterPipeline();
+			result = rmc.unregisterPipeline();
 		}
 		else if( args[0] == "acquire" || args[0] == "a" ) {
 			printf("command :  %s\n",cmd.c_str());
@@ -184,7 +185,7 @@ int main(int argc, char *argv[])
 			try {
 				std::string request = args[1];
 				std::string response;
-				rmc.acquire(request,response);
+				result = rmc.acquire(request,response);
 				acquireResources(response);
 				printf("ACQUIRE RESPONSE :  %s\n",response.c_str());
 			} catch(const std::exception & e) {
@@ -201,7 +202,7 @@ int main(int argc, char *argv[])
 			try {
 				std::string request = args[1];
 				std::string response;
-				rmc.acquire(request,response);
+				result = rmc.tryAcquire(request,response);
 				acquireResources(response);
 				printf("ACQUIRE RESPONSE :  %s\n",response.c_str());
 			} catch(const std::exception & e) {
@@ -217,7 +218,7 @@ int main(int argc, char *argv[])
 			}
 			try {
 				std::string request = args[1];
-				rmc.release(request);
+				result = rmc.release(request);
 				releaseResources(request);
 			} catch (const std::exception & e) {
 				printf(" ERROR: release command failed: %s\n", e.what());
@@ -239,7 +240,7 @@ int main(int argc, char *argv[])
 		else if( args[0] == "notifyActivity" || args[0] == "na" ) {
 			printf("command :  %s\n",cmd.c_str());
 			try {
-				rmc.notifyActivity();
+				result = rmc.notifyActivity();
 			} catch (const std::exception & e) {
 				printf(" ERROR: notifyActivity command failed: %s\n", e.what());
 			}
@@ -247,7 +248,7 @@ int main(int argc, char *argv[])
 		else if( args[0] == "notifyForeground" || args[0] == "fg" ) {
 			printf("command :  %s\n",cmd.c_str());
 			try {
-				rmc.notifyForeground();
+				result = rmc.notifyForeground();
 			} catch (const std::exception & e) {
 				printf(" ERROR: notifyForeground command failed: %s\n", e.what());
 			}
@@ -255,7 +256,7 @@ int main(int argc, char *argv[])
 		else if( args[0] == "notifyBackground" || args[0] == "bg" ) {
 			printf("command :  %s\n",cmd.c_str());
 			try {
-				rmc.notifyBackground();
+				result = rmc.notifyBackground();
 			} catch (const std::exception & e) {
 				printf(" ERROR: notifyBackground command failed: %s\n", e.what());
 			}
@@ -266,7 +267,10 @@ int main(int argc, char *argv[])
 		}
 		else {
 			printf("UNKNOWN COMMAND :  '%s'\n",cmd.c_str());
+                       continue;
 		}
+
+               printf("result : %s\n", result?"true":"false");
 	}
 
 	printf("\nResource Manager Client API exiting :  '%s'\n",cmd.c_str());

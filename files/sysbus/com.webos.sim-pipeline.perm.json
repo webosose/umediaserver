@@ -1,0 +1,6 @@
+{
+    "com.webos.pipeline.*": [
+        "media"
+    ]
+}
+

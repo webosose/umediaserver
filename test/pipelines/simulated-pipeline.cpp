@@ -272,7 +272,7 @@ bool loadEvent (UMSConnectorHandle* sender, UMSConnectorMessage* message, void* 
     PipelineContext* pctx = static_cast<PipelineContext*>(ctx);
 
     const char* msg = pctx->connector->getMessageText(message);
-    LOG_TRACE(_log, "load msg=%s", msg);
+    LOG_DEBUG(_log, "load msg=%s", msg);
 
     pctx->connector->sendSimpleResponse(sender, message, pctx->load(msg));
     return true;
@@ -283,7 +283,7 @@ bool unloadEvent (UMSConnectorHandle* sender, UMSConnectorMessage* message, void
     PipelineContext* pctx = static_cast<PipelineContext*>(ctx);
 
     const char* msg = pctx->connector->getMessageText(message);
-    LOG_TRACE(_log, "unload msg=%s", msg);
+    LOG_DEBUG(_log, "unload msg=%s", msg);
 
     bool unloaded = pctx->unload();
     if (g_send_unload_completed)
@@ -299,7 +299,7 @@ bool playEvent (UMSConnectorHandle* sender, UMSConnectorMessage* message, void* 
     PipelineContext* pctx = static_cast<PipelineContext*>(ctx);
 
     const char* msg = pctx->connector->getMessageText(message);
-    LOG_TRACE(_log, "play msg=%s", msg);
+    LOG_DEBUG(_log, "play msg=%s", msg);
 
     pctx->sendStateUpdate("playing", pctx->player->play());
 
@@ -312,7 +312,7 @@ bool pauseEvent (UMSConnectorHandle* sender, UMSConnectorMessage* message, void*
     PipelineContext* pctx = static_cast<PipelineContext*>(ctx);
 
     const char* msg = pctx->connector->getMessageText(message);
-    LOG_TRACE(_log, "pause msg=%s", msg);
+    LOG_DEBUG(_log, "pause msg=%s", msg);
 
     pctx->sendStateUpdate("paused", pctx->player->pause());
 
@@ -325,7 +325,7 @@ bool seekEvent (UMSConnectorHandle* sender, UMSConnectorMessage* message, void* 
     PipelineContext* pctx = static_cast<PipelineContext*>(ctx);
 
     const char* msg = pctx->connector->getMessageText(message);
-    LOG_TRACE(_log, "seek msg=%s", msg);
+    LOG_DEBUG(_log, "seek msg=%s", msg);
 
     pctx->sendStateUpdate("seekDone", pctx->player->seek(atoll(msg)));
 
@@ -338,7 +338,7 @@ bool stateChangeEvent (UMSConnectorHandle* sender, UMSConnectorMessage* message,
     PipelineContext* pctx = static_cast<PipelineContext*>(ctx);
 
     const char* msg = pctx->connector->getMessageText(message);
-    LOG_TRACE(_log, "stateChange msg=%s", msg);
+    LOG_DEBUG(_log, "stateChange msg=%s", msg);
 
     pctx->addSubscriber(sender, message);
 
@@ -351,7 +351,7 @@ bool debugEvent (UMSConnectorHandle* sender, UMSConnectorMessage* message, void*
     PipelineContext* pctx = static_cast<PipelineContext*>(ctx);
 
     const char* msg = pctx->connector->getMessageText(message);
-    LOG_TRACE(_log, "debug msg=%s", msg);
+    LOG_DEBUG(_log, "debug msg=%s", msg);
 	std::cerr << "debug msg = " << msg << std::endl;
 
 	std::stringstream iss(msg);
@@ -401,13 +401,13 @@ int main (int argc, char** argv, char ** envp)
     }
 
     if (service_name) {
-        LOG_TRACE(_log, "-s %s", service_name->c_str());
+        LOG_DEBUG(_log, "-s %s", service_name->c_str());
     } else {
-        service_name = new std::string("com.palm.umediapipeline_ZZZZZZZZZZZZZZZ");
-        LOG_TRACE(_log, "default service_name=%s", service_name->c_str());
+        service_name = new std::string("com.webos.pipeline._ZZZZZZZZZZZZZZZ");
+        LOG_DEBUG(_log, "default service_name=%s", service_name->c_str());
     }
 
-    LOG_TRACE(_log, "SIMULATED-PIPELINE BEGIN");
+    LOG_DEBUG(_log, "SIMULATED-PIPELINE BEGIN");
 
     PipelineContext* pctx;
 
@@ -426,7 +426,7 @@ int main (int argc, char** argv, char ** envp)
 
     pctx->connector->wait();
 
-    LOG_TRACE(_log, "SIMULATED-PIPELINE END");
+    LOG_DEBUG(_log, "SIMULATED-PIPELINE END");
 
     return 0;
 }

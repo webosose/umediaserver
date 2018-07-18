@@ -1,0 +1,11 @@
+{
+    "exeName":"@WEBOS_INSTALL_BINDIR@/python2.7",
+    "type": "regular",
+    "allowedNames": ["com.webos.media.client.*"],
+    "permissions": [
+        {
+            "service":"com.webos.media.client.*",
+            "outbound":["com.webos.media"]
+        }
+    ]
+}

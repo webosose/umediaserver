@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.webos.pipeline.*
+Exec=@WEBOS_INSTALL_SBINDIR@/simulated_pipeline
+Type=static

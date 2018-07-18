@@ -1,0 +1,11 @@
+{
+    "exeName":"@WEBOS_INSTALL_BINDIR@/ums-status",
+    "type": "regular",
+    "allowedNames": ["com.webos.ums-status.*"],
+    "permissions": [
+        {
+            "service":"com.webos.ums-status.*",
+            "outbound":["com.webos.media"]
+        }
+    ]
+}

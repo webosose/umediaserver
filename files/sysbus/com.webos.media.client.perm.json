@@ -1,0 +1,5 @@
+{
+  "com.webos.media.client.*": [
+    "media"
+  ]
+}
