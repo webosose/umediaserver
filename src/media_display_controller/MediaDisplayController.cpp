@@ -891,8 +891,8 @@ bool MediaDisplayController::registerMedia(const string &media_id, const string 
 //
 bool MediaDisplayController::unregisterMedia(const std::string &media_id)
 {
-	LOG_DEBUG(log, "media_id(%s): unregistered.", media_id.c_str());
-
+	LOG_DEBUG(log, "unregisterMedia: media_id=%s", media_id.c_str());
+	bool ret = true;
 	auto it = media_elements_.find(media_id);
 	if (it != media_elements_.end()) {
 		auto & subscription = it->second.subscription;
@@ -916,11 +916,14 @@ bool MediaDisplayController::unregisterMedia(const std::string &media_id)
 		reconnectSound(media_id);
 
 		media_elements_.erase(it);
+	} else {
+		LOG_DEBUG(log, "unregisterMedia: cannot find media_id=%s", media_id.c_str());
+		ret = false;
 	}
 
 	focus_stack.remove_if([&media_id](const std::string & id){ return id == media_id; });
 
-	return true;
+	return ret;
 }
 
 // @f acquired

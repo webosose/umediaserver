@@ -639,16 +639,22 @@ bool ResourceManager::release(const std::string &connection_id,
 
 	LOG_DEBUG(_log, " release_request=%s",release_request.c_str());
 
-	if (!connection->resources.empty()) {
-		decodeReleaseRequest(release_request, to_release);
-
-		resource_list_t released = system_resources->release(to_release);
-
-		for (const auto & unit : released) {
-			remActiveResource(*connection, unit);
-		}
-		if (m_release_callback) m_release_callback(connection_id, released);
+	if (connection->resources.empty()) {
+		LOG_DEBUG(_log, "release: resources empty");
+		return false;
 	}
+
+	if (!decodeReleaseRequest(release_request, to_release)) {
+		LOG_DEBUG(_log, "release: decodeReleaseRequest fail");
+		return false;
+	}
+
+	resource_list_t released = system_resources->release(to_release);
+
+	for (const auto & unit : released) {
+		remActiveResource(*connection, unit);
+	}
+	if (m_release_callback) m_release_callback(connection_id, released);
 
 #if RESOURCE_MANAGER_DEBUG
 	showSystemResources();
