@@ -1,5 +1,5 @@
 {
-    "exeName":"@WEBOS_INSTALL_BINDIR@/rmc",
+    "exeName":"@WEBOS_INSTALL_BINDIR@/ums_rmc",
     "type": "regular",
     "allowedNames": ["com.webos.rm.client.*"],
     "permissions": [
