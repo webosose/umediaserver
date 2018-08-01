@@ -4020,9 +4020,10 @@ bool uMediaserver::releaseCommand(UMSConnectorHandle* sender,
 			"resources must be specified");
 	string resources = parsed["resources"].asString();
 
-	rm->release(connection_id, resources);
+	bool ret = true;
+	ret = rm->release(connection_id, resources);
 
-	connector->sendSimpleResponse(sender,message,true);
+	connector->sendSimpleResponse(sender,message,ret);
 
 	return true;
 }
