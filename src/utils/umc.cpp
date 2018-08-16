@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public:
 		instant_bitrate_reported(0) {}
 
 	// override currentTimeEvent virtual method
-	bool onCurrentTime(long long currentTime)	{
+	bool onCurrentTime(int64_t currentTime)	{
 		cout << "onCurrentTime =" << currentTime << endl;
 		return true;
 	}
@@ -76,7 +76,7 @@ public:
 	}
 
 	// override error virtual method
-	bool onError(long long errorCode, const std::string &errorText)	{
+	bool onError(int64_t errorCode, const std::string &errorText)	{
 		cout << "onError Code=" << errorCode << endl;
 		cout << "onError Text=" << errorText << endl;
 		unload();

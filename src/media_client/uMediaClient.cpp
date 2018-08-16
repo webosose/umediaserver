@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 	if (name == "currentTime") {
 		if (value.hasKey("currentTime"))
 			value = value["currentTime"];
-		long long currentTime = value.asNumber<int64_t>();
+		int64_t currentTime = value.asNumber<int64_t>();
 		if (_stream_time_callback) {
 			_stream_time_callback(currentTime);
 			return true;

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -329,7 +329,7 @@ public :
         virtual bool onPreloadCompleted() { return true; }
 	virtual bool onUnloadCompleted() { return true; }
 	virtual bool onDetached() { return true; }
-	virtual bool onCurrentTime(long long currentTime) { return true; }
+	virtual bool onCurrentTime(int64_t currentTime) { return true; }
 	virtual bool onEndOfStream() { return true; }
 	virtual bool onPaused() { return true; }
 	virtual bool onPlaying() { return true; }
@@ -350,7 +350,7 @@ public :
 #endif // UMS_INTERNAL_API_VERSION == 2
 	virtual bool onStreamingInfo(const streaming_info_t &streamingInfo) { return true; }
 	virtual bool onActiveRegion(const rect_t &activeRegion) { return true; }
-	virtual bool onError(long long onPlayingerrorCode, const std::string &errorText) { return true; }
+	virtual bool onError(int64_t onPlayingerrorCode, const std::string &errorText) { return true; }
 	virtual bool onSnapshotDone() { return true; }
 	virtual bool onFileGenerated() { return true; }
 	virtual bool onRecordInfo(const record_info_t &recordInfo) { return true; }
