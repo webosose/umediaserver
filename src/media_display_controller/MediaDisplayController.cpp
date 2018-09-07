@@ -20,13 +20,9 @@
 #include <MediaDisplayController.h>
 #include <Logger_macro.h>
 #include <boost/algorithm/string.hpp>
-#include "ControlInterface.h"
 #ifdef USE_AVOUTPUTD
 #include "AVOutputContextlessDisplayConnector.h"
 typedef ::uMediaServer::AVOutputContextlessDisplayConnector WEBOS_CONNECTOR_IMPLEMENTATION;
-#else
-#include "TVDisplayConnector.h"
-typedef ::uMediaServer::TVDisplayConnector WEBOS_CONNECTOR_IMPLEMENTATION;
 #endif
 
 // -------------------
@@ -76,10 +72,10 @@ MediaDisplayController * MediaDisplayController::instance(UMSConnector *connecto
 }
 
 MediaDisplayController::MediaDisplayController(UMSConnector *connector)
-	: connector_(connector), acb_spy(connector), layout_manager(connection_policy, 1920, 1080)
+	: connector_(connector), layout_manager(connection_policy, 1920, 1080)
 	, app_observer(connector, [this](const std::set<std::string> & fg){ foregroundEvent(fg); })
 	, tv_display(new WEBOS_CONNECTOR_IMPLEMENTATION(connector_, connection_policy.video()))
-	, connection_policy(acb_spy, audio_connections)
+	, connection_policy(audio_connections)
 {
 	LOG_DEBUG(log, "[MediaDisplayController]");
 
@@ -170,118 +166,6 @@ MediaDisplayController::MediaDisplayController(UMSConnector *connector)
 		notifyActiveRegion(id, d);
 	});
 
-#if !USE_RPI_RESOURCE
-	LOG_DEBUG(log, "subscribe to TV service for screen saver Events");
-	connector_->subscribe("palm://com.webos.service.tvpower/power/registerScreenSaverRequest",
-						  "{\"clientName\":\"com.webos.media\", \"subscribe\":true}",
-						  screenSaverEventCallBack, (void*)this);
-        connector_->sendMessage(ControlInterface::get_timer_info, "{\"subscribe\":true}", nopTimerInfoCallBack, (void*)this);
-#endif
-
-}
-
-//------------------------------------------------
-// @f nopTimerInfo
-// @b nopTimerInfo callback for getting noptimer events.
-//------------------------------------------------
-
-bool MediaDisplayController::nopTimerInfo(UMSConnectorHandle* sender,
-               UMSConnectorMessage* message)
-{
-	JDomParser parser;
-
-	string event = connector_->getMessageText(message);
-	RETURN_IF(!parser.parse(event,  pbnjson::JSchema::AllSchema()), false,
-		      MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", event.c_str());
-	JValue parsed = parser.getDom();
-	JValue timers_array = parsed["timers"];
-	if (!timers_array.isArray())
-	{
-		LOG_ERROR(log, MSGERR_JSON_PARSE, "malformed response");
-		return false;
-	}
-        for (int i = 0; i < timers_array.arraySize(); i++)
-        {
-		JValue timers_object = timers_array[i];
-		std::string timer_id;
-		timer_id = timers_object["type"].asString();
-		if (timer_id.find("[TIMER]ScreenSaver") != std::string::npos) {
-			screenSaverTimerId_ = timers_object["type"].asString();
-			LOG_DEBUG(log, "screenSaverTimerId_ : %s", screenSaverTimerId_.c_str());
-		}
-	}
-        return true;
-}
-
-
-//------------------------------------------------
-// @f resetScreenSaverTimer
-// @b resetScreenSaverTimer API to reset the screen saver timer.
-//------------------------------------------------
-
-bool MediaDisplayController::resetScreenSaverTimer()
-{
-	LOG_DEBUG (log, "resetScreenSaverTimer");
-	if (screenSaverTimerId_.empty()) {
-		LOG_DEBUG(log, "screenSaverTimerId_.empty()");
-		return false;
-	}
-	JValue responseObject = Object();
-	JGenerator serializer(NULL);
-	string payload_serialized;
-	responseObject.put("timerId", screenSaverTimerId_.c_str());
-	responseObject.put("option", "reset");
-	serializer.toString(responseObject,  pbnjson::JSchema::AllSchema(), payload_serialized);
-	LOG_DEBUG (log, "sending resetScreenSaverTimer: %s ", payload_serialized.c_str());
-	connector_->sendMessage(ControlInterface::remove_nop_timer, payload_serialized, NULL, (void*)this);
-	return true;
-}
-
-/* callback function to get Events from Tv power service */
-bool MediaDisplayController::screenSaverEvent(UMSConnectorHandle* sender,
-		UMSConnectorMessage* message)
-{
-	bool ack = true;
-	JDomParser parser;
-
-	string event = connector_->getMessageText(message);
-	RETURN_IF(!parser.parse(event,  pbnjson::JSchema::AllSchema()), false,
-			MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", event.c_str());
-
-	JValue parsed = parser.getDom();
-	string cmd = "palm://com.webos.service.tvpower/power/responseScreenSaverRequest";
-	if (parsed.hasKey("timestamp")) {
-		string timestamp = parsed["timestamp"].asString();
-		JValue responseObject = Object();
-		JGenerator serializer(NULL);
-		string payload_serialized;
-		if ( media_elements_.size() != 0 ) {
-			ack = canLaunchScreenSaver();
-		}
-		responseObject.put("clientName", "com.webos.media");
-		responseObject.put("timestamp", timestamp);
-		responseObject.put("ack", ack);
-
-		serializer.toString(responseObject,  pbnjson::JSchema::AllSchema(), payload_serialized);
-		LOG_DEBUG (log, "sending responseScreenSaverRequest: %s ", payload_serialized.c_str());
-		connector_->sendMessage(cmd,payload_serialized, NULL, (void*)this);
-	}
-	return true;
-}
-
-bool MediaDisplayController::canLaunchScreenSaver() const {
-	LOG_DEBUG (log, "canLaunchScreenSaver");
-	for (const auto & i : media_elements_) {
-		if (i.second.media->hasVideo()) {
-			LOG_DEBUG (log, "canLaunchScreenSaver: playback_state %d, is_fullScreen %d",i.second.playback_state,i.second.is_fullScreen);
-			if (i.second.playback_state == PLAYBACK_PLAYING && i.second.is_fullScreen) {
-				LOG_DEBUG (log, "Playing Video pipeline in is in full screen : [media_id : %s ] ", i.first.c_str());
-				return false;
-			}
-		}
-	}
-
-	return true;
 }
 
 void MediaDisplayController::applyAutoLayout() const {
@@ -291,21 +175,6 @@ void MediaDisplayController::applyAutoLayout() const {
 			me.second.media->process_event(event::SwitchToAutoLayout());
 		}
 	});
-}
-
-//------------------------------------------------
-// @f turnOnScreen
-// @b turnOnScreen API to remove the screen saver.
-//------------------------------------------------
-
-void MediaDisplayController::turnOnScreen() const {
-	LOG_DEBUG(log,"turnOnScreen");
-	JValue responseObject = Object();
-	JGenerator serializer(NULL);
-	string payload_serialized;
-	serializer.toString(responseObject,  pbnjson::JSchema::AllSchema(), payload_serialized);
-	LOG_DEBUG (log, "Sending turnOnScreen: %s ", payload_serialized.c_str());
-	connector_->sendMessage(ControlInterface::turn_on_screen, payload_serialized, NULL, (void*)this);
 }
 
 //----------------------------------------
@@ -423,9 +292,6 @@ bool MediaDisplayController::pipelineEvents(UMSConnectorHandle* handle, UMSConne
 		string mediaId = parsed["playing"]["mediaId"].asString();
 		auto e = media_elements_.find(mediaId);
 		if(e != media_elements_.end() && e->second.is_fullScreen)
-#if !USE_RPI_RESOURCE
-			turnOnScreen();
-#endif
 		updatePipelineState(mediaId, PLAYBACK_PLAYING);
 	} else if (parsed.hasKey("paused")){
 		LOG_DEBUG(log, "Pipeline Event: event(%s).", event.c_str());
@@ -434,7 +300,6 @@ bool MediaDisplayController::pipelineEvents(UMSConnectorHandle* handle, UMSConne
 	}else if(parsed.hasKey("endOfStream")){
 		LOG_DEBUG(log, "Pipeline Event: event(%s).", event.c_str());
 		string mediaId = parsed["endOfStream"]["mediaId"].asString();
-		resetScreenSaverTimer();
 		updatePipelineState(mediaId, PLAYBACK_STOPPED);
 	}
 
@@ -787,7 +652,6 @@ bool MediaDisplayController::unregisterMedia(UMSConnectorHandle* handle, UMSConn
 
 	string media_id = parsed["mediaId"].asString();
 
-        resetScreenSaverTimer();
 
 	connector_->sendSimpleResponse(handle, message, unregisterMedia(media_id));
 	return true;

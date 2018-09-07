@@ -35,7 +35,6 @@
 #include <functional>
 #include <boost/filesystem/operations.hpp>
 #include <sys/inotify.h>
-#include <PowerManager.h>
 #include <libconfig.h++>
 
 #define __STDC_FORMAT_MACROS
@@ -332,12 +331,6 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 			}
 		}
 	});
-
-#if !USE_RPI_RESOURCE
-	// register with power manager
-	power_manager_.reset(new pwr::PowerManager(connector));
-	power_manager_->set_shutdown_handler([this](){ rm->reclaimResources(); });
-#endif
 
 } // end uMediaServer
 

@@ -34,7 +34,7 @@ private:
 
 class ConnectionPolicy : public mdc::IConnectionPolicy {
 public:
-	ConnectionPolicy(const mdc::IAcbObserver &, const std::pair<std::string, std::string> &);
+	ConnectionPolicy(const std::pair<std::string, std::string> &);
 
 	virtual mdc::IChannelConnection & audio();
 	virtual const mdc::IChannelConnection & audio() const;
@@ -61,7 +61,6 @@ private:
 	output_map_t _requested;
 	output_map_t _connected;
 
-	const mdc::IAcbObserver & _acb_spy;
 	const std::pair<std::string, std::string> & _audio_stack;
 
 	// placeholder selection checks

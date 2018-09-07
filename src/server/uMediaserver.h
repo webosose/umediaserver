@@ -62,7 +62,6 @@
 #include <PipelineManager.h>
 #include <ResourceManager.h>
 #include <MediaDisplayController.h>
-#include <PowerManager.h>
 #include <UMSConnector.h>
 #include <DirectoryWatcher.h>
 #include <AcquireQueue.h>
@@ -227,7 +226,6 @@ private:
 	PipelineManager * pm;
 	MediaDisplayController * mdc_;
 	AcquireQueue acquire_queue;
-	std::unique_ptr<pwr::PowerManager> power_manager_;
 
 	static bool policyResponseCallback(UMSConnectorHandle * handle,
 			UMSConnectorMessage * message, void * ctx);

@@ -31,16 +31,14 @@ set(LIB_MDC_NAME media_display_controller)
 if(${USE_AVOUTPUTD})
 	add_definitions(-DUSE_AVOUTPUTD)
 	set(DISPLAY_CONNECTOR_SRC AVOutputContextlessDisplayConnector.cpp)
-else()
-	set(DISPLAY_CONNECTOR_SRC TVDisplayConnector.cpp)
 endif(${USE_AVOUTPUTD})
 
 if("${WEBOS_TARGET_MACHINE}" STREQUAL "m16")
     add_definitions(-DCONFIG_OVERLAY_MODE)
 endif()
 
-set(TARGET_SRCS MediaDisplayController.cpp ControlInterface.cpp ${DISPLAY_CONNECTOR_SRC} ConnectionPolicy.cpp
-    AcbObserver.cpp AppObserver.cpp LayoutManager.cpp media_object.cpp)
+set(TARGET_SRCS MediaDisplayController.cpp ${DISPLAY_CONNECTOR_SRC} ConnectionPolicy.cpp
+    AppObserver.cpp LayoutManager.cpp media_object.cpp)
 add_library(${LIB_MDC_NAME} SHARED ${TARGET_SRCS})
 set_target_properties(${LIB_MDC_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries (${LIB_MDC_NAME}

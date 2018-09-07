@@ -18,8 +18,7 @@ mdc::sink_t VideoChannelConnection::try_connect(mdc::IMediaObject::ptr_t media) 
 
 	if (!media->foreground())
 		return mdc::sink_t::VOID;
-	if (_policy._acb_spy.check_blacklist(media->appId()))
-		return mdc::sink_t::VOID;
+
 	if (media->hasVideo()) {
 		auto it = std::find_if(_policy._requested.begin(), --_policy._requested.end(),
 							   ConnectionPolicy::free_or_background);
@@ -84,8 +83,7 @@ mdc::sink_t AudioChannelConnection::try_connect(mdc::IMediaObject::ptr_t media) 
 	// TODO: remove these checks
 	if (!media->foreground())
 		return mdc::sink_t::VOID;
-	if (_policy._acb_spy.check_blacklist(media->appId()))
-		return mdc::sink_t::VOID;
+
 	if (media->hasAudio()) {
 		auto sit = _policy._requested.find(mdc::sink_t::SOUND);
 		auto current = sit->second.lock();
@@ -182,9 +180,8 @@ bool ConnectionPolicy::sound_connection_test(mdc::IMediaObject::ptr_t in, mdc::I
 	return true;
 }
 
-ConnectionPolicy::ConnectionPolicy(const mdc::IAcbObserver & acb_spy,
-								   const std::pair<std::string, std::string> & audio_stack)
-	: _acb_spy(acb_spy), _audio_stack(audio_stack)
+ConnectionPolicy::ConnectionPolicy(		   const std::pair<std::string, std::string> & audio_stack)
+	: _audio_stack(audio_stack)
 	, _audio_channel(*this), _video_channel(*this) {
 	_requested[mdc::sink_t::MAIN]  = mdc::IMediaObject::ptr_t();
 	_requested[mdc::sink_t::SUB]   = mdc::IMediaObject::ptr_t();

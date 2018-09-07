@@ -41,9 +41,7 @@
 #include <pbnjson.hpp>
 #include <UMSConnector.h>
 #include <Logger.h>
-#include <ControlInterface.h>
 #include "ConnectionPolicy.h"
-#include "AcbObserver.h"
 #include "AppObserver.h"
 #include "LayoutManager.h"
 #include "media_object.h"
@@ -112,12 +110,6 @@ public:
 	//
 	MDC_EVENT_HANDLER(enableDebug);
 
-	//CallBack function screen saver
-	MDC_EVENT_HANDLER(screenSaverEvent);
-
-	//CallBack function for nop timer
-	MDC_EVENT_HANDLER(nopTimerInfo);
-
 	// -- uMS interface
 	//
 	// @f registerMedia
@@ -167,11 +159,6 @@ public:
 	//
 	mdc::media_element_state_t getMediaElementState(const std::string & id);
 
-	// @f resetScreenSaverTimer
-	// @b To reset nop timer
-	//
-	bool resetScreenSaverTimer();
-
 	bool updatePipelineState(const std::string &media_id, playback_state_t state);
 
 	int numberOfAutoLayoutedVideos() const;
@@ -181,7 +168,6 @@ private:
 
 	UMSConnector *connector_;
 
-	AcbObserver acb_spy;
 	AppObserver app_observer;
 	std::unique_ptr<mdc::ITVDisplay> tv_display;
 	ConnectionPolicy connection_policy;
@@ -189,7 +175,6 @@ private:
 
 	media_element_map_t media_elements_;
 	std::set<std::string> _foreground_apps;
-        std::string screenSaverTimerId_;
 
 	std::map<mdc::event::EventSignalType, event_signal_t> event_signal;
 	// audio connections: first => current; second => previous
@@ -217,8 +202,6 @@ private:
 	void notifyActiveRegion(const std::string & id, const mdc::display_out_t & dpy_out);
 	void reconnectSound(const std::string & id);
 
-	void turnOnScreen() const;
-	bool canLaunchScreenSaver() const;
 
 	void applyAutoLayout() const;
 };

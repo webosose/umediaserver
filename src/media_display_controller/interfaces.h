@@ -113,13 +113,6 @@ struct IConnectionPolicy {
 	virtual IMediaObject::ptr_t requested(mdc::sink_t) const = 0;
 };
 
-// Interface to maintain mdc application blacklist
-struct IAcbObserver {
-	// check if given app is blacklisted
-	// true if balcklisted, false otherwise
-	virtual bool check_blacklist(const std::string & app) const = 0;
-};
-
 // Interface for video overlay layout manager
 struct ILayoutManager {
 #if UMS_INTERNAL_API_VERSION == 2

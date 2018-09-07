@@ -26,7 +26,6 @@ include_directories(
                    ${CMAKE_SOURCE_DIR}/src/pipeline
                    ${CMAKE_SOURCE_DIR}/src/process_pool
                    ${CMAKE_SOURCE_DIR}/src/pipeline_manager
-				   ${CMAKE_SOURCE_DIR}/src/power_manager
                    ${CMAKE_SOURCE_DIR}/src/dbi
                    ${CMAKE_SOURCE_DIR}/src/registry
                    ${CMAKE_SOURCE_DIR}/src/media_display_controller
@@ -42,7 +41,6 @@ set(
    ums_connector_impl
    ums_registry
    media_display_controller
-   power_manager
    boost_system
    boost_filesystem
    
