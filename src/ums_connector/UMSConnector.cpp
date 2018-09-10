@@ -64,12 +64,13 @@ UMSConnector::UMSConnector(const string& name,
 		GMainLoop *mainLoop_,
 		void * user_data,
 		UMSConnectorBusType bus_type,
-		bool use_default_context)
+		bool use_default_context,
+		bool app_permission)
 
 	: log(UMS_LOG_CONTEXT_CONNECTOR), name(name) {
 	LOG_TRACE(log, "UMSConnector interface initialized");
 
-	pImpl = new UMSConnector_impl(name, mainLoop_, user_data, use_default_context);
+	pImpl = new UMSConnector_impl(name, mainLoop_, user_data, use_default_context, app_permission);
 }
 
 UMSConnector::~UMSConnector() {

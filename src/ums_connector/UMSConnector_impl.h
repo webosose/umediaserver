@@ -59,7 +59,8 @@ public:
 	explicit UMSConnector_impl(const std::string& name,
 			GMainLoop *mainLoop_ = nullptr,
 			void * user_data = nullptr,
-			bool use_default_context = false);
+			bool use_default_context = false,
+			bool app_permission = false);
 
 	~UMSConnector_impl();
 	GMainLoop * getMainLoop() {	return mainLoop_; }

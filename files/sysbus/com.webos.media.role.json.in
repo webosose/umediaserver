@@ -10,6 +10,7 @@
             "service":"com.webos.media",
             "outbound":[
                 "com.webos.service.avoutput",
+                "com.webos.service.audio",
                 "com.webos.surfacemanager",
                 "com.webos.applicationManager",
                 "com.webos.media.client.*",

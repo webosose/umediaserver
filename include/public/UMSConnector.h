@@ -51,7 +51,7 @@ public:
 	explicit UMSConnector(const std::string& name,
 			GMainLoop *mainLoop_ = NULL,void * user_data = NULL,
 			UMSConnectorBusType bus_type = UMS_CONNECTOR_PUBLIC_BUS,
-			bool use_default_context = false);
+			bool use_default_context = false, bool app_permission = false);
 
 	// interface API to be implemented by UMSConnector_impl
 	//
