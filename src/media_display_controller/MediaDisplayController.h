@@ -105,11 +105,6 @@ public:
 	//
 	MDC_EVENT_HANDLER(pipelineEvents);
 
-	// @f enable debug statements in MDC Boost::StateCharts core
-	// @b turn on MDC debug print
-	//
-	MDC_EVENT_HANDLER(enableDebug);
-
 	// -- uMS interface
 	//
 	// @f registerMedia

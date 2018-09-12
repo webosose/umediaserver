@@ -143,50 +143,14 @@ public:
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,seekCallback,seekCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,stateChangeCallback,stateChangeCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,unsubscribeCallback,unsubscribeCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setUriCallback,setUriCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setDisplayWindowCallback,setDisplayWindowCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setPlayRateCallback,setPlayRateCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,selectTrackCallback,selectTrackCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleSourceCallback,setSubtitleSourceCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleEnableCallback,setSubtitleEnableCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitlePositionCallback,setSubtitlePositionCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleSyncCallback,setSubtitleSyncCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleFontSizeCallback,setSubtitleFontSizeCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleColorCallback,setSubtitleColorCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleEncodingCallback,setSubtitleEncodingCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitlePresentationModeCallback,setSubtitlePresentationModeCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleCharacterColorCallback,setSubtitleCharacterColorCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleCharacterOpacityCallback,setSubtitleCharacterOpacityCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleCharacterFontSizeCallback,setSubtitleCharacterFontSizeCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleCharacterFontCallback,setSubtitleCharacterFontCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleBackgroundColorCallback,setSubtitleBackgroundColorCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleBackgroundOpacityCallback,setSubtitleBackgroundOpacityCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleCharacterEdgeCallback,setSubtitleCharacterEdgeCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleWindowColorCallback,setSubtitleWindowColorCommand);
-    UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSubtitleWindowOpacityCallback,setSubtitleWindowOpacityCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setUpdateIntervalCallback,setUpdateIntervalCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setUpdateIntervalKVCallback,setUpdateIntervalKVCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,takeSnapshotCallback,takeSnapshotCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,startRecordCallback,startRecordCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,stopRecordCallback,stopRecordCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,changeResolutionCallback,changeResolutionCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setStreamQualityCallback,setStreamQualityCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setPropertyCallback,setPropertyCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setDescriptiveVideoServiceCallback,setDescriptiveVideoServiceCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setVolumeCallback,setVolumeCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setMasterClockCallback,setMasterClockCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSlaveClockCallback,setSlaveClockCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setAudioDualMonoCallback,setAudioDualMonoCommand);
-
-	// set debug levels of various sub modules of uMS
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setDebugLevelCallback,setDebugLevelCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setDebugLevelPipelineCallback,setDebugLevelPipelineCommand);
 
 	// pipeline state query API
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, getPipelineStateCallback, getPipelineStateCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, logPipelineStateCallback, logPipelineStateCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, getActivePipelinesCallback, getActivePipelinesCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, setPipelineDebugStateCallback, setPipelineDebugStateCommand);
 
 	// Resource Manager API
 	// TODO add API when dynamic resource manager task is complete GF-1507
@@ -206,17 +170,9 @@ public:
 	// MDC API
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,registerMediaCallback,registerMediaCommand);
 
-	// factory mode adjust resource API
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,addResourceCallback,addResourceCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,removeResourceCallback,removeResourceCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,updateResourceCallback,updateResourceCommand);
-
 	// set Slave, Master API for network sync video playback
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSlaveCallback,setSlaveCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setMasterCallback,setMasterCommand);
-
-	// TODO do we really want this publically exposed?
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,exitCallback,exitCommand);
 
 private:
 	Logger log;

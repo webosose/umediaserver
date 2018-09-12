@@ -82,7 +82,6 @@ MediaDisplayController::MediaDisplayController(UMSConnector *connector)
 	connector_->addEventHandler("focus", focusCallBack, UMS_CONNECTOR_PUBLIC_BUS);
 	connector_->addEventHandler("setDisplayWindow", setDisplayWindowCallBack, UMS_CONNECTOR_PUBLIC_BUS);
 	connector_->addEventHandler("switchToFullScreen", switchToFullScreenCallBack, UMS_CONNECTOR_PUBLIC_BUS);
-	connector_->addEventHandler("switchToAutoLayout", switchToAutoLayoutCallBack, UMS_CONNECTOR_PUBLIC_BUS);
 	connector_->addEventHandler("setVisibility", setVisibilityCallBack, UMS_CONNECTOR_PUBLIC_BUS);
 	connector_->addEventHandler("getForegroundAppInfo", getForegroundAppInfoCallBack, UMS_CONNECTOR_PUBLIC_BUS);
 
@@ -90,10 +89,6 @@ MediaDisplayController::MediaDisplayController(UMSConnector *connector)
 	connector_->addEventHandler("setVideoInfo", setVideoInfoCallBack, UMS_CONNECTOR_PRIVATE_BUS);
 	connector_->addEventHandler("contentReady", contentReadyCallBack, UMS_CONNECTOR_PRIVATE_BUS);
 	connector_->addEventHandler("updatePipelineStateEvent", pipelineEventsCallBack, UMS_CONNECTOR_PUBLIC_BUS);
-
-	// TEST event handlers
-	connector_->addEventHandler("testPipelineEvent", pipelineEventsCallBack, UMS_CONNECTOR_PRIVATE_BUS);
-	connector_->addEventHandler("enableDebug", enableDebugCallBack, UMS_CONNECTOR_PRIVATE_BUS);
 
 	tv_display->vsm_set_registration_callback([this](const std::string & id, bool result){
 		auto it = media_elements_.find(id);
@@ -314,31 +309,6 @@ bool MediaDisplayController::pipelineEvents(UMSConnectorHandle* handle, UMSConne
 		LOG_DEBUG(log, "Pipeline Event: event(%s).", event.c_str());
 	}
 
-	return true;
-}
-
-// @f enableDebug
-// @b enable debug statements in MDC Boost::StateCharts core
-//
-//
-bool MediaDisplayController::enableDebug(UMSConnectorHandle* handle, UMSConnectorMessage* message)
-{
-	string event = connector_->getMessageText(message);
-
-	JDomParser parser;
-	RETURN_IF(!parser.parse(event,  pbnjson::JSchema::AllSchema()), false,
-			  MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", event.c_str());
-
-	JValue parsed = parser.getDom();
-	if( parsed.hasKey("state") ) {
-		bool state = parsed["state"].asBool();
-		for (auto & m : media_elements_) {
-			m.second.media->enableDebug(state);
-		}
-		LOG_DEBUG(log, "MDC debug state(%s).", (state ? "true" : "false"));
-	}
-
-	connector_->sendSimpleResponse(handle, message, true);
 	return true;
 }
 

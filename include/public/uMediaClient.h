@@ -382,35 +382,7 @@ public :
 	bool notifyForeground();
 	bool notifyBackground();
 	bool setPlayRate(double rate, bool audioOutput=true);
-	bool setUri(std::string& uri, const std::string& option = std::string());
 	bool selectTrack(std::string& type, int32_t index);
-	bool setSubtitleSource(std::string& uri, std::string preferredEncodings=std::string());
-	bool setSubtitleEnable(bool enable);
-	bool setSubtitlePosition(int32_t position);
-	bool setSubtitleSync(int32_t sync);
-	bool setSubtitleFontSize(int32_t fontSize);
-	bool setSubtitleColor(int32_t color);
-	bool setSubtitleEncoding(std::string& encoding);
-	bool setSubtitlePresentationMode(std::string& presentationMode);
-	bool setSubtitleCharacterColor(std::string& charColor);
-	bool setSubtitleCharacterOpacity(int32_t charOpacity);
-	bool setSubtitleCharacterFontSize(std::string& charFontSize);
-	bool setSubtitleCharacterFont(std::string& charFont);
-	bool setSubtitleBackgroundColor(std::string& bgColor);
-	bool setSubtitleBackgroundOpacity(int32_t bgOpacity);
-	bool setSubtitleCharacterEdge(std::string& charEdgeType);
-	bool setSubtitleWindowColor(std::string& windowColor);
-	bool setSubtitleWindowOpacity(int32_t windowOpacity);
-	bool setUpdateInterval(int32_t currentTimeInterval, int32_t bufferRangeInterval);
-	bool setUpdateInterval(std::string &key, int32_t value);
-	bool takeSnapshot(std::string& location, std::string& format,
-					int32_t width, int32_t height, int32_t pictureQuality);
-	bool startRecord(std::string& location,  std::string& format);
-	bool stopRecord();
-	bool changeResolution(int32_t width, int32_t height);
-	bool setStreamQuality(int32_t width, int32_t height, int32_t bitRate, bool init);
-	bool setDescriptiveVideoService(bool enable);
-
 	bool setVolume(const int32_t volume);
 	bool setVolume(const int32_t volume, const int32_t duration);
 	bool setVolume(const int32_t volume, const int32_t duration, const std::string type);
@@ -428,18 +400,12 @@ public :
 	bool visibility() const;
 	bool setVisibility(bool visibility);
 
-	bool setMasterClock(const std::string& ip = std::string("0.0.0.0"), int32_t port = 5637);
-	bool setSlaveClock(const std::string& ip, int32_t port, int64_t baseTime);
-	bool setAudioDualMono(int audioMode = 0);
-
 	std::string getMediaId() { return media_id; }
 
 	bool setProperty(std::string& payload);
 
 	bool getPipelineState();
 	bool logPipelineState();
-
-	bool setPipelineDebugState(std::string& debug_state);
 
 	void run();
 	void stop();
