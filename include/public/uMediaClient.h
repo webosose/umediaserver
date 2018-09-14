@@ -320,7 +320,8 @@ public :
 #endif // USE_CALLBACKS_API
 
 
-	uMediaClient(bool rawEvents = false, UMSConnectorBusType bus = UMS_CONNECTOR_PUBLIC_BUS, std::string appConnId = "");
+	uMediaClient(bool rawEvents = false, UMSConnectorBusType bus = UMS_CONNECTOR_PUBLIC_BUS, const std::string &appConnId = "");
+	uMediaClient(const std::string &appConnId);
 	virtual ~ uMediaClient();
 
 	// virtual methods:  Override messages/events as needed. See test.cpp for example.

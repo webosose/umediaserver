@@ -60,7 +60,7 @@ public:
 			GMainLoop *mainLoop_ = nullptr,
 			void * user_data = nullptr,
 			bool use_default_context = false,
-			bool app_permission = false);
+			const std::string &app_id = "");
 
 	~UMSConnector_impl();
 	GMainLoop * getMainLoop() {	return mainLoop_; }

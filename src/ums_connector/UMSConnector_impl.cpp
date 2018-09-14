@@ -42,7 +42,7 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 		GMainLoop *mainLoop,   // nullptr, will create new main loop unless use_default_context = true
 		void * user_data,
 		bool use_default_context,
-		bool app_permission)
+		const std::string &app_id)
 
    : log(new Logger(UMS_LOG_CONTEXT_CONNECTOR)),
      service_name(name),
@@ -102,10 +102,8 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 			throw std::runtime_error("LSSubscriptionSetCancelFunction FAILED");
 		}
 	};
-	if (app_permission) {
-		//get application id from service name
-		std::size_t found = name.find_last_of('-');
-		std::string app_id = found != std::string::npos ? name.substr(0, found) : name;
+
+	if (!app_id.empty()) {
 		ret = LSRegisterApplicationService(name.c_str(), app_id.c_str(), &m_service.lshandle, &lserror);
 	} else {
 		ret = LSRegister(name.c_str(), &m_service.lshandle, &lserror);
@@ -138,7 +136,7 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 	ret = LSGmainContextAttach(m_service.lshandle, main_context, &lserror);
 	if( !ret ) {
 		LOG_LS_ERROR(MSGERR_GMAIN_ATTACH, lserror,
-				"LSGmainAttach FAILED for name=%s !!", service_name.c_str());
+				"LSGmainAttach FAILED for name=%s !!", name.c_str());
 		throw std::runtime_error("LSGmainAttach FAILED");
 	}
 	f_set_sub_cancel(m_service.lshandle);

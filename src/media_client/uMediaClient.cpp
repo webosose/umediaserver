@@ -56,7 +56,7 @@ JValue serialize_rect (const rect_t & rect) {
 // ------------------------------------------
 // uMediaClient - controller + listener
 
-uMediaClient::uMediaClient(bool rawEvents, UMSConnectorBusType bus, std::string appConnId)
+uMediaClient::uMediaClient(bool rawEvents, UMSConnectorBusType bus, const std::string &appConnId)
 	: m_umediaserver_connection_id(UMEDIASERVER_CONNECTION_ID)
 	, m_app_connection_id(appConnId)
 	, load_state(UMEDIA_CLIENT_UNLOADED), visible(true), _focus(false)
@@ -64,21 +64,25 @@ uMediaClient::uMediaClient(bool rawEvents, UMSConnectorBusType bus, std::string 
 {
 	std::string uid = GenerateUniqueID()();
 	log.setUniqueId(uid);
-	std::string process_connection_id;
-	bool appPermission = !m_app_connection_id.empty();
-	process_connection_id = appPermission ? m_app_connection_id : MEDIA_CLIENT_CONNECTION_BASE_ID + uid;
+	std::string process_connection_id =
+		(!m_app_connection_id.empty() ? m_app_connection_id : MEDIA_CLIENT_CONNECTION_BASE_ID) + uid;
 	LOG_INFO(_log, "connection-id", "create ums client with connection Id : %s", process_connection_id.c_str());
 
 	context = g_main_context_new();
 	gmain_loop = g_main_loop_new(context, false);
 	connection = new UMSConnector(process_connection_id, gmain_loop,
-			static_cast<void*>(this), bus, false, appPermission);
+			static_cast<void*>(this), bus, false, m_app_connection_id);
 
 	pthread_cond_init(&load_state_cond,NULL);
 	pthread_mutex_init(&mutex,NULL);
 
 	// start message handling thread
 	pthread_create(&message_thread,NULL,messageThread,this);
+}
+
+uMediaClient::uMediaClient(const std::string &appConnId)
+	: uMediaClient(false, UMS_CONNECTOR_PUBLIC_BUS, appConnId)
+{
 }
 
 uMediaClient::~uMediaClient()
