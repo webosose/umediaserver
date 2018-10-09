@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -432,6 +432,9 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 
 	string uri = parsed["uri"].asString();
 	string type = parsed["type"].asString();
+
+	RETURN_IF(!rm->isValidType(type), false, MSGERR_NO_PIPELINE_TYPE, "specified type is not valid");
+
 	string app_id = parsed["payload"]["option"]["appId"].asString();
 	string transport = parsed["payload"]["mediaTransportType"].asString();
 	string payload = JGenerator::serialize(parsed["payload"], pbnjson::JSchema::AllSchema());

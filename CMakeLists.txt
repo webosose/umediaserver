@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2018 LG Electronics, Inc.
+# Copyright (c) 2008-2019 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,6 +42,9 @@ webos_add_compiler_flags(ALL ${GLIB2_CFLAGS_OTHER})
 
 pkg_check_modules(GTHREAD2 REQUIRED gthread-2.0)
 webos_add_compiler_flags(ALL ${GTHREAD2_CFLAGS_OTHER})
+
+pkg_check_modules(GST REQUIRED gstreamer-1.0 gstreamer-plugins-base-1.0 gstreamer-video-1.0)
+webos_add_compiler_flags(ALL ${GST_CFLAGS})
 
 pkg_check_modules(LUNASERVICE REQUIRED luna-service2)
 webos_add_compiler_flags(ALL ${LUNASERVICE_CFLAGS})

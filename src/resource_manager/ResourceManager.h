@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -387,6 +387,7 @@ public:
 			const resource_request_t &failed_resources,
 			std::list<std::string> &candidates);
 
+	bool isValidType(const std::string &type);
 	void setReleaseCallback(callback_t callback) {
 		m_release_callback = callback;
 	}
@@ -462,7 +463,7 @@ private:
 						   const resource_unit_t & unit);
 
 	bool findPriority(const std::string &type, uint32_t *priority);
-
+	bool findType(const std::string &type);
 	uint64_t timeNow(void) {
 		auto now = std::chrono::steady_clock::now();
 		return std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
@@ -477,7 +478,6 @@ private:
 			dnf_request_t & resources);
 
 	std::map<std::string,uint32_t > policy_priority;
-
 	callback_t m_release_callback;
 	callback_t m_acquire_callback;
 	callback_t m_policy_action_callback;

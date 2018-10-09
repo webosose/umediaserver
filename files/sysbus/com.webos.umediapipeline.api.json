@@ -1,0 +1,15 @@
+{
+    "media.pipeline": [
+        "com.webos.rm.client._*/acquireComplete",
+        "com.webos.rm.client._*/policyAction",
+        "com.webos.pipeline.*/load",
+        "com.webos.pipeline.*/unload",
+        "com.webos.pipeline.*/play",
+        "com.webos.pipeline.*/pause",
+        "com.webos.pipeline.*/seek",
+        "com.webos.pipeline.*/setPlayRate",
+        "com.webos.pipeline.*/selectTrack",
+        "com.webos.pipeline.*/stateChange"
+    ]
+}
+

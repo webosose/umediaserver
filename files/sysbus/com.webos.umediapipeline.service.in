@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.webos.pipeline.*;com.webos.rm.client.*
+Exec=@WEBOS_INSTALL_SBINDIR@/umediapipeline
+Type=static

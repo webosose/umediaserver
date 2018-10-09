@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -166,6 +166,7 @@
 #define MSGERR_INIT_FAILED       "INIT_FAILED_ERR"       // initialization failed
 // reference pipeline
 #define MSGERR_PIPELINE_INIT     "PIPELINE_INIT_ERR"     // initialization failed
+#define MSGERR_GST_STATE_CHANGE  "GST_STATE_CHANGE_ERR"  // gstreamer state change error
 #define MSGERR_PLAYBACK_THR      "PLAYBACK_THR_ERR"      // playback thread error
 #define MSGERR_AUDIOSINK_SETUP   "AUDIOSINK_SETUP_ERR"   // audio sink setup error
 #define MSGERR_VIDEOSINK_SETUP   "VIDEOSINK_SETUP_ERR"   // video sink setup error
@@ -186,6 +187,8 @@
 #define MSGERR_INVALID_LOG_LVL   "INVALID_LOG_LVL_ERR"   // invalid log level
 #define MSGERR_STATE_WAIT        "STATE_WAIT_ERR"        // set state and wait error
 #define MSGERR_STATE             "STATE_ERR"             // set state error
+#define MSGERR_GST_MSG           "GST_MSG_ERR"           // gstreamer error message
+#define MSGERR_GST_MSG_WARN      "GST_MSG_WARN"          // gstreamer warning message
 #define MSGERR_SNAPSHOT          "SNAPSHOT_ERR"          // take snapshot failed
 #define MSGERR_PIPELINE_LOAD     "PIPELINE_LOAD_ERR"     // pipeline failed to load media
 #define MSGERR_CHANGE_RESOLUTION "CHANGE_RESOLUTION_ERR" // pipeline failed to change camera resolution
