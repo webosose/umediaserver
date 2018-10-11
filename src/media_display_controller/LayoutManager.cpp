@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,20 +38,13 @@ mdc::display_out_t LayoutManager::suggest_layout(const ums::video_info_t & vi, c
 		return {0, 0, int(factor * width), int(factor * height)};
 	};
 	rect_t fit_rc = fit_frame(vi.width, vi.height);
-	auto sink = _connection_policy.video().connected(id);
+	auto sink = _connection_policy.video().sink_name(id);
 	mdc::display_out_t result;
-	switch (sink) {
-		case mdc::sink_t::MAIN:
-			result = mdc::display_out_t(fit_rc);
-			break;
-		case mdc::sink_t::SUB:
-		case mdc::sink_t::SUB1:
-		case mdc::sink_t::SUB2:
-			fit_rc.x += _width/number_of_autolayouted_videos;
-			result = mdc::display_out_t(fit_rc);
-			break;
-                default:
-			break;
+	if (sink.find("MAIN") != std::string::npos) {
+		result = mdc::display_out_t(fit_rc);
+	} else if (sink.find("SUB") != std::string::npos) {
+		fit_rc.x += _width/number_of_autolayouted_videos;
+		result = mdc::display_out_t(fit_rc);
 	}
 	if (_layout_change_callback) _layout_change_callback(id, result);
 	return result;
@@ -69,21 +62,15 @@ mdc::display_out_t LayoutManager::suggest_layout(const mdc::video_info_t & vi, c
 		return {0, 0, int(factor * width), int(factor * height)};
 	};
 	rect_t fit_rc = fit_frame(vi.width, vi.height);
-	auto sink = _connection_policy.video().connected(id);
+	auto sink = _connection_policy.video().sink_name(id);
 	mdc::display_out_t result;
-	switch (sink) {
-		case mdc::sink_t::MAIN:
-			result = mdc::display_out_t(fit_rc);
-			break;
-		case mdc::sink_t::SUB:
-		case mdc::sink_t::SUB1:
-		case mdc::sink_t::SUB2:
-			fit_rc.x += _width/number_of_autolayouted_videos;
-			result = mdc::display_out_t(fit_rc);
-			break;
-                default:
-			break;
+	if (sink.find("MAIN") != std::string::npos) {
+		result = mdc::display_out_t(fit_rc);
+	} else if (sink.find("SUB") != std::string::npos) {
+		fit_rc.x += _width/number_of_autolayouted_videos;
+		result = mdc::display_out_t(fit_rc);
 	}
+
 	if (_layout_change_callback) _layout_change_callback(id, result);
 	return result;
 }

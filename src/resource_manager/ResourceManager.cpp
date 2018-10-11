@@ -272,6 +272,15 @@ void ResourcePool::update(string id, uint32_t qty, bool remove)
 	return;
 }
 
+int32_t ResourcePool::get_max_qty(std::string id) {
+	auto pool_it = pool.find(id);
+	if (pool_it != pool.end()) {
+		return static_cast<int32_t>(pool_it->second.max_qty);
+	}
+	return -1;
+}
+
+
 resource_request_t ResourcePool::allocated_mutexes(const resource_request_t & resources) {
 	resource_request_t blocking_mutex_resources;
 	std::set<std::string> processed_mutex_ids;
@@ -450,6 +459,9 @@ bool ResourceManager::resetPipeline(const std::string &connection_id)
 
 	if (!connection->resources.empty()) {
 		resource_list_t released = connection->resources;
+		for (const auto & unit : released) {
+			releaseDisplayResource(unit);
+		}
 		system_resources->release(connection->resources);
 		connection->resources.erase(connection->resources.begin(),
 				connection->resources.end());
@@ -576,6 +588,7 @@ bool ResourceManager::acquire(const std::string &connection_id,
 				resource_obj.put("resource", unit.id);
 				resource_obj.put("index", (int)unit.index);
 				resource_obj.put("qty", 1);
+				acquireDisplayResource(unit, resource_obj);
 				resources_array.append(resource_obj);
 
 				addActiveResource(connection->second, unit);
@@ -653,6 +666,7 @@ bool ResourceManager::release(const std::string &connection_id,
 
 	for (const auto & unit : released) {
 		remActiveResource(*connection, unit);
+		releaseDisplayResource(unit);
 	}
 	if (m_release_callback) m_release_callback(connection_id, released);
 
@@ -1009,6 +1023,36 @@ void ResourceManager::remActiveResource(resource_manager_connection_t & owner,
 	auto it = std::find(owner.resources.begin(), owner.resources.end(), unit);
 	if (it != owner.resources.end())
 		owner.resources.erase(it);
+}
+
+void ResourceManager::acquireDisplayResource(const resource_unit_t & unit, pbnjson::JValue & resource_obj) {
+	int32_t max_qty_idx = -1;
+	if (unit.id.find("DISP") != std::string::npos) {
+		ums::disp_res_t dispRes = {-1,-1,-1};
+		max_qty_idx = system_resources->get_max_qty(unit.id) - 1;
+		if (max_qty_idx < 0) {
+			LOG_ERROR(_log, "INVALID_RESOURCE_QUANTITY", "max qty of %s should be more than 0");
+		}
+		if (m_acquire_disp_resource_callback) {
+			m_acquire_disp_resource_callback(unit.id, max_qty_idx - static_cast<int>(unit.index), dispRes);
+		}
+		resource_obj.put("plane-id", dispRes.plane_id);
+		resource_obj.put("crtc-id", dispRes.crtc_id);
+		resource_obj.put("conn-id", dispRes.conn_id);
+	}
+}
+
+void ResourceManager::releaseDisplayResource(const resource_unit_t & unit) {
+	int32_t max_qty_idx = -1;
+	if (unit.id.find("DISP") != std::string::npos) {
+		max_qty_idx = system_resources->get_max_qty(unit.id) - 1;
+		if (max_qty_idx < 0) {
+			LOG_ERROR(_log, "INVALID_RESOURCE_QUANTITY", "max qty of %s should be more than 0");
+			return;
+		}
+		if (m_release_disp_resource_callback)
+			m_release_disp_resource_callback(unit.id, max_qty_idx - static_cast<int>(unit.index));
+		}
 }
 
 bool ResourceManager::notifyActivity(const std::string & id)

@@ -35,6 +35,7 @@
 #include <libconfig.h++>
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
+#include <dto_types.h>
 
 // Convert struct timespec struct to ms resoltion
 #define GET_MS(_time_ ) (_time_.tv_sec * 1000) + (_time_.tv_nsec / 1000000UL)
@@ -312,6 +313,8 @@ public:
 	 */
 	void update(std::string id, uint32_t qty, bool remove=false);
 
+	int32_t get_max_qty(std::string id);
+
 private:
 	/**
 	 * Get list of allocated mutex resources
@@ -327,6 +330,8 @@ private:
 class ResourceManager : boost::noncopyable {
 public:
 	typedef std::function<void(const std::string &, const resource_list_t &)> callback_t;
+	typedef std::function<void(const std::string &, const int &, ums::disp_res_t & res)> acquire_plane_callback_t;
+	typedef std::function<void(const std::string &, const int &)> release_plane_callback_t;
 	ResourceManager(const libconfig::Config &config);
 
 	void setLogLevel(const std::string & level);
@@ -395,6 +400,13 @@ public:
 	void setPolicyActionCallback(callback_t callback) {
 		m_policy_action_callback = callback;
 	}
+	void setAcquireDisplayResourceCallback(acquire_plane_callback_t callback) {
+		m_acquire_disp_resource_callback = callback;
+	}
+
+	void setReleaseDisplayResourceCallback(release_plane_callback_t callback) {
+		m_release_disp_resource_callback = callback;
+	}
 
 	void addResource(const std::string &id, uint32_t qty);
 	void removeResource(const std::string &id);
@@ -461,6 +473,8 @@ private:
 						   const resource_unit_t & unit);
 	void remActiveResource(resource_manager_connection_t & owner,
 						   const resource_unit_t & unit);
+	void acquireDisplayResource(const resource_unit_t & unit, pbnjson::JValue & resource_obj);
+	void releaseDisplayResource(const resource_unit_t & unit);
 
 	bool findPriority(const std::string &type, uint32_t *priority);
 	bool findType(const std::string &type);
@@ -481,7 +495,8 @@ private:
 	callback_t m_release_callback;
 	callback_t m_acquire_callback;
 	callback_t m_policy_action_callback;
-
+	acquire_plane_callback_t m_acquire_disp_resource_callback;
+	release_plane_callback_t m_release_disp_resource_callback;
 };
 
 } // namespace uMediaServer

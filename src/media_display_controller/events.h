@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 LG Electronics, Inc.
+// Copyright (c) 2015-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -139,8 +139,8 @@ struct ToBackground          : boost::statechart::event< ToBackground > {};
 // vsm events
 struct Registered            : boost::statechart::event< Registered > {};
 struct VideoConnected        : boost::statechart::event< VideoConnected > {
-	VideoConnected(sink_t s) : sink(s) {}
-	sink_t sink;
+	VideoConnected(int32_t s) : sink(s) {}
+	int32_t sink;
 };
 struct VideoDisconnected     : boost::statechart::event< VideoDisconnected > {};
 

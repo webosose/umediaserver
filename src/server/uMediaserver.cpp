@@ -149,7 +149,12 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 		// notify acquire queue
 		acquire_queue.resourceReleased();
 	});
-
+	rm->setAcquireDisplayResourceCallback([this](const std::string & id, const int32_t & index, ums::disp_res_t & res) {
+		mdc_->acquireDisplayResource(id, index, res);
+	});
+	rm->setReleaseDisplayResourceCallback([this](const std::string & id, const int32_t & index) {
+		mdc_->releaseDisplayResource(id, index);
+	});
 	// release managed pipeline resources and unregister at exit
 	pm->pipeline_exited.connect([&](const std::string &id) {
 		rm->resetPipeline(id);
@@ -1585,18 +1590,17 @@ bool uMediaserver::getActivePipelinesCommand(UMSConnectorHandle* sender,
 
 		// gather mdc info
 		auto mdc_info = mdc_->getMediaElementState(i->second.connection_id.c_str());
+		std::pair<std::string, std::string> sink_name = mdc_->getConnectedSinkname(i->second.connection_id.c_str());
 		if (mdc_info) {
 			JValue mdc_states = Array();
 			for (const auto & state : mdc_info.states) {
 				mdc_states << state;
 			};
 			JValue mdc_connections = Array();
-			if (mdc_info.connections.first == mdc::sink_t::MAIN)
-				mdc_connections << "main";
-			else if (mdc_info.connections.first >= mdc::sink_t::SUB && mdc_info.connections.first <= mdc::sink_t::SUB2)
-				mdc_connections << "sub";
-			if (mdc_info.connections.second == mdc::sink_t::SOUND)
-				mdc_connections << "sound";
+			if (mdc_info.connections.first >= 0)
+				mdc_connections << sink_name.first;
+			if (mdc_info.connections.second >= 0)
+				mdc_connections << sink_name.second;
 			JValue mdc_obj = JObject{{"states", mdc_states}, {"connections", mdc_connections}};
 			pipeline_obj.put("mdc", mdc_obj);
 		}
@@ -1657,7 +1661,6 @@ bool uMediaserver::registerPipelineCommand(UMSConnectorHandle* sender,
 	}
 
 	JValue parsed = parser.getDom();
-
 	RETURN_IF(!parsed.hasKey("type"), false, MSGERR_NO_CONN_TYPE, "Connection type must be specified");
 	string type = parsed["type"].asString();
 

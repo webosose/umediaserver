@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 LG Electronics, Inc.
+// Copyright (c) 2015-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -380,7 +380,7 @@ states::VideoMuting::VideoMuting(my_context context) : my_base(context) {
 boost::statechart::result states::VideoMuting::react(const event::Muted &) {
 	MediaObject & media_object = outermost_context();
 	auto sink = media_object.connection_policy().video().try_connect(media_object.shared_from_this());
-	if (sink != mdc::sink_t::VOID) {
+	if (sink >= 0) {
 		media_object.connector().vsm_connect(media_object.id(), sink);
 		return transit< states::VideoConnecting >();
 	} else {
@@ -648,7 +648,7 @@ states::AudioDisconnected::AudioDisconnected(my_context context) : my_base(conte
 boost::statechart::result states::AudioDisconnected::react(const event::TryDisplay &) {
 	MediaObject & media_object = outermost_context();
 	auto sink = media_object.connection_policy().audio().try_connect(media_object.shared_from_this());
-	if (sink != mdc::sink_t::VOID) {
+	if (sink >= 0) {
 		media_object.connector().sound_connect(media_object.id());
 		return transit< states::AudioConnecting >();
 	}

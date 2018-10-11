@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -158,6 +158,20 @@ public:
 
 	int numberOfAutoLayoutedVideos() const;
 
+	// @f acquireDisplayResource
+	// @b acquire display resources including plane id, crtc id, connector id based on plane name and index
+	//
+	void acquireDisplayResource(const std::string & plane_name, const int32_t index, ums::disp_res_t & res);
+
+	// @f releaseDisplayResource
+	// @b release display resources including plane id, crtc id, connector id based on plane name and index
+	//
+	void releaseDisplayResource(const std::string & plane_name, const int32_t index);
+
+	// @f getConnectedSinkname
+	// @b query connected video/audio sink name based on media id
+	//
+	std::pair<std::string, std::string> getConnectedSinkname(const std::string & id);
 private:
 	MediaDisplayController(UMSConnector * connector);
 

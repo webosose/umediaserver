@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 LG Electronics, Inc.
+// Copyright (c) 2016-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,35 +52,19 @@ namespace Audiod
 	const std::string LOGGER_NAME = "ums.audio";
 }
 
-AVOutputContextlessDisplayConnector::AVOutputContextlessDisplayConnector(UMSConnector * umc, const mdc::IChannelConnection &)
+AVOutputContextlessDisplayConnector::AVOutputContextlessDisplayConnector(UMSConnector * umc, mdc::IConnectionPolicy & connection_policy)
 	: connector(umc)
 	, log(AVoutputd::LOGGER_NAME)
+	, max_video_sink(0)
+	, _connection_policy(connection_policy)
 {
-	video_states[0].name = "MAIN";
-	video_states[0].z = 0;
-	video_states[0].alpha = 255;
-	video_states[0].connected = false;
-	video_states[0].id = "";
-	video_states[1].name = "SUB0";
-	video_states[1].z = 1;
-	video_states[1].alpha = 255;
-	video_states[1].connected = false;
-	video_states[1].id = "";
-	video_states[2].name = "SUB1";
-	video_states[2].z = 2;
-	video_states[2].alpha = 255;
-	video_states[2].connected = false;
-	video_states[2].id = "";
-	video_states[3].name = "SUB2";
-	video_states[3].z = 3;
-	video_states[3].alpha = 255;
-	video_states[3].connected = false;
-	video_states[3].id = "";
-
 	// subscribe to video sink status
 	size_t token = connector->subscribe(AVoutputd::video_get_status,
 	                                    pbnjson::JObject{{"subscribe", true}}.stringify(),
 	                                    videoSinkStatusChange_cb, this);
+
+
+
 	if (!token)
 	{
 		LOG_ERROR(_log, MSGERR_AVOUTPUT_SUBSCRIBE, "Failed to subscribe to video getStatus");
@@ -152,7 +136,7 @@ void AVOutputContextlessDisplayConnector::vsm_unregister(const std::string& id)
 		registration_callback(id, false);
 }
 
-void AVOutputContextlessDisplayConnector::vsm_connect(const std::string &id, mdc::sink_t sink) {
+void AVOutputContextlessDisplayConnector::vsm_connect(const std::string &id, int32_t sink) {
 
 	registration_t* reg = id_to_registration(id);
 	if (!reg)
@@ -166,9 +150,9 @@ void AVOutputContextlessDisplayConnector::vsm_connect(const std::string &id, mdc
 	int source_port;
 	int sink_port=-1;
 
-	if ( mdc::sink_t::MAIN <= sink && sink <= mdc::sink_t::SUB2 )
+	if ( sink >= 0 )
 	{
-		sink_state = &video_states[static_cast<int>(sink)-1];
+		sink_state = &video_states[sink];
 	}
 	else
 	{
@@ -230,13 +214,50 @@ void AVOutputContextlessDisplayConnector::vsm_connect(const std::string &id, mdc
 }
 
 int32_t AVOutputContextlessDisplayConnector::get_plane_id(const std::string & id) const {
-	for(int i = 0; i < MAX_VIDEO_SINK; i++) {
+	for(int i = 0; i < max_video_sink; i++) {
 		if (video_states[i].id == id) {
 			LOG_DEBUG(_log, "idx:%d, plane_id:%d", i, video_states[i].planeId);
 			return video_states[i].planeId;
 		}
 	}
 	return -1;
+}
+
+void AVOutputContextlessDisplayConnector::acquire_display_resource(const std::string & plane_name, const int32_t index, ums::disp_res_t & res) {
+	int idx = 0;
+	LOG_DEBUG(_log, "requested plane name : %s", plane_name.c_str());
+	for(int i = 0; i < max_video_sink; i++) {
+		if (video_states[i].name.find(plane_name) != std::string::npos) {
+			if (!video_states[i].acquired && (idx == index)) {
+				LOG_DEBUG(_log, "return corresponding plane id %d", video_states[i].planeId);
+				video_states[i].acquired = true;
+				res.plane_id = video_states[i].planeId;
+				res.crtc_id = video_states[i].crtcId;
+				res.conn_id = video_states[i].connId;
+				break;
+			} else {
+				LOG_DEBUG(_log, "already acquired or index in not matched(%d/%d), find other candidates",idx,index);
+			}
+			idx++;
+		}
+	}
+}
+
+void AVOutputContextlessDisplayConnector::release_display_resource(const std::string & plane_name, const int32_t index) {
+	int idx = 0;
+	LOG_DEBUG(_log, "requested plane name : %s", plane_name.c_str());
+	for(int i = 0; i < max_video_sink; i++) {
+		if (video_states[i].name.find(plane_name) != std::string::npos) {
+			if (video_states[i].acquired && (idx == index)) {
+				LOG_DEBUG(_log, "acquired status for plane id %d is changed to false", video_states[i].planeId);
+				video_states[i].acquired = false;
+				break;
+			} else {
+				LOG_DEBUG(_log, "already released or index is not matched(%d/%d), find other candidates",idx,index);
+			}
+			idx++;
+		}
+	}
 }
 
 bool AVOutputContextlessDisplayConnector::videoConnectResult_cb(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
@@ -385,6 +406,8 @@ bool AVOutputContextlessDisplayConnector::videoSinkStatusChange(UMSConnectorHand
 		return false;
 	}
 
+	max_video_sink = video_array.arraySize();
+	bool is_video_states_empty = video_states.empty();
 	for (int i = 0; i < video_array.arraySize(); i++)
 	{
 		pbnjson::JValue video = video_array[i];
@@ -394,23 +417,43 @@ bool AVOutputContextlessDisplayConnector::videoSinkStatusChange(UMSConnectorHand
 		bool connected = !video["connectedSource"].isNull();
 
 		auto error = video["sink"].asString(sink);
-		if (error || !video["zOrder"].isNumber() || !video["opacity"].isNumber())
+		if (error || !video["zOrder"].isNumber() || !video["opacity"].isNumber()
+				|| !video["planeId"].isNumber() || !video["crtcId"].isNumber() || !video["connId"].isNumber())
 			break;
 
-		video_state_t* state = this->name_to_vsink(sink);
-
-		if (state)
+		uint8_t zorder = (uint8_t)video["zOrder"].asNumber<int>();
+		uint8_t opacity = (uint8_t)video["opacity"].asNumber<int>();
+		uint8_t planeid = (uint8_t)video["planeId"].asNumber<int>();
+		uint8_t crtcid = (uint8_t)video["crtcId"].asNumber<int>();
+		uint8_t connid = (uint8_t)video["connId"].asNumber<int>();
+		if (is_video_states_empty)
 		{
-			// Read back current opacity and zorder
-			state->z = (uint8_t)video["zOrder"].asNumber<int>();
-			state->alpha = (uint8_t) video["opacity"].asNumber<int>();
-
-			// Notify only disconnected, connected is notified via connect callback.
-			if (connected == false)
+			video_state_t state = {opacity, zorder, "", sink, connected, false, planeid, crtcid, connid};
+			video_states.push_back(state);
+			_connection_policy.set_video_object(i, sink);
+		}
+		else
+		{
+			video_state_t* state = this->name_to_vsink(sink);
+			if (state)
 			{
-				notifyVideoConnectedChanged(*state, connected);
+				// Read back current opacity and zorder
+				state->z = zorder;
+				state->alpha = opacity;
 			}
 		}
+		// Notify only disconnected, connected is notified via connect callback.
+		if (connected == false)
+		{
+			notifyVideoConnectedChanged(*(this->name_to_vsink(sink)), connected);
+		}
+	}
+
+	for (int i = 0; i < video_array.arraySize(); i++)
+	{
+		LOG_DEBUG(_log, "video states %d name : %s, planeid : %d, id : %s, connected : %d, acquired : %d", i, \
+		video_states[i].name.c_str(), video_states[i].planeId, video_states[i].id.c_str(), \
+		video_states[i].connected, video_states[i].acquired);
 	}
 
 	return true;
@@ -538,7 +581,7 @@ void AVOutputContextlessDisplayConnector::mute_video_impl(const std::string & id
 {
 	video_state_t* video_state = id_to_vsink(id);
 	// FIXME: mute video may be called before connect
-	std::string sink_name = "MAIN";
+	std::string sink_name = "DISP0_MAIN";
 	if (video_state)
 	{
 		sink_name = video_state->name;
@@ -585,6 +628,10 @@ bool AVOutputContextlessDisplayConnector::avmuted_cb(UMSConnectorHandle* handle,
 
 	pbnjson::JValue parsed = parser.getDom();
 	bool success = parsed.isObject() && parsed["returnValue"].asBool();
+	if (!success)
+	{
+		LOG_ERROR(_log, "AV_MUTE_ERROR", "ERROR : video blank return false, media object status will not be changed");
+	}
 	self->avblock_muted_callback(id, success);
 	return true;
 }
@@ -753,7 +800,7 @@ AVOutputContextlessDisplayConnector::registration_t* AVOutputContextlessDisplayC
 
 AVOutputContextlessDisplayConnector::video_state_t* AVOutputContextlessDisplayConnector::id_to_vsink(const std::string& id)
 {
-	for (int i = 0; i < MAX_VIDEO_SINK; i ++)
+	for (int i = 0; i < max_video_sink; i ++)
 	{
 		if (video_states[i].id == id)
 		{
@@ -765,7 +812,7 @@ AVOutputContextlessDisplayConnector::video_state_t* AVOutputContextlessDisplayCo
 
 AVOutputContextlessDisplayConnector::video_state_t* AVOutputContextlessDisplayConnector::name_to_vsink(const std::string& name)
 {
-	for (int i = 0; i < MAX_VIDEO_SINK; i ++)
+	for (int i = 0; i < max_video_sink; i ++)
 	{
 		if (video_states[i].name == name)
 		{

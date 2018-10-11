@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ MediaDisplayController * MediaDisplayController::instance(UMSConnector *connecto
 MediaDisplayController::MediaDisplayController(UMSConnector *connector)
 	: connector_(connector), layout_manager(connection_policy, 1920, 1080)
 	, app_observer(connector, [this](const std::set<std::string> & fg){ foregroundEvent(fg); })
-	, tv_display(new WEBOS_CONNECTOR_IMPLEMENTATION(connector_, connection_policy.video()))
+	, tv_display(new WEBOS_CONNECTOR_IMPLEMENTATION(connector_, connection_policy))
 	, connection_policy(audio_connections)
 {
 	LOG_DEBUG(log, "[MediaDisplayController]");
@@ -104,7 +104,8 @@ MediaDisplayController::MediaDisplayController(UMSConnector *connector)
 		// update connection pair
 		audio_connections.second = audio_connections.first;
 		audio_connections.first = id;
-		auto media_element_out = connection_policy.connected(mdc::sink_t::SOUND);
+		auto media_element_out = connection_policy.audio_connected("SOUND");
+
 		auto it = media_elements_.find(id);
 		if (it != media_elements_.end()) {
 			auto & media_element = it->second.media;
@@ -878,6 +879,18 @@ mdc::media_element_state_t MediaDisplayController::getMediaElementState(const st
 									  connection_policy.audio().connected(id)});
 }
 
+void MediaDisplayController::acquireDisplayResource(const std::string & plane_name, const int32_t index, ums::disp_res_t & res) {
+	tv_display->acquire_display_resource(plane_name, index, res);
+}
+
+void MediaDisplayController::releaseDisplayResource(const std::string & plane_name, const int32_t index) {
+	tv_display->release_display_resource(plane_name, index);
+}
+
+std::pair<std::string, std::string> MediaDisplayController::getConnectedSinkname(const std::string & id) {
+	return {connection_policy.video().sink_name(id), connection_policy.audio().sink_name(id)};
+}
+
 // ----------------------------------------------------------
 // INTERNAL API
 //
@@ -911,7 +924,7 @@ bool MediaDisplayController::setVideoInfo(const pbnjson::JValue & parsed) {
 	LOG_DEBUG(log, "videoInfo - width[%d], height[%d], frameRate[%d/%d] codec[%s], bitRate[%llu]",
             video_info.width, video_info.height,
             video_info.frame_rate.num, video_info.frame_rate.den,
-            video_info.codec, video_info.bit_rate);
+            video_info.codec.c_str(), video_info.bit_rate);
 
 	static auto validate_video_info = [](const ums::video_info_t & vi) {
 		return vi.width && vi.height;

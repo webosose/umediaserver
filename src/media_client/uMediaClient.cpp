@@ -752,6 +752,7 @@ bool uMediaClient::loadAsync(std::string uri,AudioStreamClass audioClass, std::s
 
 bool uMediaClient::loadAsync(const std::string& uri, const std::string& type, const std::string& mediaPayload)
 {
+	LOG_DEBUG(_log, "payload of loadAsync : %s",mediaPayload.c_str());
 	JValue args = pbnjson::Object();   // append all values into JSON array
 	args.put("uri", marshallstring(uri));
 	args.put("type", marshallstring(type));
@@ -766,7 +767,6 @@ bool uMediaClient::loadAsync(const std::string& uri, const std::string& type, co
         }
 
         load_state = UMEDIA_CLIENT_LOADING;
-
 	invokeCall("/load", args, loadResponseCallback);
 
 	return true;
@@ -1496,10 +1496,10 @@ std::string uMediaClient::unmarshallstring(JValue value) {
 
 JValue uMediaClient::marshallPayload(const std::string& value) {
 	JDomParser parser;
-	if (!parser.parse(value.empty() ? "[]" : value, pbnjson::JSchema::AllSchema())) {
+	if (!parser.parse(value, pbnjson::JSchema::AllSchema())) {
+		LOG_ERROR(_log, MSGERR_JSON_PARSE, "failure to parse from %s", __FUNCTION__);
 		return 0;
 	}
-
 	JValue parsed = parser.getDom();
 	return parsed;
 }

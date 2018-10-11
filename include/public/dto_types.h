@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 LG Electronics, Inc.
+// Copyright (c) 2015-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,6 +71,12 @@ struct source_info_t {
 	std::vector<program_info_t> programs;
 	std::vector<video_info_t> video_streams;
 	std::vector<audio_info_t> audio_streams;
+};
+
+struct disp_res_t {
+	int32_t plane_id;
+	int32_t crtc_id;
+	int32_t conn_id;
 };
 
 } // namespace ums
@@ -243,23 +249,14 @@ struct display_out_t {
 	bool fullscreen;
 };
 
-enum class sink_t {
-	VOID = 0, // not connected
-	MAIN,     // video connected to main
-	SUB,      // video connected to sub0
-	SUB1,      // video connected to sub1
-	SUB2,      // video connected to sub2
-	SOUND     // audio only
-};
-
 struct media_element_state_t {
 	media_element_state_t(const std::string & _id,
 						  const std::vector<std::string> & _states,
-						  const std::pair<sink_t, sink_t> & _connections)
+						  const std::pair<int32_t, int32_t> & _connections)
 		: id(_id), states(_states), connections(_connections) {}
 	media_element_state_t(const std::string & _id, const std::vector<std::string> & _states)
-		: media_element_state_t(_id, _states, {sink_t::VOID, sink_t::VOID}) {}
-	media_element_state_t(const std::string & _id, const std::pair<sink_t, sink_t> & _connections)
+		: media_element_state_t(_id, _states, {-1, -1}) {}
+	media_element_state_t(const std::string & _id, const std::pair<int32_t, int32_t> & _connections)
 		: media_element_state_t(_id, std::vector<std::string>(), _connections) {}
 	explicit media_element_state_t(const std::string & _id = std::string())
 		: media_element_state_t(_id, std::vector<std::string>()) {}
@@ -270,7 +267,7 @@ struct media_element_state_t {
 	}
 	std::string id;
 	std::vector<std::string> states;
-	std::pair<sink_t, sink_t> connections;
+	std::pair<int32_t, int32_t> connections;
 };
 
 }} // uMediaServer::mdc
