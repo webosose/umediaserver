@@ -62,8 +62,12 @@ uMediaClient::uMediaClient(bool rawEvents, UMSConnectorBusType bus, const std::s
 	, load_state(UMEDIA_CLIENT_UNLOADED), visible(true), _focus(false)
 	, rawEventsFlag(rawEvents), bus(bus)
 {
+	//prefix of uid should be '-' when the client is created under app privileged case
 	std::string uid = GenerateUniqueID()();
-	log.setUniqueId(uid);
+	if(!m_app_connection_id.empty())
+		std::replace_if(uid.begin(), uid.begin() + 1, [](char c) { return c == '_'; }, '-');
+
+	_log.setUniqueId(uid);
 	std::string process_connection_id =
 		(!m_app_connection_id.empty() ? m_app_connection_id : MEDIA_CLIENT_CONNECTION_BASE_ID) + uid;
 	LOG_INFO(_log, "connection-id", "create ums client with connection Id : %s", process_connection_id.c_str());
