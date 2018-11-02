@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ inline PmLogErr SetUniqueId(LogContext * context, const char * uniqueId) {
  * @param pointer to logging context to be assigned
  * @return error code
  */
-inline PmLogErr AcquireLogContext(const char * contextName, LogContext * context) {
+static inline PmLogErr AcquireLogContext(const char * contextName, LogContext * context) {
 	if (context == NULL)
 		return kPmLogErr_InvalidParameter;
 	memset(context->uid, 0, UMEDIASERVER_UNIQUE_ID_LENGTH + 1);
