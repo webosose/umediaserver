@@ -24,6 +24,7 @@
 #include <memory>
 #include "dto_types.h"
 
+// TODO: We need to remove vsm and TVDisplay things. Make it general architecture
 // TODO: implement proper logging engine. cant rely on PmLogLib in all cases
 // #define LOG_DEBUG(l, f, ...) fprintf(stderr, f, ##__VA_ARGS__); fprintf(stderr, "\n")
 

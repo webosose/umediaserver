@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2018 LG Electronics, Inc.
+# Copyright (c) 2008-2019 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,10 +31,9 @@ set(LIB_MDC_NAME media_display_controller)
 if(${USE_AVOUTPUTD})
 	add_definitions(-DUSE_AVOUTPUTD)
 	set(DISPLAY_CONNECTOR_SRC AVOutputContextlessDisplayConnector.cpp)
-endif(${USE_AVOUTPUTD})
-
-if("${WEBOS_TARGET_MACHINE}" STREQUAL "m16")
-    add_definitions(-DCONFIG_OVERLAY_MODE)
+elseif(${USE_VIDEOOUTPUTD})
+	add_definitions(-DUSE_VIDEOOUTPUTD)
+	set(DISPLAY_CONNECTOR_SRC VideooutputConnector.cpp)
 endif()
 
 set(TARGET_SRCS MediaDisplayController.cpp ${DISPLAY_CONNECTOR_SRC} ConnectionPolicy.cpp

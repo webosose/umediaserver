@@ -212,6 +212,13 @@
 #define MSGERR_AVOUTPUTD_INVALID_PARAMS "AVOUTPUTD_INVALID_PARAMS"  // invalid parameters for avoutputd call
 #define MSGWARN_UNEXPECTED_AUDIO_CONNECTION "UNEXPECTED_AUDIO_CONNECTION"
 
+// Videooutputd display controller
+#define MSGERR_VIDEOOUTPUT_SUBSCRIBE  "VIDEOOUTPUT_SUBSCRIBE"   // subscribe to videooutput/sink/getStatus
+#define MSGERR_MEDIA_ID_NOT_CONNECTED "MEDIA_ID_NOT_CONNECTED"  // cannot perform action on media id, not connected
+#define MSGERR_MEDIA_ID_NOT_REGISTERD  "MEDIA_ID_NOT_REGISTERED"  // cannot perform action on media id, not registerd
+#define MSGERR_VIDEOOUTPUTD_INVALID_PARAMS "VIDEOOUTPUTD_INVALID_PARAMS"  // invalid parameters for videooutputd call
+#define MSGWARN_UNEXPECTED_AUDIO_CONNECTION "UNEXPECTED_AUDIO_CONNECTION"
+
 // Performance metrics classification tags
 #define MSGNFO_LOAD_REQUEST      "LOAD_REQUEST"          // got load request
 #define MSGNFO_PRELOAD_REQUEST   "PRELOAD_REQUEST"       // got preload request

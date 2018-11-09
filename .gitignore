@@ -29,3 +29,5 @@
 *.pyc
 *~
 core*
+/oe-logs
+/oe-workdir

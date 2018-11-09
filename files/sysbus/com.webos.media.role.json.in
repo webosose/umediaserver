@@ -11,6 +11,7 @@
             "outbound":[
                 "com.webos.service.avoutput",
                 "com.webos.service.audio",
+                "com.webos.service.videooutput",
                 "com.webos.surfacemanager",
                 "com.webos.applicationManager",
                 "com.webos.media.client.*",

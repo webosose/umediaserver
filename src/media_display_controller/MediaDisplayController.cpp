@@ -23,6 +23,9 @@
 #ifdef USE_AVOUTPUTD
 #include "AVOutputContextlessDisplayConnector.h"
 typedef ::uMediaServer::AVOutputContextlessDisplayConnector WEBOS_CONNECTOR_IMPLEMENTATION;
+#elif defined(USE_VIDEOOUTPUTD)
+#include "VideooutputConnector.h"
+typedef ::uMediaServer::VideooutputConnector WEBOS_CONNECTOR_IMPLEMENTATION;
 #endif
 
 // -------------------
