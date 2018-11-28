@@ -578,8 +578,8 @@ bool MediaDisplayController::setVisibility(UMSConnectorHandle* handle, UMSConnec
 			  MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
 
 	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
-	RETURN_IF(!parsed.hasKey("visible"), false, MSGERR_NO_MEDIA_ID, "visible must be specified");
+	RETURN_IF(!(parsed.hasKey("mediaId") && parsed["mediaId"].isString()), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
+	RETURN_IF(!(parsed.hasKey("visible") && parsed["visible"].isBoolean()), false, MSGERR_NO_MEDIA_ID, "visible must be specified");
 
 
 	string media_id = parsed["mediaId"].asString();

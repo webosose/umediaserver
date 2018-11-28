@@ -422,7 +422,6 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 				return true;
 		return false;
 	};
-
 	JDomParser parser;
 
 	string cmd = connector->getMessageText(message);
@@ -432,8 +431,8 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 	}
 
 	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("uri"), false, MSGERR_NO_MEDIA_URI, "client must specify uri");
-	RETURN_IF(!parsed.hasKey("type"), false, MSGERR_NO_PIPELINE_TYPE, "client must specify type");
+	RETURN_IF(!(parsed.hasKey("uri") && parsed["uri"].isString()), false, MSGERR_NO_MEDIA_URI, "client must specify uri");
+	RETURN_IF(!(parsed.hasKey("type") && parsed["type"].isString()), false, MSGERR_NO_PIPELINE_TYPE, "client must specify type");
 
 	string uri = parsed["uri"].asString();
 	string type = parsed["type"].asString();
@@ -1052,7 +1051,6 @@ error     	| yes | String | see error JSON object below
 bool uMediaserver::stateChangeCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctxt)
 {
 	JDomParser parser;
-
 	string cmd = connector->getMessageText(message);
 
 	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
@@ -1062,7 +1060,7 @@ bool uMediaserver::stateChangeCommand(UMSConnectorHandle* sender, UMSConnectorMe
 
 	JValue parsed = parser.getDom();
 
-	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
+	RETURN_IF(!(parsed.hasKey("mediaId") && parsed["mediaId"].isString()), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
 
 	string connection_id = parsed["mediaId"].asString();
 
@@ -1115,7 +1113,6 @@ None
 bool uMediaserver::unsubscribeCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctxt)
 {
 	JDomParser parser;
-
 	string cmd = connector->getMessageText(message);
 
 	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
@@ -1736,7 +1733,7 @@ bool uMediaserver::unregisterPipelineCommand(UMSConnectorHandle* sender,
 	}
 
 	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("connectionId"), false,
+	RETURN_IF(!(parsed.hasKey("connectionId") && parsed["connectionId"].isString()), false,
 			MSGERR_NO_CONN_ID, "connectionId must be specified");
 	string connection_id = parsed["connectionId"].asString();
 

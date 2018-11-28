@@ -650,7 +650,7 @@ bool ResourceManager::release(const std::string &connection_id,
 	auto connection = findConnection(connection_id);
 	RETURN_IF(nullptr ==  connection, false, MSGERR_CONN_FIND, "connection not found");
 
-	LOG_DEBUG(_log, " release_request=%s",release_request.c_str());
+	LOG_DEBUG(_log, "connection_id=%s, release_request=%s",connection_id.c_str(), release_request.c_str());
 
 	if (connection->resources.empty()) {
 		LOG_DEBUG(_log, "release: resources empty");
