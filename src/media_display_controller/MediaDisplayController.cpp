@@ -622,7 +622,7 @@ bool MediaDisplayController::unregisterMedia(UMSConnectorHandle* handle, UMSConn
 			  MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
 
 	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
+	RETURN_IF(!(parsed.hasKey("mediaId") && parsed["mediaId"].isString()), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
 
 	string media_id = parsed["mediaId"].asString();
 
@@ -683,8 +683,9 @@ bool MediaDisplayController::contentReady(UMSConnectorHandle* handle, UMSConnect
 	JDomParser parser;
 	RETURN_IF(!parser.parse(cmd,  pbnjson::JSchema::AllSchema()), false,
 			  MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
-
 	JValue parsed = parser.getDom();
+	RETURN_IF(!(parsed.hasKey("mediaId") && parsed["mediaId"].isString()), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
+	RETURN_IF(!(parsed.hasKey("state") && parsed["state"].isBoolean()), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
 	string media_id = parsed["mediaId"].asString();
 	bool ready = parsed["state"].asBool();
 	connector_->sendSimpleResponse(handle, message, contentReady(media_id, ready));
