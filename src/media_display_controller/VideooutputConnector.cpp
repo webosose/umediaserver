@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019 LG Electronics, Inc.
+// Copyright (c) 2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,12 +29,13 @@ namespace {
 namespace Videooutputd
 {
 	// Video
-	static const char* video_get_status = "palm://com.webos.service.videooutput/getStatus";
-    const char* video_register = "palm://com.webos.service.videooutput/register";
-    const char* video_unregister = "palm://com.webos.service.videooutput/unregister";
+	const char* video_get_status = "palm://com.webos.service.videooutput/getStatus";
+	const char* video_register = "palm://com.webos.service.videooutput/register";
+	const char* video_unregister = "palm://com.webos.service.videooutput/unregister";
 	const char* video_connect = "palm://com.webos.service.videooutput/connect";
 	const char* video_disconnect = "palm://com.webos.service.videooutput/disconnect";
 	const char* video_blank = "palm://com.webos.service.videooutput/blankVideo";
+	const char* video_getparam = "palm://com.webos.service.videooutput/display/getParam";
 	const char* video_set_display_window = "palm://com.webos.service.videooutput/display/setDisplayWindow";
 	const char* video_set_video_data = "palm://com.webos.service.videooutput/setVideoData";
 	const char* display_set_compositing = "palm://com.webos.service.videooutput/display/setCompositing";
@@ -43,37 +44,12 @@ namespace Videooutputd
 	const std::string LOGGER_NAME = "ums.videooutput";
 }
 
-VideooutputConnector::VideooutputConnector(UMSConnector * umc, const mdc::IChannelConnection &)
+VideooutputConnector::VideooutputConnector(UMSConnector * umc, mdc::IConnectionPolicy & connection_policy)
 	: connector(umc)
 	, log(Videooutputd::LOGGER_NAME)
+	, max_video_sink(0)
+	, _connection_policy(connection_policy)
 {
-#if 0
-	connector->sendMessage(Videooutputd::video_connect,
-            JValue(),
-			nullptr, context);
-#endif
-
-	video_states[0].name = "MAIN";
-	video_states[0].z = 0;
-	video_states[0].alpha = 255;
-	video_states[0].connected = false;
-	video_states[0].id = "";
-	video_states[1].name = "SUB0";
-	video_states[1].z = 1;
-	video_states[1].alpha = 255;
-	video_states[1].connected = false;
-	video_states[1].id = "";
-	video_states[2].name = "SUB1";
-	video_states[2].z = 2;
-	video_states[2].alpha = 255;
-	video_states[2].connected = false;
-	video_states[2].id = "";
-	video_states[3].name = "SUB2";
-	video_states[3].z = 3;
-	video_states[3].alpha = 255;
-	video_states[3].connected = false;
-	video_states[3].id = "";
-
 	// subscribe to video sink status
 	size_t token = connector->subscribe(Videooutputd::video_get_status,
 	                                    pbnjson::JObject{{"subscribe", true}}.stringify(),
@@ -94,7 +70,7 @@ void VideooutputConnector::vsm_set_connection_observer(callback_t && callback) {
 }
 
 void VideooutputConnector::sound_set_connection_observer(callback_t && callback) {
-    //Not support
+	// DEPRECATED_API
 }
 
 void VideooutputConnector::avblock_set_muted_callback(callback_t && callback) {
@@ -133,7 +109,7 @@ void VideooutputConnector::vsm_unregister(const std::string& id)
 		registration_callback(id, false);
 }
 
-void VideooutputConnector::vsm_connect(const std::string &id, mdc::sink_t sink) {
+void VideooutputConnector::vsm_connect(const std::string &id, int32_t sink) {
 
 	registration_t* reg = id_to_registration(id);
 	if (!reg)
@@ -146,9 +122,9 @@ void VideooutputConnector::vsm_connect(const std::string &id, mdc::sink_t sink) 
 	std::string source_name;
 	int source_port;
 
-	if ( mdc::sink_t::MAIN <= sink && sink <= mdc::sink_t::SUB2 )
+	if ( sink >= 0 )
 	{
-		sink_state = &video_states[static_cast<int>(sink)-1];
+		sink_state = &video_states[sink];
 	}
 	else
 	{
@@ -210,13 +186,50 @@ void VideooutputConnector::vsm_connect(const std::string &id, mdc::sink_t sink) 
 }
 
 int32_t VideooutputConnector::get_plane_id(const std::string & id) const {
-	for(int i = 0; i < MAX_VIDEO_SINK; i++) {
+	for(int i = 0; i < max_video_sink; i++) {
 		if (video_states[i].id == id) {
 			LOG_DEBUG(_log, "idx:%d, plane_id:%d", i, video_states[i].planeId);
 			return video_states[i].planeId;
 		}
 	}
 	return -1;
+}
+
+void VideooutputConnector::acquire_display_resource(const std::string & plane_name, const int32_t index, ums::disp_res_t & res) {
+	int idx = 0;
+	LOG_DEBUG(_log, "requested plane name : %s", plane_name.c_str());
+	for(int i = 0; i < max_video_sink; i++) {
+		if (video_states[i].name.find(plane_name) != std::string::npos) {
+			if (!video_states[i].acquired && (idx == index)) {
+				LOG_DEBUG(_log, "return corresponding plane id %d", video_states[i].planeId);
+				video_states[i].acquired = true;
+				res.plane_id = video_states[i].planeId;
+				res.crtc_id = video_states[i].crtcId;
+				res.conn_id = video_states[i].connId;
+				break;
+			} else {
+				LOG_DEBUG(_log, "already acquired or index in not matched(%d/%d), find other candidates",idx,index);
+			}
+			idx++;
+		}
+	}
+}
+
+void VideooutputConnector::release_display_resource(const std::string & plane_name, const int32_t index) {
+	int idx = 0;
+	LOG_DEBUG(_log, "requested plane name : %s", plane_name.c_str());
+	for(int i = 0; i < max_video_sink; i++) {
+		if (video_states[i].name.find(plane_name) != std::string::npos) {
+			if (video_states[i].acquired && (idx == index)) {
+				LOG_DEBUG(_log, "acquired status for plane id %d is changed to false", video_states[i].planeId);
+				video_states[i].acquired = false;
+				break;
+			} else {
+				LOG_DEBUG(_log, "already released or index is not matched(%d/%d), find other candidates",idx,index);
+			}
+			idx++;
+		}
+	}
 }
 
 bool VideooutputConnector::videoConnectResult_cb(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
@@ -277,11 +290,11 @@ void VideooutputConnector::vsm_disconnect(const std::string &id) {
 }
 
 void VideooutputConnector::sound_connect(const std::string & id){
-    // Not support
+	// DEPRECATED_API
 }
 
 void VideooutputConnector::sound_disconnect(const std::string & id){
-    // Not support
+	// DEPRECATED_API
 }
 
 bool VideooutputConnector::videoSinkStatusChange(UMSConnectorHandle* , UMSConnectorMessage* message, void*)
@@ -303,10 +316,11 @@ bool VideooutputConnector::videoSinkStatusChange(UMSConnectorHandle* , UMSConnec
 	if (!video_array.isArray())
 	{
 		LOG_ERROR(_log, MSGERR_JSON_PARSE, "malformed response (%s)", msg);
-
 		return false;
 	}
 
+	max_video_sink = video_array.arraySize();
+	bool is_video_states_empty = video_states.empty();
 	for (int i = 0; i < video_array.arraySize(); i++)
 	{
 		pbnjson::JValue video = video_array[i];
@@ -319,20 +333,47 @@ bool VideooutputConnector::videoSinkStatusChange(UMSConnectorHandle* , UMSConnec
 		if (error || !video["zOrder"].isNumber() || !video["opacity"].isNumber())
 			break;
 
-		video_state_t* state = this->name_to_vsink(sink);
-
-		if (state)
+		uint8_t zorder = (uint8_t)video["zOrder"].asNumber<int>();
+		uint8_t opacity = (uint8_t)video["opacity"].asNumber<int>();
+		if (is_video_states_empty)
 		{
-			// Read back current opacity and zorder
-			state->z = (uint8_t)video["zOrder"].asNumber<int>();
-			state->alpha = (uint8_t) video["opacity"].asNumber<int>();
+			video_state_t state = {opacity, zorder, "", sink, connected, false, 0, 0, 0};
+			video_states.push_back(state);
+			_connection_policy.set_video_object(i, sink);
 
-			// Notify only disconnected, connected is notified via connect callback.
-			if (connected == false)
+			video_state_t* sink_state = &video_states[i];
+
+			connect_context_t* context = new connect_context_t();
+			context->connector = this;
+			// get display resource info
+			LOG_DEBUG(_log, "video_getparam sink:%s", sink_state->name.c_str());
+			connector->sendMessage(Videooutputd::video_getparam,
+					pbnjson::JObject{{"command", "DRMResources"}, {"sink", sink_state->name.c_str()}}
+					.stringify(),
+					getparam_cb, context);
+		}
+		else
+		{
+			video_state_t* state = this->name_to_vsink(sink);
+			if (state)
 			{
-				notifyVideoConnectedChanged(*state, connected);
+				// Read back current opacity and zorder
+				state->z = zorder;
+				state->alpha = opacity;
 			}
 		}
+		// Notify only disconnected, connected is notified via connect callback.
+		if (connected == false)
+		{
+			notifyVideoConnectedChanged(*(this->name_to_vsink(sink)), connected);
+		}
+	}
+
+	for (int i = 0; i < video_array.arraySize(); i++)
+	{
+		LOG_DEBUG(_log, "video states %d name : %s, planeid : %d, id : %s, connected : %d, acquired : %d", i, \
+		video_states[i].name.c_str(), video_states[i].planeId, video_states[i].id.c_str(), \
+		video_states[i].connected, video_states[i].acquired);
 	}
 
 	return true;
@@ -378,7 +419,7 @@ void VideooutputConnector::mute_video_impl(const std::string & id, bool mute)
 {
 	video_state_t* video_state = id_to_vsink(id);
 	// FIXME: mute video may be called before connect
-	std::string sink_name = "MAIN";
+	std::string sink_name = "DISP0_MAIN";
 	if (video_state)
 	{
 		sink_name = video_state->name;
@@ -425,6 +466,10 @@ bool VideooutputConnector::avmuted_cb(UMSConnectorHandle* handle, UMSConnectorMe
 
 	pbnjson::JValue parsed = parser.getDom();
 	bool success = parsed.isObject() && parsed["returnValue"].asBool();
+	if (!success)
+	{
+		LOG_ERROR(_log, "AV_MUTE_ERROR", "ERROR : video blank return false, media object status will not be changed");
+	}
 	self->avblock_muted_callback(id, success);
 	return true;
 }
@@ -557,6 +602,54 @@ void VideooutputConnector::display_set_alpha(const std::string &id, double alpha
 	                       nullptr, nullptr);
 }
 
+bool VideooutputConnector::getparam_cb(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
+{
+	connect_context_t* context = static_cast<connect_context_t*>(ctx);
+	VideooutputConnector* self = context->connector;
+	std::string sink;
+	delete context;
+
+	LOG_DEBUG(self->log, "Return getParam.");
+
+	const char* msg = self->connector->getMessageText(message);
+	pbnjson::JDomParser parser;
+	if (!parser.parse(msg, pbnjson::JSchema::AllSchema()))
+	{
+		LOG_ERROR(_log,
+				MSGERR_JSON_PARSE,
+				"ERROR JDomParser.parse. raw=%s ",
+				msg);
+		return false;
+	}
+
+	pbnjson::JValue parsed = parser.getDom();
+	bool success = parsed.isObject() && parsed["returnValue"].asBool();
+	if (!success)
+	{
+		LOG_ERROR(_log, "VIDEOOUTPUTD_GET_PARAM_ERROR", "ERROR : getParam return false, fail to get connId, crtcId, planeId");
+	}
+	else
+	{
+		auto error = parsed["sink"].asString(sink);
+		if (error || !parsed["planeId"].isNumber() || !parsed["crtcId"].isNumber() || !parsed["connId"].isNumber())
+		{
+			LOG_ERROR(_log, "VIDEOOUTPUTD_GET_PARAM_ERROR", "ERROR : fail to get valid sink, connId, crtcId, planeId");
+		}
+		else
+		{
+			video_state_t* state = self->name_to_vsink(sink);
+			if (state)
+			{
+				state->planeId = (uint8_t)parsed["planeId"].asNumber<int>();
+				state->crtcId = (uint8_t)parsed["crtcId"].asNumber<int>();
+				state->connId = (uint8_t)parsed["connId"].asNumber<int>();
+			}
+			LOG_DEBUG(self->log, "sink:%s, planeId:%d, crtcId:%d, connId:%d", sink.c_str(), state->planeId, state->crtcId, state->connId);
+		}
+	}
+	return true;
+}
+
 VideooutputConnector::registration_t* VideooutputConnector::id_to_registration(const std::string& id)
 {
 	auto iter = registrations.find(id);
@@ -570,7 +663,7 @@ VideooutputConnector::registration_t* VideooutputConnector::id_to_registration(c
 
 VideooutputConnector::video_state_t* VideooutputConnector::id_to_vsink(const std::string& id)
 {
-	for (int i = 0; i < MAX_VIDEO_SINK; i ++)
+	for (int i = 0; i < max_video_sink; i ++)
 	{
 		if (video_states[i].id == id)
 		{
@@ -582,7 +675,7 @@ VideooutputConnector::video_state_t* VideooutputConnector::id_to_vsink(const std
 
 VideooutputConnector::video_state_t* VideooutputConnector::name_to_vsink(const std::string& name)
 {
-	for (int i = 0; i < MAX_VIDEO_SINK; i ++)
+	for (int i = 0; i < max_video_sink; i ++)
 	{
 		if (video_states[i].name == name)
 		{

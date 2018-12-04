@@ -3,7 +3,7 @@
 		{
 			"name" : "ums-log",
 			"file" : "@WEBOS_INSTALL_LOGDIR@/ums.log",
-			"maxSize" : 20000,
+			"maxSize" : 200000,
 			"rotations" : 9
 		}
 	],
@@ -120,7 +120,7 @@
 			]
 		},
 		{
-			"name" : "ums.avoutput",
+			"name" : "ums.videooutput",
 			"level" : "info",
 			"logProcessIds" : true,
 			"logThreadIds" : true,
