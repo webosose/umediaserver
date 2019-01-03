@@ -268,7 +268,9 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 
 	mdc_->registerEventNotify(mdc::event::EventSignalType::REGISTERED, [this](mdc::event::EventSignalType,
 							  const std::string &id, const mdc::event::EventDataBaseType &) {
-		rm->setManaged(id);
+		string active_pipeline;
+		if(pm->getActivePipeline(id, active_pipeline))
+			rm->setManaged(id);
 	});
 
 	mdc_->registerEventNotify(mdc::event::EventSignalType::SOUND_DISCONNECTED,
@@ -1554,10 +1556,10 @@ bool uMediaserver::getActivePipelinesCommand(UMSConnectorHandle* sender,
 		pipeline_obj.put("resource", resources_array);
 		pipeline_obj.put("type", i->second.type.c_str());
 		pipeline_obj.put("id", i->second.connection_id.c_str());
-		pipeline_obj.put("is_managed", JValue(i->second.is_managed));
+		pipeline_obj.put("is_managed", JValue((bool)i->second.is_managed));
 		pipeline_obj.put("policy_state", JValue((int)i->second.policy_state));
-		pipeline_obj.put("is_foreground", JValue(i->second.is_foreground));
-		pipeline_obj.put("is_focus", JValue(i->second.is_focus));
+		pipeline_obj.put("is_foreground", JValue((bool)i->second.is_foreground));
+		pipeline_obj.put("is_focus", JValue((bool)i->second.is_focus));
 		pipeline_obj.put("timestamp", JValue((int64_t)i->second.timestamp));
 
 		LOG_DEBUG(log,"+");

@@ -1003,10 +1003,11 @@ void ResourceManager::showActivePipelines()
 			resources_string += rit->id + "=" + intToString(rit->index) + " ";
 		}
 
-		LOG_DEBUG(_log, "\t+ id=%s, type=%s, "
-				"policy_state = %d, resources=%s ",
+		LOG_DEBUG(_log, "\t+ id=%s, type=%s, is_managed=%d, "
+				"policy_state=%d, resources=%s ",
 				it->second.connection_id.c_str(),
 				it->second.type.c_str(),
+				it->second.is_managed,
 				it->second.policy_state,
 				resources_string.empty() ? "NO RESOURCES" : resources_string.c_str());
 	}
