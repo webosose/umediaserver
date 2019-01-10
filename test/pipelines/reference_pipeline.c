@@ -50,7 +50,6 @@ static bool PlayEvent(UMSConnectorHandle* handle, UMSConnectorMessage* message, 
 static bool PauseEvent(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx);
 static bool SeekEvent(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx);
 static bool SetPlayRateEvent(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx);
-static bool SelectTrackEvent(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx);
 static bool PropertyChangeSubscriptionEvent(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx);
 static bool SendResponse(bool resp, UMSConnectorHandle* sender, UMSConnectorMessage* message);
 
@@ -81,7 +80,6 @@ UMSConnectorEventHandler eventMethods[] = {
     {"pause",               PauseEvent},
     {"seek",                SeekEvent},
     {"setPlayRate",         SetPlayRateEvent},
-    {"selectTrack",         SelectTrackEvent},
     {"stateChange",         PropertyChangeSubscriptionEvent},
     {NULL,                  NULL}
 };
@@ -872,46 +870,6 @@ static bool SetPlayRateEvent(UMSConnectorHandle* sender, UMSConnectorMessage* me
     LOG_TRACE(log, "SetPlayRateEvent - rate : %f, audioOutput : %d ", rate, audioOutput);
 
     //TODO set playrate
-
-    SendResponse( true, sender, message); /* acknowledge command */
-    return true;
-}
-
-/**
- * @f SelectTrackEvent
- * "selectTrack" state event message from uMediaServer.  select track to pipeline
- *
- */
-static bool SelectTrackEvent(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctx)
-{
-    char *text_message = NULL;
-
-    text_message = (char*)UMSConnectorGetMessageText(sender, message);
-
-    if (text_message == NULL) {
-        return SendResponse( false, sender, message);
-    }
-
-    LOG_TRACE(log, "selectTrackEvent : %s ", text_message);
-
-    JSchemaInfo schemaInfo;
-    jschema_info_init(&schemaInfo, jschema_all(), NULL, NULL); // no external refs & no error handlers
-    jvalue_ref parsed = jdom_parse(j_cstr_to_buffer(text_message), DOMOPT_NOOPT, &schemaInfo);
-
-    if (jis_null(parsed)) {
-        LOG_WARNING(log, MSGERR_SELECT_TRACK, "selectTrackEvent ERROR : %s ", text_message);
-        return SendResponse( false, sender, message);
-    }
-
-    jvalue_ref type_ref = jobject_get(parsed, j_cstr_to_buffer("type"));
-    const char* type = jstring_get(type_ref).m_str;
-    jvalue_ref indexref = jobject_get(parsed, j_cstr_to_buffer("index"));
-    int32_t index;
-    jnumber_get_i32(indexref, &index);
-
-    LOG_TRACE(log, "selectTrackEvent : type - %s, index - %d ", type, index);
-
-    //TODO select track
 
     SendResponse( true, sender, message); /* acknowledge command */
     return true;

@@ -930,7 +930,7 @@ bool ResourceManager::encodeResourceRequest(const resource_request_t & resources
 		// pbnjson::JValue<uintXX_t>::JValue(const uintXX_t &) ?
 		junit.put("qty", (int32_t)unit.qty);
 		junit.put("index", (int32_t)unit.index);
-		junit.put("attribute", unit.attribute);
+		//junit.put("attribute", unit.attribute);
 		root.append(junit);
 	}
 
@@ -1030,6 +1030,7 @@ void ResourceManager::acquireDisplayResource(const resource_unit_t & unit, pbnjs
 	int32_t max_qty_idx = -1;
 	if (unit.id.find("DISP") != std::string::npos) {
 		ums::disp_res_t dispRes = {-1,-1,-1};
+		pbnjson::JValue dispattr_obj = pbnjson::Object();
 		max_qty_idx = system_resources->get_max_qty(unit.id) - 1;
 		if (max_qty_idx < 0) {
 			LOG_ERROR(_log, "INVALID_RESOURCE_QUANTITY", "max qty of %s should be more than 0");
@@ -1037,9 +1038,10 @@ void ResourceManager::acquireDisplayResource(const resource_unit_t & unit, pbnjs
 		if (m_acquire_disp_resource_callback) {
 			m_acquire_disp_resource_callback(unit.id, max_qty_idx - static_cast<int>(unit.index), dispRes);
 		}
-		resource_obj.put("plane-id", dispRes.plane_id);
-		resource_obj.put("crtc-id", dispRes.crtc_id);
-		resource_obj.put("conn-id", dispRes.conn_id);
+		dispattr_obj.put("plane-id", dispRes.plane_id);
+		dispattr_obj.put("crtc-id", dispRes.crtc_id);
+		dispattr_obj.put("conn-id", dispRes.conn_id);
+		resource_obj.put("display_attr", dispattr_obj);
 	}
 }
 

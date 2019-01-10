@@ -783,6 +783,7 @@ bool uMediaClient::loadAsync(const std::string& uri, const std::string& type, co
 
 Requests the media server to load a new media object for the specified URI.
 This function is synchronous.
+Currently not supported.
 
 @par Parameters
 Name | Required | Type | Description
@@ -802,21 +803,11 @@ None
 
 bool uMediaClient::preload(std::string uri,AudioStreamClass audioClass, std::string mediaPayload)
 {
-        return preload(uri, marshallAudioStreamClass(audioClass), mediaPayload);
+        return true;
 }
 
 bool uMediaClient::preload(const std::string& uri, const std::string& type, const std::string& mediaPayload)
 {
-        JValue args = pbnjson::Object();   // append all values into JSON array
-        args.put("uri", marshallstring(uri));
-        args.put("type", marshallstring(type));
-        args.put("payload", marshallPayload(mediaPayload));
-
-        media_id = "<invalid mediaId>";
-        load_state = UMEDIA_CLIENT_PRELOADING;
-
-        invokeCall("/preload", args, preloadResponseCallback);
-
         return true;
 }
 
@@ -1006,7 +997,7 @@ bool uMediaClient::setPlayRate(double playRate, bool audioOutput)
 @{
 @section com_media_client_selectTrack selectTrack
 
-Selects Track
+Selects Track : Not supported
 
 @par Parameters
 Name | Required | Type | Description
@@ -1024,12 +1015,6 @@ None
 //->End of API documentation comment block
 bool uMediaClient::selectTrack(string &type, int32_t index)
 {
-	pbnjson::JValue args = pbnjson::Object();
-	args.put("mediaId",media_id);
-	args.put("type", marshallstring(type));
-	args.put("index", marshalllong(index));
-
-	dispatchCall("/selectTrack", args);
 
 	return true;
 }
@@ -1192,6 +1177,7 @@ bool uMediaClient::switchToFullscreen() {
 @section com_media_client_switchToAutoLayout switchToAutoLayout
 
 Delegate video output layout to MDC.
+Not supported. Using setDisplayWindow is recommended.
 
 @par Parameters
 None
@@ -1204,10 +1190,6 @@ None
 */
 //->End of API documentation comment block
 bool uMediaClient::switchToAutoLayout() {
-	JValue args = Object();
-	args.put("mediaId", media_id);
-
-	dispatchCall("/switchToAutoLayout", args);
 
 	return true;
 }
@@ -1314,19 +1296,6 @@ bool uMediaClient::setVisibility(bool visibility) {
 	return true;
 }
 
-// @f getPipelineState
-// @brief get the tracked pipeline state
-//
-bool uMediaClient::getPipelineState()
-{
-	pbnjson::JValue args = pbnjson::Object();
-	args.put("mediaId",media_id);
-
-	dispatchCall("/getPipelineState", args);
-
-	return true;
-}
-
 void uMediaClient::run()
 {
 	connection->wait();
@@ -1379,47 +1348,6 @@ bool uMediaClient::loadResponse(UMSConnectorHandle* handle, UMSConnectorMessage*
 	pthread_mutex_unlock(&mutex);
 
 	return true;
-}
-
-bool uMediaClient::preloadResponse(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
-{
-        JDomParser parser;
-
-        const char *status = connection->getMessageText(message);
-
-        if (!parser.parse(status, pbnjson::JSchema::AllSchema())) {
-                LOG_ERROR(_log, MSGERR_JSON_PARSE,"JDomParser.parse. status=%s ", status);
-                return false;
-        }
-
-        JValue parsed = parser.getDom();
-        if (!parsed.hasKey("mediaId")) {
-                LOG_ERROR(_log, MSGERR_JSON_SCHEMA, "preload failed. status=%s", status);
-                return false;
-        }
-
-        media_id = parsed["mediaId"].asString(); // save mediaId issued by uMediaServer
-
-        pthread_mutex_lock(&mutex);
-        load_state = UMEDIA_CLIENT_MEDIAID_VALID;
-
-        // TODO: optimize by squashing some events. Eg play,play,pause,play => play
-        // or seek, seek, seek => seek
-        // fire off message stash
-        for (auto & msg : message_queue) {
-                msg.second.put("mediaId", media_id);
-                invokeCall(msg.first, msg.second);
-        }
-        message_queue.clear();
-
-        subscribe();  // subscribe to state change messages
-
-        _log.setUniqueId(media_id);
-
-        pthread_cond_signal(&load_state_cond);
-        pthread_mutex_unlock(&mutex);
-
-        return true;
 }
 
 bool uMediaClient::attachResponse(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)

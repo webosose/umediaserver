@@ -91,7 +91,6 @@ MediaDisplayController::MediaDisplayController(UMSConnector *connector)
 	connector_->addEventHandler("unregisterMedia", unregisterMediaCallBack, UMS_CONNECTOR_PUBLIC_BUS);
 	connector_->addEventHandler("setVideoInfo", setVideoInfoCallBack, UMS_CONNECTOR_PRIVATE_BUS);
 	connector_->addEventHandler("contentReady", contentReadyCallBack, UMS_CONNECTOR_PRIVATE_BUS);
-	connector_->addEventHandler("updatePipelineStateEvent", pipelineEventsCallBack, UMS_CONNECTOR_PUBLIC_BUS);
 
 	tv_display->vsm_set_registration_callback([this](const std::string & id, bool result){
 		auto it = media_elements_.find(id);
@@ -447,18 +446,15 @@ bool MediaDisplayController::getForegroundAppInfo(UMSConnectorHandle* handle, UM
 			break;
 		}
 	}
-	arrayObject.put("pipelineId", pipelineId);
-	arrayObject.put("playStateNow", playStateNow);
-	arrayObject.put("playStateNext", playStateNow);
-	arrayObject.put("isFullScreen", isFullScreen);
-	arrayObject.put("positionX", positionX);
-	arrayObject.put("positionY", positionY);
-	arrayObject.put("width", width);
-	arrayObject.put("height", height);
-	array_info << arrayObject;
+	retObject.put("pipelineId", pipelineId);
+	retObject.put("playStateNow", playStateNow);
+	retObject.put("isFullScreen", isFullScreen);
+	retObject.put("positionX", positionX);
+	retObject.put("positionY", positionY);
+	retObject.put("width", width);
+	retObject.put("height", height);
 	retObject.put("returnValue", returnValue);
 	retObject.put("appId", appId);
-	retObject.put("acbs", array_info);
 
 	serializer.toString(retObject,  pbnjson::JSchema::AllSchema(), retObjectString);
 	LOG_DEBUG(log, "retObjectString =  %s", retObjectString.c_str());
@@ -505,49 +501,6 @@ bool MediaDisplayController::switchToFullScreen(UMSConnectorHandle* handle, UMSC
 
 	notifyEvent(EventSignalType::FULLSCREEN, media_id,
 			static_cast<const EventDataBaseType&>(FullscreenEvent(true)) );
-
-	connector_->sendSimpleResponse(handle, message, true);
-	return true;
-}
-
-// @f switchToAutoLayout
-// @b Delegate media element layout to MDC
-//
-//  command:
-//   {"mediaId":"<MID>"}
-//
-//  responses:
-//  success = {"returnValue": true}
-//  failure = {
-//     "returnValue": false,
-//     "errorCode": "DISPLAY_ERROR_0000",
-//     "errorText": "Invalid Context",
-//     "context": "pipeline_1"
-//  }
-//
-bool MediaDisplayController::switchToAutoLayout(UMSConnectorHandle* handle, UMSConnectorMessage* message)
-{
-	string cmd = connector_->getMessageText(message);
-	LOG_DEBUG(log, "cmd = %s", cmd.c_str());
-
-	JDomParser parser;
-	RETURN_IF(!parser.parse(cmd,  pbnjson::JSchema::AllSchema()), false,
-			  MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
-
-	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
-
-
-	string media_id = parsed["mediaId"].asString();
-	auto e = media_elements_.find(media_id);
-	RETURN_IF(e == media_elements_.end(), false, MSGERR_INVALID_ARG,
-			  "invalid media_id=%s", media_id.c_str());
-
-	e->second.media->process_event(event::SwitchToAutoLayout());
-
-	if (numberOfAutoLayoutedVideos() > 1 ) {
-		applyAutoLayout();
-	}
 
 	connector_->sendSimpleResponse(handle, message, true);
 	return true;

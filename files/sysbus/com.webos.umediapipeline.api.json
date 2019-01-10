@@ -8,7 +8,6 @@
         "com.webos.pipeline.*/pause",
         "com.webos.pipeline.*/seek",
         "com.webos.pipeline.*/setPlayRate",
-        "com.webos.pipeline.*/selectTrack",
         "com.webos.pipeline.*/stateChange"
     ]
 }

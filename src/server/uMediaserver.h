@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -133,7 +133,6 @@ public:
 
 	// load/unload pipeline
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,loadCallback,loadCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,preloadCallback,preloadCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,attachCallback,attachCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,unloadCallback,unloadCommand);
 
@@ -145,11 +144,9 @@ public:
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,unsubscribeCallback,unsubscribeCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setDisplayWindowCallback,setDisplayWindowCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setPlayRateCallback,setPlayRateCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,selectTrackCallback,selectTrackCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setVolumeCallback,setVolumeCommand);
 
 	// pipeline state query API
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, getPipelineStateCallback, getPipelineStateCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, getActivePipelinesCallback, getActivePipelinesCommand);
 
 	// Resource Manager API
@@ -169,10 +166,6 @@ public:
 
 	// MDC API
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,registerMediaCallback,registerMediaCommand);
-
-	// set Slave, Master API for network sync video playback
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setSlaveCallback,setSlaveCommand);
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setMasterCallback,setMasterCommand);
 
 private:
 	Logger log;

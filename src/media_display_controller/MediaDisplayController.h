@@ -90,7 +90,6 @@ public:
 	MDC_EVENT_HANDLER(focus);
 	MDC_EVENT_HANDLER(setDisplayWindow);
 	MDC_EVENT_HANDLER(switchToFullScreen);
-	MDC_EVENT_HANDLER(switchToAutoLayout);
 	MDC_EVENT_HANDLER(setVisibility);
 	MDC_EVENT_HANDLER(getForegroundAppInfo);
 

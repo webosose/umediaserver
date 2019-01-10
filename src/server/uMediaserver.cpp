@@ -185,7 +185,6 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	// uMediaserver public API
 
 	connector->addEventHandler("load",loadCallback);
-        connector->addEventHandler("preload",preloadCallback);
 	connector->addEventHandler("attach",attachCallback);
 	connector->addEventHandler("unload",unloadCallback);
 
@@ -196,7 +195,6 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	connector->addEventHandler("subscribe",stateChangeCallback);
 	connector->addEventHandler("unsubscribe",unsubscribeCallback);
 	connector->addEventHandler("setPlayRate",setPlayRateCallback);
-	connector->addEventHandler("selectTrack",selectTrackCallback);
 	connector->addEventHandler("setVolume",setVolumeCallback);
 
 	// Resource Manager API
@@ -215,12 +213,7 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	connector->addEventHandler("registerMedia", registerMediaCallback, UMS_CONNECTOR_PUBLIC_BUS);
 
 	// pipeline state query API
-	connector->addEventHandler("getPipelineState", getPipelineStateCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("getActivePipelines", getActivePipelinesCallback, UMS_CONNECTOR_PRIVATE_BUS);
-
-	//set Master,Slave API for network sync video playback
-	connector->addEventHandler("setSlave",setSlaveCallback);
-	connector->addEventHandler("setMaster",setMasterCallback);
 
 	// ---
 	mdc_ = MediaDisplayController::instance(connector);
@@ -490,88 +483,6 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 	connector->sendResponseObject(sender,message,retObject);
 	rm->notifyActivity(connection_id);
 	return true;
-}
-
-//->Start of API documentation comment block
-/**
-@page com_webos_media com.webos.media
-@{
-@section com_webos_media_preload preload
-
-Requests the media server to load a new media object for the specified URI.
-
-@par Parameters
-Name | Required | Type | Description
------|--------|------|----------
-uri     | yes | String | Location of media file
-type    | yes | String | Pipeline type to launch
-payload | yes | String | JSON object containing pipeline specific parameters
-
-@par Returns(Call)
-Name | Required | Type | Description
------|--------|------|----------
-greturnValue | yes | Boolean | true if successful, false otherwise.
-errorCode   | no  | Integer | errorCode only if returnValue is false.
-errorText   | no  | String  | errorText only if returnValue is false.
-mediaId     | yes | String  | media id assigned to this media.
-
-@par Returns(Subscription)
-None
-@}
- */
-//->End of API documentation comment block
-bool uMediaserver::preloadCommand(UMSConnectorHandle* sender,
-                UMSConnectorMessage* message, void* ctxt)
-{
-        static auto is_nabs = [](const std::string & transport) {
-                static const std::string NABS_TRANSPORT_TYPES[2] = {"NABS-ROUTE", "NABS-MMT"};
-                for (const auto & nabs : NABS_TRANSPORT_TYPES)
-                        if (nabs == transport)
-                                return true;
-                return false;
-        };
-
-        JDomParser parser;
-
-        string cmd = connector->getMessageText(message);
-        if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
-                LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. cmd=%s ", cmd.c_str());
-                return false;
-        }
-
-        JValue parsed = parser.getDom();
-        RETURN_IF(!parsed.hasKey("uri"), false, MSGERR_NO_MEDIA_URI, "client must specify uri");
-        RETURN_IF(!parsed.hasKey("type"), false, MSGERR_NO_PIPELINE_TYPE, "client must specify type");
-
-        string uri = parsed["uri"].asString();
-        string type = parsed["type"].asString();
-        string app_id = parsed["payload"]["option"]["appId"].asString();
-        string transport = parsed["payload"]["mediaTransportType"].asString();
-        string payload = JGenerator::serialize(parsed["payload"], pbnjson::JSchema::AllSchema());
-
-        string connection_id;   // id returned by load
-        bool isPreload = true;
-        bool rv = pm->load(connection_id, type, uri, payload, app_id, connector, isPreload);
-
-        // register pipeline as managed with Resource Manager
-        UMSTRACE_BEFORE((connection_id+"_load").c_str());
-        rm->registerPipeline(connection_id, type);
-
-        // register with Media Display Controller
-        if (!is_nabs(transport))
-                mdc_->registerMedia(connection_id, app_id);
-        LOG_INFO_EX(log, MSGNFO_PRELOAD_REQUEST, __KV({ {KVP_MEDIA_ID, connection_id},
-                {KVP_PIPELINE_TYPE, type} }), "");
-
-        connector->addClientWatcher(sender, message, bind(unload_functor_,connection_id));
-
-        string retObject = createRetObject(rv, connection_id);
-        connector->sendResponseObject(sender,message,retObject);
-        rm->notifyActivity(connection_id);
-
-        connection_message_map_[connection_id] = message;
-        connector->refMessage(message);
-        return true;
 }
 
 //->Start of API documentation comment block
@@ -1189,81 +1100,16 @@ bool uMediaserver::setPlayRateCommand(UMSConnectorHandle* sender, UMSConnectorMe
 	JValue parsed = parser.getDom();
 	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
 	RETURN_IF(!parsed.hasKey("playRate"), false, MSGERR_NO_MEDIA_RATE, "client must specify playback rate");
-	RETURN_IF(!parsed.hasKey("audioOutput"), false, MSGERR_NO_AUDIO_OUTPUT, "client must specify audioOutput");
 
 	string connection_id = parsed["mediaId"].asString();
 	double rate;
-	bool audioOutput;
 	parsed["playRate"].asNumber(rate);
-	parsed["audioOutput"].asBool(audioOutput);
 
 	LOG_TRACE(log, "cmd=%s,connection_id=%s", cmd.c_str(), connection_id.c_str());
 
-	bool rv = pm->setPlayRate(connection_id,rate,audioOutput);
+	bool rv = pm->setPlayRate(connection_id,rate,true);
 	string retObject = createRetObject(rv, connection_id);
 	connector->sendResponseObject(sender,message,retObject);
-	return true;
-}
-
-//->Start of API documentation comment block
-/**
-@page com_webos_media com.webos.media
-@{
-@section com_webos_media_setSlave setSlave
-
-Set Master's information to make pipeline's clock synced.
-
-@par Parameters
-Name | Required | Type | Description
------|--------|------|----------
-mediaId     | yes | String  | media id assigned to this media.
-ip          | yes | String  | Master IP
-port        | yes | Integer | Master port
-basetime    | yes | String  | Master basetime
-
-@par Returns(Call)
-Name | Required | Type | Description
------|--------|------|----------
-returnValue | yes | Boolean | true if successful, false otherwise.
-errorCode   | no  | Integer | errorCode only if returnValue is false.
-errorText   | no  | String  | errorText only if returnValue is false.
-
-@par Returns(Subscription)
-None
-@}
- */
-//->End of API documentation comment block
-bool uMediaserver::setSlaveCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctx)
-{
-	JDomParser parser;
-
-	string cmd = connector->getMessageText(message);
-
-	// TODO remove debug statement
-	LOG_DEBUG(log, "%s ", cmd.c_str());
-
-	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema(), NULL)) {
-		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
-		return false;
-	}
-
-	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
-	RETURN_IF(!parsed.hasKey("ip"), false, MSGERR_NO_IP, "client must specify ip");
-	RETURN_IF(!parsed.hasKey("port"), false, MSGERR_NO_PORT, "client must specify port");
-	RETURN_IF(!parsed.hasKey("basetime"), false, MSGERR_NO_BASE_TIME, "client must specify basetime");
-
-	string connection_id = parsed["mediaId"].asString();
-
-	int port;
-	string ip = parsed["ip"].asString();
-	parsed["port"].asNumber(port);
-	string basetime = parsed["basetime"].asString();
-
-	LOG_TRACE(log, "connection_id=%s", connection_id.c_str());
-
-	bool rv = pm->setSlave(connection_id, ip, port, basetime);
-	connector->sendSimpleResponse(sender, message, rv);
 	return true;
 }
 
@@ -1281,142 +1127,6 @@ bool uMediaserver::pipelineCmdEventSetMaster(UMSConnectorHandle* handle, UMSConn
 	UMSConnector::unrefMessage(self->messageForSetMaster);
 	self->senderForSetMaster = nullptr;
 	self->messageForSetMaster = nullptr;
-	return true;
-}
-
-//->Start of API documentation comment block
-/**
-@page com_webos_media com.webos.media
-@{
-@section com_webos_media_setMaster setMaster
-
-Set ip and port to provide network time clock.
-
-@par Parameters
-Name | Required | Type | Description
------|--------|------|----------
-mediaId     | yes | String  | media id assigned to this media.
-ip          | yes | String  | Master IP
-port        | yes | Integer | Master port
-
-@par Returns(Call)
-Name | Required | Type | Description
------|--------|------|----------
-basetime    | yes | String  | basetime of pipeline in string
-returnValue | yes | Boolean | true if successful, false otherwise.
-errorCode   | no  | Integer | errorCode only if returnValue is false.
-errorText   | no  | String  | errorText only if returnValue is false.
-
-@par Returns(Subscription)
-None
-@}
- */
-//->End of API documentation comment block
-bool uMediaserver::setMasterCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctx)
-{
-	JDomParser parser;
-
-	string cmd = connector->getMessageText(message);
-
-	// TODO remove debug statement
-	LOG_DEBUG(log, "%s ", cmd.c_str());
-
-	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema(), NULL)) {
-		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
-		return false;
-	}
-
-	// save these for replying back when the message received from pipeline.
-	if (NULL != senderForSetMaster || NULL != messageForSetMaster) {
-		LOG_ERROR(log, "CLOCK_SYNC", "previous call is not finished yet.");
-		connector->sendSimpleResponse(sender,message,false);
-		return false;
-	}
-
-	senderForSetMaster = sender;
-	messageForSetMaster = message;
-	UMSConnector::refMessage(messageForSetMaster);
-
-	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
-	RETURN_IF(!parsed.hasKey("ip"), false, MSGERR_NO_IP, "client must specify ip");
-	RETURN_IF(!parsed.hasKey("port"), false, MSGERR_NO_PORT, "client must specify port");
-
-	string connection_id = parsed["mediaId"].asString();
-
-	int port;
-	string ip = parsed["ip"].asString();
-	parsed["port"].asNumber(port);
-
-	LOG_TRACE(log, "connection_id=%s", connection_id.c_str());
-
-	bool rv = pm->setMaster(connection_id, ip, port, pipelineCmdEventSetMaster, this);
-	if (!rv) {
-		connector->sendSimpleResponse(sender,message,rv);
-		return false;
-	}
-	return true;
-}
-
-//->Start of API documentation comment block
-/**
-@page com_webos_media com.webos.media
-@{
-@section com_webos_media_selectTrack selectTrack
-
-Selects Track
-
-@par Parameters
-Name | Required | Type | Description
------|--------|------|----------
-mediaId  | yes | String  | media id assigned to this media.
-type     | yes | String  | track type: video, audio and subtitle.
-index    | yes | Integer  | track index to select.
-
-@par Returns(Call)
-Name | Required | Type | Description
------|--------|------|----------
-returnValue | yes | Boolean | true if successful, false otherwise.
-errorCode   | no  | Integer | errorCode only if returnValue is false.
-errorText   | no  | String  | errorText only if returnValue is false.
-mediaId     | yes | String  | media id assigned to this media.
-
-@par Returns(Subscription)
-None
-@}
- */
-//->End of API documentation comment block
-bool uMediaserver::selectTrackCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctx)
-{
-	JDomParser parser;
-
-	string cmd = connector->getMessageText(message);
-
-	// TODO remove debug statement
-	LOG_DEBUG(log, "%s ", cmd.c_str());
-
-
-	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
-		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
-		return false;
-	}
-
-	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
-	RETURN_IF(!parsed.hasKey("type"), false, MSGERR_NO_TRACK_TYPE, "client must specify type");
-	RETURN_IF(!parsed.hasKey("index"), false, MSGERR_NO_TRACK_INDEX, "client must specify index");
-
-	string connection_id = parsed["mediaId"].asString();
-	string type = parsed["type"].asString();
-	JValue param = parsed["index"];
-	int32_t index;
-	param.asNumber(index);
-
-	LOG_TRACE(log, "cmd=%s,connection_id=%s",cmd.c_str(), connection_id.c_str());
-
-	bool rv = pm->selectTrack(connection_id,type,index);
-	string retObject = createRetObject(rv, connection_id);
-	connector->sendResponseObject(sender,message,retObject);
 	return true;
 }
 
@@ -1486,44 +1196,6 @@ bool uMediaserver::setVolumeCommand(UMSConnectorHandle* sender, UMSConnectorMess
 	return true;
 }
 
-// @f getPipelineStateCommand
-// @brief get the json string representing the tracked pipeline state
-//
-// <mediaId> is returned to client from load command
-// luna-send -n 1 palm://com.webos.media/getPipelineState '{mediaId : "<mediaId>"}'
-//
-bool uMediaserver::getPipelineStateCommand(UMSConnectorHandle* sender,
-		UMSConnectorMessage* message, void* ctxt)
-{
-	JDomParser parser;
-	bool retval = false;
-
-	string cmd = connector->getMessageText(message);
-
-	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
-		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. cmd=%s ", cmd.c_str());
-		return false;
-	}
-
-	JValue parsed = parser.getDom();
-	string connection_id = parsed["mediaId"].asString();
-
-	LOG_TRACE(log, "uMediaserver get pipeline state. mediaId=%s", connection_id.c_str());
-
-	string state_json;
-	retval = pm->getPipelineState(connection_id, state_json);
-	if ( retval == false) {
-		// id not found, invalid mediaId
-		string retObject = createRetObject(false, connection_id);
-		connector->sendResponseObject(sender,message,retObject);
-		return false;
-	}
-
-	string retObject = createRetObject(true, connection_id, state_json);
-	connector->sendResponseObject(sender,message,retObject);
-	return true;
-}
-
 // @f getActivePipelinesCommand
 // @brief get the json string representing the running pipelines and its resources
 //
@@ -1553,7 +1225,7 @@ bool uMediaserver::getActivePipelinesCommand(UMSConnectorHandle* sender,
 			resource_obj.put("index", (int)j.index);
 			resources_array.append(resource_obj);
 		}
-		pipeline_obj.put("resource", resources_array);
+		pipeline_obj.put("resources", resources_array);
 		pipeline_obj.put("type", i->second.type.c_str());
 		pipeline_obj.put("id", i->second.connection_id.c_str());
 		pipeline_obj.put("is_managed", JValue((bool)i->second.is_managed));

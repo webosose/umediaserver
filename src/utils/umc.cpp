@@ -837,16 +837,6 @@ int main(int argc, char *argv[])
 			}
 			mp.setVolume(volume, duration, type);
 		}
-		else if(args[0] == "getPipelineState" ) {
-
-			if( UNLOADED == mp.state ) {
-				printf("load content first !\n");
-				continue;
-			}
-
-			printf("command :  %s\n",cmd.c_str());
-			mp.getPipelineState();
-		}
 		else if( args[0] == "unload") {
 			if( UNLOADED == mp.state ) {
 				printf("load content first !\n");

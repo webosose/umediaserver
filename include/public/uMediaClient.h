@@ -402,11 +402,6 @@ public :
 
 	std::string getMediaId() { return media_id; }
 
-	bool setProperty(std::string& payload);
-
-	bool getPipelineState();
-	bool logPipelineState();
-
 	void run();
 	void stop();
 
@@ -473,9 +468,6 @@ private :
 
 	// specifically handle load response to obtain media_id
 	UMS_RESPONSE_HANDLER(uMediaClient,loadResponseCallback,loadResponse);
-
-        // specifically handle preload response to obtain media_id
-        UMS_RESPONSE_HANDLER(uMediaClient,preloadResponseCallback,preloadResponse);
 
 	// specifically handle attach response to start subscribing
 	UMS_RESPONSE_HANDLER(uMediaClient,attachResponseCallback,attachResponse);
