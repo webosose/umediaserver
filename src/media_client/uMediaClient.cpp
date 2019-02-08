@@ -1015,8 +1015,111 @@ None
 //->End of API documentation comment block
 bool uMediaClient::selectTrack(string &type, int32_t index)
 {
+  return true;
+}
 
-	return true;
+//->Start of API documentation comment block
+/**
+@page com_media_client uMediaClient
+@{
+@section com_media_client_startCameraRecord startCameraRecord
+
+start to record
+
+@par Parameters
+Name | Required | Type | Description
+-----|--------|------|----------
+location        | yes | String  | location to record media
+format          | yes | String  | format to be stored
+
+@par Returns(Call)
+Required. Boolean. Returns true if successful, false otherwise.
+
+@par Returns(Subscription)
+None
+@}
+*/
+//->End of API documentation comment block
+bool uMediaClient::startCameraRecord(std::string& location, std::string& format)
+{
+  pbnjson::JValue args = pbnjson::Object();
+  args.put("mediaId",media_id);
+  args.put("location", marshallstring(location));
+  args.put("format", marshallstring(format));
+
+  dispatchCall("/startCameraRecord", args);
+
+  return true;
+}
+
+//->Start of API documentation comment block
+/**
+@page com_media_client uMediaClient
+@{
+@section com_media_client_stopCameraRecord stopCameraRecord
+
+stop recording
+
+@par Parameters
+Name | Required | Type | Description
+-----|--------|------|----------
+
+@par Returns(Call)
+Required. Boolean. Returns true if successful, false otherwise.
+
+@par Returns(Subscription)
+None
+@}
+*/
+//->End of API documentation comment block
+bool uMediaClient::stopCameraRecord()
+{
+  pbnjson::JValue args = pbnjson::Object();
+  args.put("mediaId",media_id);
+
+  dispatchCall("/stopCameraRecord", args);
+
+  return true;
+}
+
+//->Start of API documentation comment block
+/**
+@page com_media_client uMediaClient
+@{
+@sction com_media_client_takeCameraSnapshot takeCameraSnapshot
+
+take still image
+
+@par Parameters
+Name | Required | Type | Description
+-----|--------|------|----------
+location        | yes | String  | location to store still image
+format          | yes | String  | format to be stored
+width           | yes | Integer | width for still image
+height          | yes | Integer | height for still image
+pictureQuality  | yes | Integer | pictureQuality for still image
+
+@par Returns(Call)
+Required. Boolean. Returns true if successful, false otherwise.
+
+@par Returns(Subscription)
+None
+@}
+*/
+//->End of API documentation comment block
+bool uMediaClient::takeCameraSnapshot(std::string& location, std::string& format, int32_t width, int32_t height, int32_t pictureQuality)
+{
+  pbnjson::JValue args = pbnjson::Object();
+  args.put("mediaId",media_id);
+  args.put("location", marshallstring(location));
+  args.put("format", marshallstring(format));
+  args.put("width", marshalllong(width));
+  args.put("height", marshalllong(height));
+  args.put("pictureQuality", marshalllong(pictureQuality));
+
+  dispatchCall("/takeCameraSnapshot", args);
+
+  return true;
 }
 
 //->Start of API documentation comment block

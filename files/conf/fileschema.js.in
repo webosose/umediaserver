@@ -169,6 +169,23 @@
 		"mediaId": {"type": "string"}
 		}
 	},
+	"startCameraRecord": {
+		"type": "object",
+		"properties": {
+			"location": {"type": "string"},
+			"format": {"type": "string"}
+		}
+	},
+	"takeCameraSnapshot": {
+		"type": "object",
+		"properties": {
+			"location": {"type": "string"},
+			"format": {"type": "string"},
+			"width": {"type": "integer"},
+			"height": {"type": "integer"},
+			"pictureQuality": {"type": "integer"}
+		}
+	},
 	"endOfStream": {
 	    "type": "object",
 	    "properties": {

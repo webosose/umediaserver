@@ -837,6 +837,47 @@ int main(int argc, char *argv[])
 			}
 			mp.setVolume(volume, duration, type);
 		}
+		else if(args[0] == "startCameraRecord" ) {
+			if( UNLOADED == mp.state ) {
+				printf("load content first !\n");
+				continue;
+			}
+
+			if( args.size() != 3 ) {
+				printf("startCameraRecord - usage :  startCameraRecord location format \n");
+				continue;
+			}
+
+			printf("command :  %s\n",cmd.c_str());
+			mp.startCameraRecord(args[1],args[2]);
+		}
+		else if(args[0] == "stopCameraRecord" ) {
+			if( UNLOADED == mp.state ) {
+				printf("load content first !\n");
+				continue;
+			}
+
+			printf("command :  %s\n",cmd.c_str());
+			mp.stopCameraRecord();
+		}
+		else if(args[0] == "takeCameraSnapshot" ) {
+			if( UNLOADED == mp.state ) {
+				printf("load content first !\n");
+				continue;
+			}
+
+			if( args.size() != 6 ) {
+				printf("takeCameraSnapshot - usage :  takeCameraSnapshot location format width height pictureQuality \n");
+				continue;
+			}
+
+			long width =  boost::lexical_cast<int>(args[3]);
+			long height =  boost::lexical_cast<int>(args[4]);
+			long pq =  boost::lexical_cast<int>(args[5]);
+
+			printf("command :  %s\n",cmd.c_str());
+			mp.takeCameraSnapshot(args[1],args[2],width,height,pq);
+		}
 		else if( args[0] == "unload") {
 			if( UNLOADED == mp.state ) {
 				printf("load content first !\n");

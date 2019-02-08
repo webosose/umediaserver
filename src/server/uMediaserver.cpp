@@ -197,6 +197,10 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	connector->addEventHandler("setPlayRate",setPlayRateCallback);
 	connector->addEventHandler("setVolume",setVolumeCallback);
 
+	connector->addEventHandler("startCameraRecord",startCameraRecordCallback, UMS_CONNECTOR_PRIVATE_BUS);
+	connector->addEventHandler("stopCameraRecord",stopCameraRecordCallback, UMS_CONNECTOR_PRIVATE_BUS);
+	connector->addEventHandler("takeCameraSnapshot",takeCameraSnapshotCallback, UMS_CONNECTOR_PRIVATE_BUS);
+
 	// Resource Manager API
 	connector->addEventHandler("registerPipeline",registerPipelineCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("unregisterPipeline",unregisterPipelineCallback, UMS_CONNECTOR_PRIVATE_BUS);
@@ -1194,6 +1198,202 @@ bool uMediaserver::setVolumeCommand(UMSConnectorHandle* sender, UMSConnectorMess
 	string retObject = createRetObject(rv, connection_id);
 	connector->sendResponseObject(sender,message,retObject);
 	return true;
+}
+
+//->Start of API documentation comment block
+/**
+@page com_webos_media com.webos.media
+@{
+@section com_webos_media_startCameraRecord startCameraRecord
+
+start to record
+
+@par Parameters
+Name | Required | Type | Description
+-----|--------|------|----------
+mediaId         | yes | String  | media id assigned to this media.
+location        | yes | String  | location to record media
+format          | yes | String  | format to be stored
+
+@par Returns(Call)
+Name | Required | Type | Description
+-----|--------|------|----------
+returnValue | yes | Boolean | true if successful, false otherwise.
+errorCode   | no  | Integer | errorCode only if returnValue is false.
+errorText   | no  | String  | errorText only if returnValue is false.
+mediaId     | yes | String  | media id assigned to this media.
+
+@par Returns(Subscription)
+@}
+*/
+//->End of API documentation comment block
+bool uMediaserver::startCameraRecordCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctx)
+{
+  JDomParser parser;
+
+  string cmd = connector->getMessageText(message);
+
+  LOG_DEBUG(log, "%s ", cmd.c_str());
+
+  if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
+    LOG_ERROR(log, MSGERR_JSON_PARSE,"ERROR JDomParser.parse. raw=%s ", cmd.c_str());
+    return false;
+  }
+
+  JValue parsed = parser.getDom();
+  RETURN_IF(!parsed.hasKey("mediaId"),false, MSGERR_NO_MEDIA_ID,"mediaId must be specified");
+  RETURN_IF(!parsed.hasKey("location"),false,MSGERR_NO_LOCATION,"location must be specified");
+  RETURN_IF(!parsed.hasKey("format"),false,MSGERR_NO_FORMAT,"format must be specified");
+
+  string connection_id = parsed["mediaId"].asString();
+  string location = parsed["location"].asString();
+  string format = parsed["format"].asString();
+
+  LOG_TRACE(log, "cmd=%s,connection_id=%s",cmd.c_str(), connection_id.c_str());
+
+  bool rv = pm->startCameraRecord(connection_id, location, format);
+  string retObject = createRetObject(rv, connection_id);
+  if (rv) {
+    rm->notifyActivity(connection_id);
+  }
+  connector->sendResponseObject(sender,message,retObject);
+  return true;
+}
+
+//->Start of API documentation comment block
+/**
+@page com_webos_media com.webos.media
+@{
+@section com_webos_media_stopCameraRecord stopCameraRecord
+
+stop recording
+
+@par Parameters
+Name | Required | Type | Description
+-----|--------|------|----------
+mediaId         | yes | String  | media id assigned to this media.
+
+@par Returns(Call)
+Name | Required | Type | Description
+-----|--------|------|----------
+returnValue | yes | Boolean | true if successful, false otherwise.
+errorCode   | no  | Integer | errorCode only if returnValue is false.
+errorText   | no  | String  | errorText only if returnValue is false.
+mediaId     | yes | String  | media id assigned to this media.
+
+@par Returns(Subscription)
+@}
+*/
+//->End of API documentation comment block
+bool uMediaserver::stopCameraRecordCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctx)
+{
+  JDomParser parser;
+
+  string cmd = connector->getMessageText(message);
+
+  LOG_DEBUG(log, "%s ", cmd.c_str());
+
+  if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
+    LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
+    return false;
+  }
+
+  JValue parsed = parser.getDom();
+  RETURN_IF(!parsed.hasKey("mediaId"),false,MSGERR_NO_MEDIA_ID,"mediaId must be specified");
+
+  string connection_id = parsed["mediaId"].asString();
+
+  LOG_TRACE(log, "cmd=%s,connection_id=%s",cmd.c_str(), connection_id.c_str());
+
+  bool rv = pm->stopCameraRecord(connection_id);
+  string retObject = createRetObject(rv, connection_id);
+  if (rv) {
+    rm->notifyActivity(connection_id);
+  }
+  connector->sendResponseObject(sender,message,retObject);
+  return true;
+}
+
+//->Start of API documentation comment block
+/**
+@page com_webos_media com.webos.media
+@{
+@section com_webos_media_takeCameraSnapshot takeCameraSnapshot
+
+take still image
+
+@par Parameters
+Name | Required | Type | Description
+-----|--------|------|----------
+mediaId         | yes | String  | media id assigned to this media.
+location        | yes | String  | location to store still image
+format          | yes | String  | format to be stored
+width           | yes | Integer | width for still image
+height          | yes | Integer | height for still image
+pictureQuality  | yes | Integer | pictureQuality for still image
+
+@par Returns(Call)
+Name | Required | Type | Description
+-----|--------|------|----------
+returnValue | yes | Boolean | true if successful, false otherwise.
+errorCode   | no  | Integer | errorCode only if returnValue is false.
+errorText   | no  | String  | errorText only if returnValue is false.
+mediaId     | yes | String  | media id assigned to this media.
+
+@par Returns(Subscription)
+@}
+*/
+//->End of API documentation comment block
+bool uMediaserver::takeCameraSnapshotCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctx)
+{
+  JDomParser parser;
+
+  string cmd = connector->getMessageText(message);
+
+  LOG_TRACE(log, "%s ", cmd.c_str());
+
+  if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
+    LOG_ERROR(log,MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
+    return false;
+  }
+
+  JValue parsed = parser.getDom();
+  RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
+  RETURN_IF(!parsed.hasKey("location"), false, MSGERR_NO_LOCATION, "location must be specified");
+  RETURN_IF(!parsed.hasKey("format"), false, MSGERR_NO_FORMAT, "format must be specified");
+  RETURN_IF(!parsed.hasKey("width"), false, MSGERR_NO_WIDTH, "width must be specified");
+  RETURN_IF(!parsed.hasKey("height"), false, MSGERR_NO_HEIGHT, "height must be specified");
+  RETURN_IF(!parsed.hasKey("pictureQuality"), false, MSGERR_NO_QUALITY, "pictureQuality must be specified");
+
+  string connection_id = parsed["mediaId"].asString();
+  string location = parsed["location"].asString();
+  string format = parsed["format"].asString();
+
+  int32_t width, height, pictureQuality;
+  JValue param = parsed["width"];
+  if(!param.isNull()) {
+      param.asNumber(width);
+  }
+  param = parsed["height"];
+  if(!param.isNull()) {
+    param.asNumber(height);
+  }
+  param = parsed["pictureQuality"];
+  if(!param.isNull()) {
+    param.asNumber(pictureQuality);
+  }
+
+  LOG_TRACE(log, "cmd=%s,connection_id=%s",cmd.c_str(), connection_id.c_str());
+
+  bool rv = pm->takeCameraSnapshot(connection_id, location, format, width, height, pictureQuality);
+  string retObject = createRetObject(rv, connection_id);
+  // TODO: should we consider this as a user triggered activity
+  // or it is rather suspend preparation?
+  if (rv) {
+    rm->notifyActivity(connection_id);
+  }
+  connector->sendResponseObject(sender,message,retObject);
+  return true;
 }
 
 // @f getActivePipelinesCommand

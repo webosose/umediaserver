@@ -119,9 +119,9 @@ public:
 			int32_t buffer_range_interval);
 	bool setUpdateInterval(std::string key, int32_t value);
 
-	bool takeSnapshot(const std::string &location, const std::string &format, int32_t width, int32_t height, int32_t pictureQuality);
-	bool startRecord(const std::string &location, const std::string &format);
-	bool stopRecord();
+	bool takeCameraSnapshot(const std::string &location, const std::string &format, int32_t width, int32_t height, int32_t pictureQuality);
+	bool startCameraRecord(const std::string &location, const std::string &format);
+	bool stopCameraRecord();
 	bool changeResolution(int32_t width, int32_t height);
 	bool setStreamQuality(int32_t width, int32_t height, int32_t bitRate, bool init);
 

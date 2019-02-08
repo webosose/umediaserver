@@ -146,6 +146,10 @@ public:
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setPlayRateCallback,setPlayRateCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setVolumeCallback,setVolumeCommand);
 
+	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,startCameraRecordCallback,startCameraRecordCommand);
+	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,stopCameraRecordCallback,stopCameraRecordCommand);
+	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,takeCameraSnapshotCallback,takeCameraSnapshotCommand);
+
 	// pipeline state query API
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, getActivePipelinesCallback, getActivePipelinesCommand);
 

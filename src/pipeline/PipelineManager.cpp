@@ -540,10 +540,10 @@ bool PipelineManager::setUpdateInterval(const std::string &client_connection_id,
 	return p->setUpdateInterval(key,value);
 }
 
-// @f takeSnapshot
+// @f takeCameraSnapshot
 // @brief take still cut image
 //
-bool PipelineManager::takeSnapshot(const std::string &client_connection_id,
+bool PipelineManager::takeCameraSnapshot(const std::string &client_connection_id,
 		const std::string &location, const std::string &format,
 		int32_t width, int32_t height, int32_t pictureQuality)
 {
@@ -552,13 +552,13 @@ bool PipelineManager::takeSnapshot(const std::string &client_connection_id,
 		return false;
 	}
 
-	return p->takeSnapshot(location, format, width, height, pictureQuality);
+	return p->takeCameraSnapshot(location, format, width, height, pictureQuality);
 }
 
-// @f startRecord
+// @f startCameraRecord
 // @brief start to record
 //
-bool PipelineManager::startRecord(const std::string &client_connection_id,
+bool PipelineManager::startCameraRecord(const std::string &client_connection_id,
 		const std::string &location, const std::string &format)
 {
 	Pipeline::ptr_t p = findPipeline(client_connection_id);
@@ -566,20 +566,20 @@ bool PipelineManager::startRecord(const std::string &client_connection_id,
 		return false;
 	}
 
-	return p->startRecord(location, format);
+	return p->startCameraRecord(location, format);
 }
 
-// @f stopRecord
+// @f stopCameraRecord
 // @brief stop recording
 //
-bool PipelineManager::stopRecord(const std::string &client_connection_id)
+bool PipelineManager::stopCameraRecord(const std::string &client_connection_id)
 {
 	Pipeline::ptr_t p = findPipeline(client_connection_id);
 	if( p == nullptr ) {
 		return false;
 	}
 
-	return p->stopRecord();
+	return p->stopCameraRecord();
 }
 
 // @f changeResolution

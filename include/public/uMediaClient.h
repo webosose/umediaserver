@@ -383,6 +383,9 @@ public :
 	bool notifyBackground();
 	bool setPlayRate(double rate, bool audioOutput=true);
 	bool selectTrack(std::string& type, int32_t index);
+	bool startCameraRecord(std::string& location,  std::string& format);
+	bool stopCameraRecord();
+	bool takeCameraSnapshot(std::string& location, std::string& format, int32_t width, int32_t height, int32_t pictureQuality);
 	bool setVolume(const int32_t volume);
 	bool setVolume(const int32_t volume, const int32_t duration);
 	bool setVolume(const int32_t volume, const int32_t duration, const std::string type);

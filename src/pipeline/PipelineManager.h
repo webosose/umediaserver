@@ -86,10 +86,10 @@ public:
 	bool setUpdateInterval(const std::string &client_connection_id,
 			std::string key, int32_t value);
 
-	bool takeSnapshot(const std::string &client_connection_id, const std::string &location, const std::string &format,
-					int32_t width, int32_t height, int32_t pictureQuality);
-	bool startRecord(const std::string &client_connection_id, const std::string &location, const std::string &format);
-	bool stopRecord(const std::string &client_connection_id);
+	bool takeCameraSnapshot(const std::string &client_connection_id, const std::string &location, const std::string &format,
+													int32_t width, int32_t height, int32_t pictureQuality);
+	bool startCameraRecord(const std::string &client_connection_id, const std::string &location, const std::string &format);
+	bool stopCameraRecord(const std::string &client_connection_id);
 	bool changeResolution(const std::string &client_connection_id, int32_t width, int32_t height);
 	bool setStreamQuality(const std::string &client_connection_id, int32_t width, int32_t height, int32_t bitRate, bool init);
 	bool setProperty(const std::string &client_connection_id, const std::string &payload);

@@ -463,19 +463,19 @@ bool Pipeline::processLoadCompleted()
 		else if ( "setUpdateInterval" == m_command_queue[i].command ) {
 			setUpdateInterval(unmarshallstring(state["setUpdateInterval"]["key"]), unmarshalllong(state["setUpdateInterval"]["value"]));
 		}
-		else if ( "takeSnapshot" == m_command_queue[i].command ) {
-			takeSnapshot(unmarshallstring(state["takeSnapshot"]["location"]),
-					unmarshallstring(state["takeSnapshot"]["format"]),
-					unmarshalllong(state["takeSnapshot"]["width"]),
-					unmarshalllong(state["takeSnapshot"]["height"]),
-					unmarshalllong(state["takeSnapshot"]["pictureQuality"]));
+		else if ( "takeCameraSnapshot" == m_command_queue[i].command ) {
+			takeCameraSnapshot(unmarshallstring(state["takeCameraSnapshot"]["location"]),
+					unmarshallstring(state["takeCameraSnapshot"]["format"]),
+					unmarshalllong(state["takeCameraSnapshot"]["width"]),
+					unmarshalllong(state["takeCameraSnapshot"]["height"]),
+					unmarshalllong(state["takeCameraSnapshot"]["pictureQuality"]));
 		}
-		else if ( "startRecord" == m_command_queue[i].command ) {
-			startRecord(unmarshallstring(state["startRecord"]["location"]),
-					unmarshallstring(state["startRecord"]["format"]));
+		else if ( "startCameraRecord" == m_command_queue[i].command ) {
+			startCameraRecord(unmarshallstring(state["startCameraRecord"]["location"]),
+					unmarshallstring(state["startCameraRecord"]["format"]));
 		}
-		else if ( "stopRecord" == m_command_queue[i].command ) {
-			stopRecord();
+		else if ( "stopCameraRecord" == m_command_queue[i].command ) {
+			stopCameraRecord();
 		}
 		else if ( "changeResolution" == m_command_queue[i].command ) {
 			changeResolution(unmarshalllong(state["changeResolution"]["width"]), unmarshalllong(state["changeResolution"]["height"]));
@@ -1686,11 +1686,11 @@ bool Pipeline::setUpdateInterval(std::string key, int32_t value)
 	return true;
 }
 
-// @f takeSnapshot
+// @f takeCameraSnapshot
 // @b take still cut image
 //
 //
-bool Pipeline::takeSnapshot(const std::string &location, const std::string &format, int32_t width, int32_t height, int32_t picture_quality)
+bool Pipeline::takeCameraSnapshot(const std::string &location, const std::string &format, int32_t width, int32_t height, int32_t picture_quality)
 {
 	pbnjson::JValue args = pbnjson::Object();
 
@@ -1701,17 +1701,17 @@ bool Pipeline::takeSnapshot(const std::string &location, const std::string &form
 	args.put("pictureQuality",marshalllong(picture_quality));
 
 	JValue stateupdate = Object();
-	stateupdate.put("takeSnapshot", args);
+	stateupdate.put("takeCameraSnapshot", args);
 	m_pipeline_json_state.update(stateupdate);
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
-		LOG_DEBUG(log, "caching takeSnapshot info : location - %s, format - %s, width - %d, height - %d, pq - %d",
+		LOG_DEBUG(log, "caching takeCameraSnapshot info : location - %s, format - %s, width - %d, height - %d, pq - %d",
 				location.c_str(),
 				format.c_str(),
 				width,
 				height,
 				picture_quality);
-		m_command_queue.emplace_back("takeSnapshot");
+		m_command_queue.emplace_back("takeCameraSnapshot");
 		return true;
 	}
 
@@ -1723,24 +1723,24 @@ bool Pipeline::takeSnapshot(const std::string &location, const std::string &form
 		return false;
 	}
 
-	LOG_DEBUG(log, "takeSnapshot info : location - %s, format - %s, width - %d, height - %d, pq - %d",
+	LOG_DEBUG(log, "takeCameraSnapshot info : location - %s, format - %s, width - %d, height - %d, pq - %d",
 			location.c_str(),
 			format.c_str(),
 			width,
 			height,
 			picture_quality);
 
-	string cmd = process_connection_id + "/takeSnapshot";
+	string cmd = process_connection_id + "/takeCameraSnapshot";
 	pipeline_connector->sendMessage(cmd, payload_serialized, nullptr, nullptr);
 
 	return true;
 }
 
-// @f startRecord
+// @f startCameraRecord
 // @b start to record
 //
 //
-bool Pipeline::startRecord(const std::string &location, const std::string &format)
+bool Pipeline::startCameraRecord(const std::string &location, const std::string &format)
 {
 	pbnjson::JValue args = pbnjson::Object();
 
@@ -1748,12 +1748,12 @@ bool Pipeline::startRecord(const std::string &location, const std::string &forma
 	args.put("format",marshallstring(format));
 
 	JValue stateupdate = Object();
-	stateupdate.put("startRecord", args);
+	stateupdate.put("startCameraRecord", args);
 	m_pipeline_json_state.update(stateupdate);
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
-		LOG_DEBUG(log, "caching startRecord info : location - %s, format - %s", location.c_str(), format.c_str());
-		m_command_queue.emplace_back("startRecord");
+		LOG_DEBUG(log, "caching startCameraRecord info : location - %s, format - %s", location.c_str(), format.c_str());
+		m_command_queue.emplace_back("startCameraRecord");
 		return true;
 	}
 
@@ -1765,25 +1765,25 @@ bool Pipeline::startRecord(const std::string &location, const std::string &forma
 		return false;
 	}
 
-	LOG_DEBUG(log, "startRecord info : location - %s, format - %s", location.c_str(), format.c_str());
+	LOG_DEBUG(log, "startCameraRecord info : location - %s, format - %s", location.c_str(), format.c_str());
 
-	string cmd = process_connection_id + "/startRecord";
+	string cmd = process_connection_id + "/startCameraRecord";
 	pipeline_connector->sendMessage(cmd, payload_serialized, nullptr, nullptr);
 
 	return true;
 }
 
-// @f stopRecord
+// @f stopCameraRecord
 // @b stop recording
 //
 //
-bool Pipeline::stopRecord()
+bool Pipeline::stopCameraRecord()
 {
 	pbnjson::JValue args = pbnjson::Object();
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
-		LOG_DEBUG(log, "caching stopRecord");
-		m_command_queue.emplace_back("stopRecord");
+		LOG_DEBUG(log, "caching stopCameraRecord");
+		m_command_queue.emplace_back("stopCameraRecord");
 		return true;
 	}
 
@@ -1795,9 +1795,9 @@ bool Pipeline::stopRecord()
 		return false;
 	}
 
-	LOG_DEBUG(log, "stopRecord");
+	LOG_DEBUG(log, "stopCameraRecord");
 
-	string cmd = process_connection_id + "/stopRecord";
+	string cmd = process_connection_id + "/stopCameraRecord";
 	pipeline_connector->sendMessage(cmd, payload_serialized, nullptr, nullptr);
 	return true;
 }
