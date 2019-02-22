@@ -68,7 +68,12 @@ if("${WEBOS_TARGET_MACHINE}" STREQUAL "" OR "${WEBOS_TARGET_MACHINE}" MATCHES "r
     message(STATUS "Using INTERNAL API v.2")
     add_definitions(-DUMS_INTERNAL_API_VERSION=2)
 else()
-    message(STATUS "Using INTERNAL API v.1")
+  if (${WEBOS_TARGET_MACHINE} STREQUAL "qemux86")
+      message(STATUS "Using INTERNAL API v.2")
+      add_definitions(-DUMS_INTERNAL_API_VERSION=2)
+  else()
+      message(STATUS "Using INTERNAL API v.1")
+  endif()
 endif()
 
 if("${WEBOS_TARGET_MACHINE}" MATCHES "raspberrypi*")
