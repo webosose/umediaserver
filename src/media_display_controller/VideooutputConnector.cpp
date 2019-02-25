@@ -277,10 +277,9 @@ bool VideooutputConnector::videoConnectResult_cb(UMSConnectorHandle* handle, UMS
 
 void VideooutputConnector::vsm_disconnect(const std::string &id) {
 	video_state_t* vstate = id_to_vsink(id);
-	LOG_DEBUG(log, "Call vsm_disconnect. mediaId=%s, sinkname:%s", id.c_str(), vstate->name.c_str());
-
 	if (vstate)
 	{
+		LOG_DEBUG(log, "Call vsm_disconnect. mediaId=%s, sinkname:%s", id.c_str(), vstate->name.c_str());
 		connector->sendMessage(Videooutputd::video_disconnect,
 		                       pbnjson::JObject{{"sink",  vstate->name}}
 				                       .stringify(),
@@ -441,6 +440,9 @@ void VideooutputConnector::mute_video_impl(const std::string & id, bool mute)
 				pbnjson::JObject{{"sink",  sink_name},
 				{"blank", mute}}.stringify(),
 				nullptr, nullptr);
+        // Context is usually deleted in the callback function
+        // If the callback is not set, the context variable must be deleted
+		delete context;
 	}
 }
 
@@ -643,8 +645,8 @@ bool VideooutputConnector::getparam_cb(UMSConnectorHandle* handle, UMSConnectorM
 				state->planeId = (uint8_t)parsed["planeId"].asNumber<int>();
 				state->crtcId = (uint8_t)parsed["crtcId"].asNumber<int>();
 				state->connId = (uint8_t)parsed["connId"].asNumber<int>();
+				LOG_DEBUG(self->log, "sink:%s, planeId:%d, crtcId:%d, connId:%d", sink.c_str(), state->planeId, state->crtcId, state->connId);
 			}
-			LOG_DEBUG(self->log, "sink:%s, planeId:%d, crtcId:%d, connId:%d", sink.c_str(), state->planeId, state->crtcId, state->connId);
 		}
 	}
 	return true;

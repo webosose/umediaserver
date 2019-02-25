@@ -1033,7 +1033,7 @@ void ResourceManager::acquireDisplayResource(const resource_unit_t & unit, pbnjs
 		pbnjson::JValue dispattr_obj = pbnjson::Object();
 		max_qty_idx = system_resources->get_max_qty(unit.id) - 1;
 		if (max_qty_idx < 0) {
-			LOG_ERROR(_log, "INVALID_RESOURCE_QUANTITY", "max qty of %s should be more than 0");
+			LOG_ERROR(_log, "INVALID_RESOURCE_QUANTITY", "max qty of %s should be more than 0", unit.id.c_str());
 		}
 		if (m_acquire_disp_resource_callback) {
 			m_acquire_disp_resource_callback(unit.id, max_qty_idx - static_cast<int>(unit.index), dispRes);
@@ -1050,7 +1050,7 @@ void ResourceManager::releaseDisplayResource(const resource_unit_t & unit) {
 	if (unit.id.find("DISP") != std::string::npos) {
 		max_qty_idx = system_resources->get_max_qty(unit.id) - 1;
 		if (max_qty_idx < 0) {
-			LOG_ERROR(_log, "INVALID_RESOURCE_QUANTITY", "max qty of %s should be more than 0");
+			LOG_ERROR(_log, "INVALID_RESOURCE_QUANTITY", "max qty of %s should be more than 0", unit.id.c_str());
 			return;
 		}
 		if (m_release_disp_resource_callback)
