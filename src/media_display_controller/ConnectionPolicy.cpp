@@ -160,17 +160,20 @@ std::string AudioChannelConnection::sink_name(const std::string & id, const int3
 
 void AudioChannelConnection::disconnected(const std::string &id) {
 	_policy.log_connections("Audio disconnected", id);
-	auto cit = _policy._audio_connected.end();
-	auto connected_media = cit->second.wptr.lock();
-	// filter out false positives
-	if (connected_media && connected_media->id() == id) {
-		auto rit = _policy._audio_requested.end();
+	auto cit = std::find_if(_policy._audio_connected.begin(), _policy._audio_connected.end(),
+							[&id](ConnectionPolicy::output_map_t::const_reference e) {
+			auto media = e.second.wptr.lock();
+			return media && media->id() == id;
+	});
+	if (cit != _policy._audio_connected.end()) {
+		// clear connected media
+		cit->second.wptr = mdc::IMediaObject::ptr_t();
+		auto rit = _policy._audio_requested.find(cit->first);
 		auto requested_media = rit->second.wptr.lock();
-		// clear requested media if it matches connected
+		// clear requested media if it is match connected one
 		if (requested_media && requested_media->id() == id) {
 			rit->second.wptr = mdc::IMediaObject::ptr_t();
 		}
-		cit->second.wptr = mdc::IMediaObject::ptr_t();
 	}
 }
 
