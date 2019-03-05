@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,6 +45,14 @@ using namespace std;
 using namespace boost;
 using namespace uMediaServer;
 
+#define EVALUATE_IF(exp,fname) \
+{ \
+	if(!exp) \
+	{ \
+		printf("ERROR: Failed to run %s", fname); \
+	} \
+}
+
 // ---
 // MAIN
 
@@ -77,15 +85,15 @@ int main(int argc, char *argv[])
 					continue;
 				}
 
-				mdc_client.registerMedia(args[1], args[2]);
+				EVALUATE_IF(mdc_client.registerMedia(args[1], args[2]), "registerMedia");
 			}
 			else if(args[0] == "unregisterMedia" ) {
 				printf("command :  %s\n",cmd.c_str());
-				mdc_client.unregisterMedia();
+				EVALUATE_IF(mdc_client.unregisterMedia(), "unregisterMedia");
 			}
 			else if(args[0] == "switchToFullScreen" ) {
 				printf("command :  %s\n",cmd.c_str());
-				mdc_client.switchToFullscreen();
+				EVALUATE_IF(mdc_client.switchToFullscreen(), "switchToFullscreen");
 			}
 			else if(args[0] == "setDisplayWindow" ) {
 				printf("command :  %s\n",cmd.c_str());
@@ -97,7 +105,7 @@ int main(int argc, char *argv[])
 					height = boost::lexical_cast<float>(args[4]);
 
 					window_t output(x, y, width, height);
-					mdc_client.setDisplayWindow(output);
+					ASSERT_IF(mdc_client.setDisplayWindow(output), "setDisplayWindow");
 				}
 				else if(args.size() == 9) {
 					x = boost::lexical_cast<float>(args[1]);
@@ -112,7 +120,7 @@ int main(int argc, char *argv[])
 					height = boost::lexical_cast<float>(args[8]);
 					window_t input(x, y, width, height);
 
-					mdc_client.setDisplayWindow(input, output);
+					EVALUATE_IF(mdc_client.setDisplayWindow(input, output), "setDisplayWindow");
 				}
 				else {
 					printf("ERROR: usage<input and output>:\n"
@@ -124,7 +132,7 @@ int main(int argc, char *argv[])
 			}
 			else if(args[0] == "setFocus" ) {
 				printf("command :  %s\n",cmd.c_str());
-				mdc_client.setFocus();
+				EVALUATE_IF(mdc_client.setFocus(),"setFocus");
 			}
 			else if(args[0] == "exit"
 					|| args[0] == "quit"
