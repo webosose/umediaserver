@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 					height = boost::lexical_cast<float>(args[4]);
 
 					window_t output(x, y, width, height);
-					ASSERT_IF(mdc_client.setDisplayWindow(output), "setDisplayWindow");
+					EVALUATE_IF(mdc_client.setDisplayWindow(output), "setDisplayWindow");
 				}
 				else if(args.size() == 9) {
 					x = boost::lexical_cast<float>(args[1]);
