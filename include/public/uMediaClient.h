@@ -363,6 +363,8 @@ public :
 	virtual bool onSubtitleData(const subtitle_data_info_t& subtitleDataInfo) { return true; }
 	virtual bool onVsmResourceInfo(const std::string& vsmResourceInfo) { return true; }
 	virtual bool onValidData(bool state) { return true; }
+	virtual bool onSubscribe(const char * message) { return true; }
+	virtual bool onUnsubscribe(const char * message) { return true; }
 
 	// media pipelines can return any state. Untracked/user defined data
 	virtual bool onUserDefinedChanged(const char * message) { return true; }
@@ -404,6 +406,9 @@ public :
 	bool setVisibility(bool visibility);
 
 	std::string getMediaId() { return media_id; }
+
+	void subscribe();
+	void unsubscribe();
 
 	void run();
 	void stop();
@@ -462,9 +467,6 @@ private :
 	void dispatchCall(const std::string & method, const pbnjson::JValue & args);
 	void invokeCall(const std::string & method, const pbnjson::JValue & args,
 					bool (*cb)(UMSConnectorHandle*, UMSConnectorMessage*, void*) = commandResponseCallback);
-
-	void subscribe();
-	void unsubscribe();
 
 	// handle subscribed events
 	UMS_RESPONSE_HANDLER(uMediaClient,subscribeCallback,stateChange);

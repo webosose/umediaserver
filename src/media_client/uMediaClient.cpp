@@ -163,12 +163,10 @@ bool uMediaClient::getStateData(const string & message, string &name, JValue &va
 	}
 
 	JValue state = parser.getDom();
-
 	if ( !(*state.begin()).first.isString() ) {
 		LOG_ERROR(_log, MSGERR_JSON_SCHEMA, "error. stateChange name != string");
 		return false;
 	}
-
 	name = (*state.begin()).first.asString();
 	value = state[name];
 
@@ -184,8 +182,10 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 	const char *msg = connection->getMessageText(message);
 
 	std::string name;
-	JValue value;
+	JValue value = Object();
 	bool rv = getStateData(msg,name,value);
+	if (!rv)
+		LOG_WARNING(_log, MSGERR_JSON_PARSE, "Invalid value type detected");
 
 	// First: do internal signaling
 	if (name == "loadCompleted") {
@@ -204,8 +204,6 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 
 	// Third: do normal notification dispatching
 	if (name == "currentTime") {
-		if (value.hasKey("currentTime"))
-			value = value["currentTime"];
 		int64_t currentTime = value.asNumber<int64_t>();
 		if (_stream_time_callback) {
 			_stream_time_callback(currentTime);
@@ -217,18 +215,20 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 #if UMS_INTERNAL_API_VERSION == 2
 		ums::source_info_t source_info = {};
 		source_info.container = value["container"].asString();
-		source_info.duration = value["duration"].asNumber<ums::time_t>();
+		source_info.duration = value["duration"].asNumber<int64_t>();
+
 		source_info.seekable = value["seekable"].asBool();
 		for (size_t p = 0; p < value["programs"].arraySize(); p++) {
 			const auto & program = value["programs"][p];
 			source_info.programs.push_back(ums::program_info_t { program["video_stream"].asNumber<int32_t>(),
 																 program["audio_stream"].asNumber<int32_t>() });
 		}
+
 		for (size_t v = 0; v < value["video_streams"].arraySize(); ++v) {
 			const auto & vs = value["video_streams"][v];
 			ums::video_info_t video_info;
 			video_info.codec = vs["codec"].asString();
-			video_info.bit_rate = vs["bit_rate"].asNumber<int64_t>();
+			video_info.bit_rate = vs["bitrate"].asNumber<int64_t>();
 			video_info.width = vs["width"].asNumber<int32_t>();
 			video_info.height = vs["height"].asNumber<int32_t>();
 			video_info.frame_rate = ums::rational_t { vs["frame_rate"]["num"].asNumber<int32_t>(),
@@ -236,7 +236,7 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 			source_info.video_streams.push_back(video_info);
 		}
 		for (size_t v = 0; v < value["audio_streams"].arraySize(); ++v) {
-			const auto & as = value["audio_stream"][v];
+			const auto & as = value["audio_streams"][v];
 			ums::audio_info_t audio_info;
 			audio_info.codec = as["codec"].asString();
 			audio_info.bit_rate = as["bit_rate"].asNumber<int64_t>();
@@ -1482,10 +1482,16 @@ bool uMediaClient::attachResponse(UMSConnectorHandle* handle, UMSConnectorMessag
 	return true;
 }
 
-bool uMediaClient::commandResponse(UMSConnectorHandle*, UMSConnectorMessage*, void*)
+bool uMediaClient::commandResponse(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
 {
 	// not used for normal commands but left in place for future uMediaServer return status
-	return true;
+	const char *msg = connection->getMessageText(message);
+	std::string name;
+	JValue value = Object();
+	bool rv = getStateData(msg,name,value);
+	if (!rv)
+		LOG_WARNING(_log, MSGERR_JSON_PARSE, "Invalid value type detected");
+	return onUnsubscribe(msg);
 }
 
 void uMediaClient::dispatchCall(const std::string & method, const pbnjson::JValue & args) {

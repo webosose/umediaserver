@@ -65,7 +65,7 @@ public:
 
 	// override currentTimeEvent virtual method
 	bool onCurrentTime(int64_t currentTime)	{
-		cout << "onCurrentTime =" << currentTime << endl;
+		//cout << "onCurrentTime =" << currentTime << endl;
 		return true;
 	}
 
@@ -266,11 +266,22 @@ public:
 		return true;
 	}
 
+	bool onSubscribe(const char * message) {
+		cout << "onSubscribe result : " << message << endl;
+		return true;
+	}
+
+	bool onUnsubscribe(const char * message) {
+		cout << "onunSubscribe result : " << message << endl;
+		return true;
+
+	}
+
 	bool onUserDefinedChanged(const char * message)	{
-		cout << "onUserDefinedChanged " << message << endl;
+		//cout << "onUserDefinedChanged " << message << endl;
 
 		std::string name;
-		pbnjson::JValue value;
+		pbnjson::JValue value = pbnjson::Object();
 		bool rv = getStateData(message,name,value);
 
 		if (name == "currentTime") {
@@ -641,6 +652,12 @@ public:
 
 			cout << "onUserDefinedChagned: validData state = " << state << endl;
 		}
+		else if (name == "subscription") {
+			onSubscribe(message);
+		}
+		else if (name == "errorCode") {
+			cout << "Command Result : " << message << endl;
+		}
 		else {
 			cout << "Unknown stateChange event.  Passing raw message to client." << endl;
 		}
@@ -679,11 +696,9 @@ int main(int argc, char *argv[])
 	bool exit = false;
 
 	printf("uMediaClient : START\n");
-
+	printf("COMMANDS: load file:////media_files/rat.mp4 ref {\"option\":{\"appId\":\"app1\"}}, play, pause, unload, exit :  \n");
+	printf("\tenter command : ");
 	while( !exit ) {
-		printf("COMMANDS: load file:////media_files/rat.mp4 ref {\"option\":{\"appId\":\"app1\"}}, play, pause, unload, exit :  \n");
-		printf("\tenter command : ");
-
 		try {
 			getline(cin, cmd);
 		}
@@ -711,7 +726,7 @@ int main(int argc, char *argv[])
 			mp.load(args[1], args[2], args[3]);
 			printf("load media_id :  %s\n",mp.getMediaId().c_str());
 		}
-		if(args[0] == "attach" ) {
+		else if(args[0] == "attach" ) {
 			printf("command :  %s\n",cmd.c_str());
 			mp.state = LOADED;
 
@@ -723,7 +738,7 @@ int main(int argc, char *argv[])
 			mp.attach(args[1]);
 			printf("attach media_id :  %s\n",mp.getMediaId().c_str());
 		}
-		if(args[0] == "loadAsync" ) {
+		else if(args[0] == "loadAsync" ) {
 			printf("command :  %s\n",cmd.c_str());
 			mp.state = LOADED;
 
@@ -735,7 +750,7 @@ int main(int argc, char *argv[])
 			mp.loadAsync(args[1], args[2], args[3]);
 			printf("load media_id :  %s\n",mp.getMediaId().c_str());
 		}
-		if(args[0] == "loadAsyncBadClient" ) {
+		else if(args[0] == "loadAsyncBadClient" ) {
 			// send commands immediately after loadAsync
 			// to simulate misbehaving loadAsync client.
 			//
@@ -938,6 +953,14 @@ int main(int argc, char *argv[])
 		else if ( args[0] == "focus" ) {
 			printf("command :  %s\n",cmd.c_str());
 			mp.setFocus();
+		}
+		else if (args[0] == "subscribe") {
+			printf("command :  %s\n",cmd.c_str());
+			mp.subscribe();
+		}
+		else if (args[0] == "unsubscribe") {
+			printf("command :  %s\n",cmd.c_str());
+			mp.unsubscribe();
 		}
 		else {
 			printf("UNKNOWN COMMAND :  '%s'\n",cmd.c_str());
