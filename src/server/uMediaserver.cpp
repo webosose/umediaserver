@@ -135,6 +135,11 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 		}
 		mdc_->unregisterMedia(connection_id);
 	};
+	unregister_functor_ = [this] (std::string connection_id) {
+		LOG_DEBUG(log, "RM Client disconnected. Unregister(%s).", connection_id.c_str());
+		rm->unregisterPipeline(connection_id);
+		mdc_->unregisterMedia(connection_id);
+	};
 
 	acquire_callback_ = [this](const std::string & id, const resource_list_t & resources) {
 		// notify mdc
@@ -281,12 +286,14 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 		if (event.plane_id >= 0) {
 			auto connection = rm->findConnection(id);
 			if (connection && !connection->is_managed) {
+				/*
 				pbnjson::JValue args = pbnjson::JObject {{"planeID", event.plane_id}};
 				std::string message;
 				if (pbnjson::JGenerator(nullptr).toString(args, pbnjson::JSchema::AllSchema(), message)) {
 					std::string cmd = id + "/SetPlane";
 					connector->sendMessage(cmd, message, nullptr, nullptr);
 				}
+				*/
 			} else {
 				pm->setPlane(id, event.plane_id);
 			}
@@ -1558,12 +1565,7 @@ bool uMediaserver::registerPipelineCommand(UMSConnectorHandle* sender,
 	LOG_DEBUG(log, "connection_id=%s, type = %s, service_name=%s",
 			connection_id.c_str(), type.c_str(), service);
 
-	connector->addClientWatcher(sender, message, [this, connection_id] {
-		LOG_DEBUG(log, "RM Client disconnected. Unregister(%s).",
-				connection_id.c_str());
-		rm->unregisterPipeline(connection_id);
-        mdc_->unregisterMedia(connection_id);
-	});
+	connector->addClientWatcher(sender, message, std::bind(unregister_functor_, connection_id));
 
 	connector->sendResponse(sender,message,"connectionId", connection_id);
 	rm->notifyActivity(connection_id);

@@ -364,7 +364,11 @@ bool VideooutputConnector::videoSinkStatusChange(UMSConnectorHandle* , UMSConnec
 		// Notify only disconnected, connected is notified via connect callback.
 		if (connected == false)
 		{
-			notifyVideoConnectedChanged(*(this->name_to_vsink(sink)), connected);
+			video_state_t* state = this->name_to_vsink(sink);
+			if (state)
+			{
+				notifyVideoConnectedChanged(*state, connected);
+			}
 		}
 	}
 

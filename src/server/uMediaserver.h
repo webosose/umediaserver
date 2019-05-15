@@ -208,6 +208,7 @@ private:
 	void removeDynamicPipelines();
 	std::map<std::string, UMSConnectorMessage *> connection_message_map_;
 	std::function<void(std::string)> unload_functor_;
+	std::function<void(std::string)> unregister_functor_;
 
 	ResourceManager::callback_t acquire_callback_;
 };

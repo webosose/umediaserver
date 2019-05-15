@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -710,14 +710,17 @@ bool UMSConnector::UMSConnector_impl::sendChangeNotificationJsonString(const str
 
 bool UMSConnector::UMSConnector_impl::_CancelCallback(LSHandle* sh, LSMessage* reply, void* ctx)
 {
-	UMSConnector::UMSConnector_impl& obj = *(static_cast<UMSConnector::UMSConnector_impl*>(ctx));
+	UMSConnector::UMSConnector_impl* obj = static_cast<UMSConnector::UMSConnector_impl*>(ctx);
+	if (!obj)
+		return true;
 
 	const char* unique_client_id = LSMessageGetSender(reply);
-	auto e = obj.watchers.find(unique_client_id);
-	if (e != obj.watchers.cend()) {
-		(*e->second)();
-		obj.watchers.erase(e);
+	auto e = obj->watchers.find(unique_client_id);
+	if (e != obj->watchers.cend()) {
+		(*(e->second))();
+		obj->watchers.erase(e);
 	}
+	return true;
 }
 
 bool UMSConnector::UMSConnector_impl::addClientWatcher (UMSConnectorHandle* cl,

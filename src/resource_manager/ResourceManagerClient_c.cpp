@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ ResourceManagerClientHandle * ResourceManagerClientCreate(const char * connectio
 		bool (*policyActionHandler)(const char *, const char *, const char*,
 		const char *, const char *))
 {
-	_ResourceManagerClientCreate(connection_id, policyActionHandler);
+	return _ResourceManagerClientCreate(connection_id, policyActionHandler);
 }
 
 static ResourceManagerClientHandle * _ResourceManagerClientCreate(const char * connection_id,
