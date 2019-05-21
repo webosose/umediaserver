@@ -106,6 +106,7 @@ void * uMediaClient::messageThread(void *arg)
 {
 	uMediaClient *self = static_cast<uMediaClient *>(arg);
 	self->connection->wait();
+	return nullptr;
 }
 
 // @f subscribe
