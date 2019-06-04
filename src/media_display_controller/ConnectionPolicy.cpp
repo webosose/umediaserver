@@ -39,6 +39,17 @@ int32_t VideoChannelConnection::try_connect(mdc::IMediaObject::ptr_t media) {
 		return -1;
 	if (media->hasVideo()) {
 		auto it = std::find_if(_policy._video_requested.begin(), _policy._video_requested.end(),
+							   [this] (ConnectionPolicy::output_map_t::const_reference e) -> bool {
+							   return (e.second.name == this->_policy._acquired_sink_name);
+		});
+		if (it != _policy._video_requested.end()) {
+			it->second.wptr = media;
+			LOG_DEBUG(_log, "Connecting video (%s) to %s, first:%d", media->id().c_str(),
+				it->second.name.c_str(), it->first);
+			return it->first;
+		}
+
+		it = std::find_if(_policy._video_requested.begin(), _policy._video_requested.end(),
 							   ConnectionPolicy::free_or_background);
 		if (it == _policy._video_requested.end()) {
 			// fallback - now kickout media without focus
@@ -50,7 +61,7 @@ int32_t VideoChannelConnection::try_connect(mdc::IMediaObject::ptr_t media) {
 		}
 		it->second.wptr = media;
 		LOG_DEBUG(_log, "Connecting video (%s) to %s, first:%d", media->id().c_str(),
-				  it->second.name.c_str(), it->first);
+					  it->second.name.c_str(), it->first);
 		return it->first;
 	}
 	return -1;
@@ -236,7 +247,7 @@ ConnectionPolicy::ConnectionPolicy(		   const std::pair<std::string, std::string
 	: _audio_stack(audio_stack)
 	, _audio_channel(*this), _video_channel(*this) {
 
-  set_audio_object(0, "SOUND");
+	set_audio_object(0, "SOUND");
 }
 
 mdc::IChannelConnection & ConnectionPolicy::audio() {
@@ -277,6 +288,12 @@ void ConnectionPolicy::set_video_object(int32_t sink_index, std::string sink_nam
 	_video_requested.insert(std::make_pair(sink_index, sink_map));
 	_video_connected.insert(std::make_pair(sink_index, sink_map));
 }
+
+void ConnectionPolicy::set_video_sink(const std::string & sink_name) {
+	std::lock_guard<std::mutex> lock(_mtx);
+	_acquired_sink_name = sink_name;
+}
+
 
 void ConnectionPolicy::set_audio_object(int32_t sink_index, std::string sink_name) {
 	sink_name_map_t sink_map = {mdc::IMediaObject::ptr_t(), sink_name};

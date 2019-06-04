@@ -19,6 +19,7 @@
 #define __MDC_CONNECTION_POLICY_H__
 
 #include <map>
+#include <mutex>
 #include "interfaces.h"
 
 namespace uMediaServer {
@@ -64,6 +65,7 @@ public:
 	virtual mdc::IMediaObject::ptr_t audio_connected(const std::string & sink_name) const;
 	virtual mdc::IMediaObject::ptr_t audio_requested(const std::string & sink_name) const;
 	virtual void set_video_object(int32_t sink_index, std::string sink_name);
+	virtual void set_video_sink(const std::string & sink_name);
 	virtual void set_audio_object(int32_t sink_index, std::string sink_name);
 
 private:
@@ -85,6 +87,9 @@ private:
 	AudioChannelConnection _audio_channel;
 	VideoChannelConnection _video_channel;
 
+	std::string _acquired_sink_name;
+	std::mutex _mtx;
+
 	output_map_t _audio_requested;
 	output_map_t _video_requested;
 	output_map_t _audio_connected;
@@ -92,10 +97,11 @@ private:
 
 	const std::pair<std::string, std::string> & _audio_stack;
 	// placeholder selection checks
+
 	static bool free_or_background(output_map_t::const_reference);
 	static bool free_or_no_focus(output_map_t::const_reference);
 	static bool sound_connection_test(mdc::IMediaObject::ptr_t in, mdc::IMediaObject::ptr_t out,
-									  const std::pair<std::string, std::string> &);
+									const std::pair<std::string, std::string> &);
 };
 
 }

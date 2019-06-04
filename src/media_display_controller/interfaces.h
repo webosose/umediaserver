@@ -119,6 +119,7 @@ struct IConnectionPolicy {
 	virtual IMediaObject::ptr_t audio_connected(const std::string &) const = 0;
 	virtual IMediaObject::ptr_t audio_requested(const std::string &) const = 0;
 	virtual void set_video_object(int32_t, std::string ) = 0;
+	virtual void set_video_sink(const std::string &) = 0;
 	virtual void set_audio_object(int32_t, std::string ) = 0;
 };
 

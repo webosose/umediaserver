@@ -203,6 +203,7 @@ void VideooutputConnector::acquire_display_resource(const std::string & plane_na
 			if (!video_states[i].acquired && (idx == index)) {
 				LOG_DEBUG(_log, "return corresponding plane id %d", video_states[i].planeId);
 				video_states[i].acquired = true;
+				_connection_policy.set_video_sink(video_states[i].name);
 				res.plane_id = video_states[i].planeId;
 				res.crtc_id = video_states[i].crtcId;
 				res.conn_id = video_states[i].connId;
@@ -223,6 +224,7 @@ void VideooutputConnector::release_display_resource(const std::string & plane_na
 			if (video_states[i].acquired && (idx == index)) {
 				LOG_DEBUG(_log, "acquired status for plane id %d is changed to false", video_states[i].planeId);
 				video_states[i].acquired = false;
+				_connection_policy.set_video_sink("");
 				break;
 			} else {
 				LOG_DEBUG(_log, "already released or index is not matched(%d/%d), find other candidates",idx,index);
