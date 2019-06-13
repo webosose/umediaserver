@@ -44,6 +44,7 @@ struct MediaPlayer : public uMediaServer::uMediaClient {
 	MediaPlayer() : unload_completed(false), uMediaServer::uMediaClient(false, UMS_CONNECTOR_PRIVATE_BUS) {}
 	virtual bool onUnloadCompleted() {
 		unload_completed = true;
+		return true;
 	}
 	bool unload_completed;
 };
