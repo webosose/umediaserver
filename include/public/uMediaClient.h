@@ -405,7 +405,8 @@ public :
 	bool visibility() const;
 	bool setVisibility(bool visibility);
 
-	std::string getMediaId() { return media_id; }
+	std::string getMediaId();
+	void setMediaId(const std::string& new_media_id);
 
 	void subscribe();
 	void unsubscribe();
@@ -462,6 +463,7 @@ private :
 	bool rawEventsFlag; // set means deliver only unparsed raw events to the client
 	pthread_cond_t load_state_cond;
 	pthread_mutex_t mutex;
+	pthread_mutex_t media_id_mutex;
 
 	std::vector<std::pair<std::string, pbnjson::JValue> > message_queue;
 	void dispatchCall(const std::string & method, const pbnjson::JValue & args);

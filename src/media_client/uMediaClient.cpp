@@ -79,6 +79,7 @@ uMediaClient::uMediaClient(bool rawEvents, UMSConnectorBusType bus, const std::s
 
 	pthread_cond_init(&load_state_cond,NULL);
 	pthread_mutex_init(&mutex,NULL);
+	pthread_mutex_init(&media_id_mutex, NULL);
 
 	// start message handling thread
 	pthread_create(&message_thread,NULL,messageThread,this);
@@ -100,6 +101,7 @@ uMediaClient::~uMediaClient()
 
 	pthread_cond_destroy(&load_state_cond);
 	pthread_mutex_destroy(&mutex);
+	pthread_mutex_destroy(&media_id_mutex);
 }
 
 void * uMediaClient::messageThread(void *arg)
@@ -109,6 +111,24 @@ void * uMediaClient::messageThread(void *arg)
 	return nullptr;
 }
 
+std::string uMediaClient::getMediaId()
+{
+	std::string copied_media_id;
+	pthread_mutex_lock(&media_id_mutex);
+	copied_media_id = media_id;
+	pthread_mutex_unlock(&media_id_mutex);
+	return copied_media_id;
+}
+
+void uMediaClient::setMediaId(const std::string& new_media_id)
+{
+	if (getMediaId() != new_media_id) {
+		pthread_mutex_lock(&media_id_mutex);
+		media_id = new_media_id;
+		pthread_mutex_unlock(&media_id_mutex);
+	}
+}
+
 // @f subscribe
 // @brief subscribe to uMediaServer state change events
 //
@@ -116,7 +136,7 @@ void uMediaClient::subscribe()
 {
 	pbnjson::JValue args = pbnjson::Object();
 
-	args.put("mediaId",media_id);	 // {"mediaId":<mediaId>}
+	args.put("mediaId", getMediaId());	 // {"mediaId":<mediaId>}
 
 	JGenerator serializer(NULL);   // serialize into string
 	string payload_serialized;
@@ -137,7 +157,7 @@ void uMediaClient::unsubscribe()
 {
 	pbnjson::JValue args = pbnjson::Object();
 
-	args.put("mediaId",media_id);	 // {"mediaId":<mediaId>}
+	args.put("mediaId", getMediaId());	 // {"mediaId":<mediaId>}
 
 	JGenerator serializer(NULL);   // serialize into string
 	string payload_serialized;
@@ -759,12 +779,12 @@ bool uMediaClient::loadAsync(const std::string& uri, const std::string& type, co
 	args.put("type", marshallstring(type));
 	args.put("payload", marshallPayload(mediaPayload));
 
-        if (!media_id.empty()) {
-          args.put("mediaId", media_id);
+        if (!getMediaId().empty()) {
+          args.put("mediaId", getMediaId());
         } else {
           // Note: uMS will detect additional loads on this object and will
           //     automatically unload the previous media pipeline.
-          media_id = "<invalid mediaId>";
+          setMediaId("<invalid mediaId>");
         }
 
         load_state = UMEDIA_CLIENT_LOADING;
@@ -817,7 +837,7 @@ bool uMediaClient::preload(const std::string& uri, const std::string& type, cons
 //
 bool uMediaClient::attach(const std::string& mediaId)
 {
-	media_id = "<invalid mediaId>";
+	setMediaId("<invalid mediaId>");
 	JValue args = pbnjson::Object();   // append all values into JSON array
 	args.put("mediaId", marshallstring(mediaId));
 
@@ -848,7 +868,7 @@ None
 bool uMediaClient::play()
 {
 	pbnjson::JValue args = pbnjson::Object();
-	args.put("mediaId",media_id); // {"mediaId":<mediaId>}
+	args.put("mediaId", getMediaId()); // {"mediaId":<mediaId>}
 
 	dispatchCall("/play", args);
 
@@ -877,7 +897,7 @@ None
 bool uMediaClient::pause()
 {
 	pbnjson::JValue args = pbnjson::Object();
-	args.put("mediaId",media_id); // {"mediaId":<mediaId>}
+	args.put("mediaId", getMediaId()); // {"mediaId":<mediaId>}
 
 	dispatchCall("/pause", args);
 
@@ -909,7 +929,7 @@ None
 bool uMediaClient::seek(long long position)
 {
 	pbnjson::JValue args = pbnjson::Object();
-	args.put("mediaId",media_id);
+	args.put("mediaId", getMediaId());
 	args.put("position",marshalllonglong(position));
 
 	dispatchCall("/seek", args);
@@ -927,7 +947,7 @@ bool uMediaClient::unload()
 	}
 
 	pbnjson::JValue args = pbnjson::Object();
-	args.put("mediaId",media_id);
+	args.put("mediaId", getMediaId());
 
 	dispatchCall("/unload", args);
 
@@ -939,7 +959,7 @@ bool uMediaClient::unload()
 //
 bool uMediaClient::notifyForeground() {
 	pbnjson::JValue args = pbnjson::Object();
-	args.put("connectionId", media_id);
+	args.put("connectionId", getMediaId());
 
 	dispatchCall("/notifyForeground", args);
 
@@ -951,7 +971,7 @@ bool uMediaClient::notifyForeground() {
 //
 bool uMediaClient::notifyBackground() {
 	pbnjson::JValue args = pbnjson::Object();
-	args.put("connectionId", media_id);
+	args.put("connectionId", getMediaId());
 
 	dispatchCall("/notifyBackground", args);
 
@@ -983,7 +1003,7 @@ None
 bool uMediaClient::setPlayRate(double playRate, bool audioOutput)
 {
 	pbnjson::JValue args = pbnjson::Object();
-	args.put("mediaId",media_id);
+	args.put("mediaId", getMediaId());
 	args.put("playRate",marshallfloat(playRate));
 	args.put("audioOutput",marshallboolean(audioOutput));
 
@@ -1044,7 +1064,7 @@ None
 bool uMediaClient::startCameraRecord(std::string& location, std::string& format)
 {
   pbnjson::JValue args = pbnjson::Object();
-  args.put("mediaId",media_id);
+  args.put("mediaId",getMediaId());
   args.put("location", marshallstring(location));
   args.put("format", marshallstring(format));
 
@@ -1076,7 +1096,7 @@ None
 bool uMediaClient::stopCameraRecord()
 {
   pbnjson::JValue args = pbnjson::Object();
-  args.put("mediaId",media_id);
+  args.put("mediaId",getMediaId());
 
   dispatchCall("/stopCameraRecord", args);
 
@@ -1111,7 +1131,7 @@ None
 bool uMediaClient::takeCameraSnapshot(std::string& location, std::string& format, int32_t width, int32_t height, int32_t pictureQuality)
 {
   pbnjson::JValue args = pbnjson::Object();
-  args.put("mediaId",media_id);
+  args.put("mediaId",getMediaId());
   args.put("location", marshallstring(location));
   args.put("format", marshallstring(format));
   args.put("width", marshalllong(width));
@@ -1168,7 +1188,7 @@ bool uMediaClient::setVolume(const int32_t volume, const int32_t duration, const
 bool uMediaClient::setVolume(const int32_t volume, const int32_t duration, const EaseType type)
 {
 	pbnjson::JValue args = pbnjson::Object();
-	args.put("mediaId", media_id);
+	args.put("mediaId", getMediaId());
 	args.put("volume", marshalllong(volume));
 
 	pbnjson::JValue ease = pbnjson::Object();
@@ -1205,7 +1225,7 @@ None
 bool uMediaClient::setDisplayWindow(const rect_t & output_rect) {
 
 	JValue args = Object();
-	args.put("mediaId", media_id);
+	args.put("mediaId", getMediaId());
 	args.put("destination", serialize_rect(output_rect));
 
 	dispatchCall("/setDisplayWindow", args);
@@ -1238,7 +1258,7 @@ None
 //->End of API documentation comment block
 bool uMediaClient::setDisplayWindow(const rect_t & source_rect, const rect_t & output_rect) {
 	JValue args = Object();
-	args.put("mediaId", media_id);
+	args.put("mediaId", getMediaId());
 	args.put("destination", serialize_rect(output_rect));
 	args.put("source", serialize_rect(source_rect));
 
@@ -1267,7 +1287,7 @@ None
 //->End of API documentation comment block
 bool uMediaClient::switchToFullscreen() {
 	JValue args = Object();
-	args.put("mediaId", media_id);
+	args.put("mediaId", getMediaId());
 
 	dispatchCall("/switchToFullScreen", args);
 
@@ -1320,7 +1340,7 @@ bool uMediaClient::setFocus() {
 	_focus = true;
 
 	JValue args = Object();
-	args.put("mediaId", media_id);
+	args.put("mediaId", getMediaId());
 
 	dispatchCall("/focus", args);
 
@@ -1395,7 +1415,7 @@ None
 bool uMediaClient::setVisibility(bool visibility) {
 	if (visible != visibility) {
 		visible = visibility;
-		dispatchCall("/setVisibility", JObject{{"mediaId", media_id}, {"visible", visible}});
+		dispatchCall("/setVisibility", JObject{{"mediaId", getMediaId()}, {"visible", visible}});
 	}
 	return true;
 }
@@ -1430,7 +1450,7 @@ bool uMediaClient::loadResponse(UMSConnectorHandle* handle, UMSConnectorMessage*
 		return false;
 	}
 
-	media_id = parsed["mediaId"].asString(); // save mediaId issued by uMediaServer
+	setMediaId(parsed["mediaId"].asString()); // save mediaId issued by uMediaServer
 
 	pthread_mutex_lock(&mutex);
 	load_state = UMEDIA_CLIENT_MEDIAID_VALID;
@@ -1438,15 +1458,16 @@ bool uMediaClient::loadResponse(UMSConnectorHandle* handle, UMSConnectorMessage*
 	// TODO: optimize by squashing some events. Eg play,play,pause,play => play
 	// or seek, seek, seek => seek
 	// fire off message stash
+	std::string copied_media_id(getMediaId());
 	for (auto & msg : message_queue) {
-		msg.second.put("mediaId", media_id);
+		msg.second.put("mediaId", copied_media_id);
 		invokeCall(msg.first, msg.second);
 	}
 	message_queue.clear();
 
 	subscribe();  // subscribe to state change messages
 
-	_log.setUniqueId(media_id);
+	_log.setUniqueId(copied_media_id);
 
 	pthread_cond_signal(&load_state_cond);
 	pthread_mutex_unlock(&mutex);
@@ -1472,11 +1493,11 @@ bool uMediaClient::attachResponse(UMSConnectorHandle* handle, UMSConnectorMessag
 	}
 
 	pthread_mutex_lock(&mutex);
-	media_id = parsed["mediaId"].asString(); // save mediaId issued by uMediaServer
+	setMediaId(parsed["mediaId"].asString()); // save mediaId issued by uMediaServer
 	load_state = UMEDIA_CLIENT_LOADED;
 	pthread_mutex_unlock(&mutex);
 
-	_log.setUniqueId(media_id);
+	_log.setUniqueId(getMediaId());
 
 	subscribe();  // subscribe to state change messages
 
