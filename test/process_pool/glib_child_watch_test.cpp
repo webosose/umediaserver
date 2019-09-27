@@ -10,6 +10,7 @@
 #include <vector>
 #include <mutex>
 #include <signal.h>
+#include <fstream>
 
 const int TTL_UNIT  = 100000; /* 100 ms */
 const int MIN_TTL   = 10;     /* min proc lifetime = 1 s */
@@ -21,7 +22,16 @@ static GMainLoop * loop = nullptr;
 static void * cookie = nullptr;
 
 int rand_range(int min, int max) {
-	return min + int(double(max - min) * double(std::rand()) / double(RAND_MAX));
+	unsigned int random_value = 0;
+	size_t size = sizeof(random_value);
+	std::ifstream urandom("/dev/urandom", std::ios::in|std::ios::binary);
+	if(urandom.is_open()) {
+	        urandom.read(reinterpret_cast<char*>(&random_value), size);
+	        urandom.close(); //close stream
+	} else {
+		std::cerr << "Failed to open /dev/urandom" << std::endl;
+	}
+	return min + int(double(max - min) * double(random_value) / double(UINT_MAX));
 }
 
 int rand_sleep() {
