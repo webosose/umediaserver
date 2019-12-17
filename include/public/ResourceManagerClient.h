@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -65,7 +65,8 @@ public :
 
 	virtual ~ ResourceManagerClient();
 
-	bool registerPipeline(std::string type);
+	bool registerPipeline(std::string type, const std::string& app_id = std::string());
+
 	bool unregisterPipeline();
 
 	bool acquire(const std::string &resources, std::string &resource_response_json);
@@ -76,8 +77,12 @@ public :
 	bool notifyForeground();
 	bool notifyBackground();
 	bool notifyActivity();
+	bool notifyPipelineStatus(const std::string& pipeline_status);
+
+	bool getDisplayId(const std::string &app_id);
 
 	const char * getConnectionID() { return connection_id.data(); };
+	int32_t getDisplayID();
 
 	// @f registerPolicyActionHandler
 	// @description : register policy action even handler with Resource Manager
@@ -90,6 +95,7 @@ public :
 private :
 	Logger log;
 	std::string connection_id;       // returned from ResourceManager open_connection command
+	int32_t display_id;
 	std::string connection_category;
 	connection_state_t connection_state;
 
@@ -113,6 +119,10 @@ private :
 
 	std::map<std::string, acquire_waiter_t::ptr_t> acquire_waiters;
 	std::mutex acquire_mutex;
+
+	std::mutex display_id_mutex;
+	std::condition_variable display_id_cv;
+	bool is_valid_display_id = false;
 
 	GMainLoop *main_loop;
 	GMainContext * main_context;
@@ -159,6 +169,8 @@ private :
 	// generic command response handler
 	RMC_RESPONSE_HANDLER(ResourceManagerClient,commandResponseCallback,commandResponse);
 
+	RMC_RESPONSE_HANDLER(ResourceManagerClient,getDisplayIdResponseCallback,getDisplayIdResponse);
+
 	// @f
 	// @brief false subscription handler.
 	//   uMS IPC mechanism luna-service2 only properly tracks subscribed clients.
@@ -172,6 +184,12 @@ private :
 		return pthread_create(&message_process_thread, NULL, messageThread, this);
 	}
 
+	template <typename FuncType>
+	void registerUpdateStatusHandler( FuncType handler ) { updateStatusHandler = handler; }
+
+	template <typename FuncType>
+	void registerUpdateResourcesStatusHandler( FuncType handler ) { updateResourcesStatusHandler = handler; }
+
 	void run() { connector->wait(); }
 	void stop() { connector->stop(); }
 
@@ -183,7 +201,10 @@ private :
 	}
 
 	void subscribe();
+	bool getStateData(const std::string& message, std::string& name, pbnjson::JValue &value);
 
+	std::function <bool (const char* status, const char* appType)> updateStatusHandler;
+	std::function <bool (const bool available, const char* resources)> updateResourcesStatusHandler;
 };
 
 } // namespace uMediaServer

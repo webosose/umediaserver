@@ -29,7 +29,6 @@
 #include <UMSConnector.h>
 #include <uMediaserver.h>
 #include <GenerateUniqueID.h>
-#include <MediaDisplayController.h>
 #include <sstream>
 #include <fstream>
 #include <functional>
@@ -72,7 +71,8 @@ mdc::res_info_t convert_to_res_info(const resource_list_t & resources) {
 uMediaserver::uMediaserver(const std::string& conf_file)
 : log(UMS_LOG_CONTEXT_SERVER), dynamic_config_dir_watcher_(nullptr),
   senderForSetMaster(nullptr),
-  messageForSetMaster(nullptr)
+  messageForSetMaster(nullptr),
+  app_observer_(nullptr)
 {
 	LOG_TRACE(log, "uMediaserver connection: %s", UMEDIASERVER_CONNECTION_ID);
 	LOG_TRACE(log, "uMediaserver resource file: %s", conf_file.c_str());
@@ -109,6 +109,34 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	rm = new ResourceManager(cfg);
 	pm = new PipelineManager(*sr_watcher);
 
+	app_life_manager_ = new AppLifeManager(connector);
+	app_life_manager_->setConnectionStatusCallback([this](
+	const std::string& connection_id, AppLifeManager::app_status_event_t status, const std::string& app_window_type)->bool {
+	switch (status) {
+		case AppLifeManager::app_status_event_t::FOREGROUND:
+				rm->notifyActivity(connection_id);
+				rm->notifyForeground(connection_id);
+				pm->resume(connection_id);
+				break;
+
+		case AppLifeManager::app_status_event_t::BACKGROUND:
+				rm->notifyBackground(connection_id);
+				break;
+
+		default:
+				break;
+		}
+		return true;
+	});
+
+	app_life_manager_->setPipelineStatusCallback([this](const std::string& connection_id, JValue& pipeline_status)->bool {
+		if (rm->getManaged(connection_id)) {
+			return pm->getActivePipeline(connection_id, pipeline_status, false);
+		} else {
+			return rm->getActivePipeline(connection_id, pipeline_status);
+		}
+	});
+
 	initAcquireQueue();
 
 	if (!dynamic_config_dir.empty()) {
@@ -133,33 +161,54 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 			connector->unrefMessage(connection_message_map_[connection_id]);
 			connection_message_map_.erase(connection_id);
 		}
-		mdc_->unregisterMedia(connection_id);
+
 	};
 	unregister_functor_ = [this] (std::string connection_id) {
 		LOG_DEBUG(log, "RM Client disconnected. Unregister(%s).", connection_id.c_str());
 		rm->unregisterPipeline(connection_id);
-		mdc_->unregisterMedia(connection_id);
+		app_life_manager_->unregisterConnection(connection_id);
 	};
 
 	acquire_callback_ = [this](const std::string & id, const resource_list_t & resources) {
 		// notify mdc
 		std::string pipeline_service = pm->getPipelineServiceName(id);
-		mdc_->acquired(id, pipeline_service, convert_to_res_info(resources));
 	};
 
 	rm->setAcquireCallback(acquire_callback_);
 	rm->setReleaseCallback([this](const std::string & id, const resource_list_t & resources) {
-		// notify mdc
-		mdc_->released(id, convert_to_res_info(resources));
 		// notify acquire queue
 		acquire_queue.resourceReleased();
 	});
-	rm->setAcquireDisplayResourceCallback([this](const std::string & id, const int32_t & index, ums::disp_res_t & res) {
-		mdc_->acquireDisplayResource(id, index, res);
+
+	rm->setForegroundInfoCallback([this]() {
+		app_life_manager_->notifyForegroundAppsInfo();
 	});
-	rm->setReleaseDisplayResourceCallback([this](const std::string & id, const int32_t & index) {
-		mdc_->releaseDisplayResource(id, index);
+
+	rm->setUpdateStatusCallback([this](const std::string& connection_id, const std::string& status, const std::string& appType) -> bool {
+		pbnjson::JValue payload = pbnjson::Object();
+		payload.put("connectionId", connection_id);
+		payload.put("status", status);
+		payload.put("appType", appType);
+
+		pbnjson::JValue event = pbnjson::Object();
+		event.put("updateStatus", payload);
+
+		std::string subscription_key = std::string("appStatus_") + connection_id;
+		return connector->sendChangeNotificationJsonString(event.stringify(), subscription_key);
 	});
+
+	rm->setUpdateResourcesStatusCallback([this](const std::string& connection_id, const std::string& resource) -> bool {
+		pbnjson::JValue payload = pbnjson::Object();
+		payload.put("available", true);
+		payload.put("resources", resource);
+
+		pbnjson::JValue event = pbnjson::Object();
+		event.put("updateResourcesStatus", payload);
+
+		std::string subscription_key = std::string("resourcesStatus_") + connection_id;
+		return connector->sendChangeNotificationJsonString(event.stringify(), subscription_key);
+	});
+
 	// release managed pipeline resources and unregister at exit
 	pm->pipeline_exited.connect([&](const std::string &id) {
 		rm->resetPipeline(id);
@@ -167,6 +216,7 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 
 	pm->pipeline_removed.connect([&](const std::string & id) {
 		rm->unregisterPipeline(id);
+		app_life_manager_->unregisterConnection(id);
 	});
 
 	pm->pipeline_pid_update.connect([this](const string &appid, pid_t pid, bool exec) {
@@ -186,6 +236,14 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 
 	});
 
+	pm->pipeline_load_failed.connect ([&](const std::string & id) {
+		unload_functor_(id);
+	});
+
+	pm->fg_pipeline_status_update.connect ([&]() {
+		app_life_manager_->notifyForegroundAppsInfo();
+	});
+
 	// ---
 	// uMediaserver public API
 
@@ -201,6 +259,8 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	connector->addEventHandler("unsubscribe",unsubscribeCallback);
 	connector->addEventHandler("setPlayRate",setPlayRateCallback);
 	connector->addEventHandler("setVolume",setVolumeCallback);
+	connector->addEventHandler("getDisplayId",getDisplayIdCallback);
+	connector->addEventHandler("getForegroundAppInfo",getForegroundAppInfoCallback);
 
 	connector->addEventHandler("startCameraRecord",startCameraRecordCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("stopCameraRecord",stopCameraRecordCallback, UMS_CONNECTOR_PRIVATE_BUS);
@@ -216,90 +276,19 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	connector->addEventHandler("notifyForeground",notifyForegroundCallback);
 	connector->addEventHandler("notifyBackground",notifyBackgroundCallback);
 	connector->addEventHandler("notifyActivity",notifyActivityCallback);
+	connector->addEventHandler("notifyPipelineStatus",notifyPipelineStatusCallback);
 	connector->addEventHandler("trackAppProcesses", trackAppProcessesCallback, UMS_CONNECTOR_PRIVATE_BUS);
 
 	// MDC API
 	connector->addEventHandler("registerMedia", registerMediaCallback, UMS_CONNECTOR_PUBLIC_BUS);
 
 	// pipeline state query API
+	connector->addEventHandler("getPipelineState", getPipelineStateCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("getActivePipelines", getActivePipelinesCallback, UMS_CONNECTOR_PRIVATE_BUS);
 
-	// ---
-	mdc_ = MediaDisplayController::instance(connector);
-
-	// register for visibility events to update Resource Manager state and LRU score
-	mdc_->registerEventNotify(mdc::event::EventSignalType::VISIBLE, [this](mdc::event::EventSignalType,
-			const std::string &id, const mdc::event::EventDataBaseType &state) {
-		const mdc::event::VisibilityEvent &visibility_event = static_cast<const mdc::event::VisibilityEvent&>(state);
-
-		LOG_TRACE(log, "MDC::VISIBLE id = %s, state = %s.",
-				id.c_str(), visibility_event.state ? "TRUE" : "FALSE");
-
-		rm->notifyVisibility(id, visibility_event.state);
-	});
-
-	// register for focus events to update Resource Manager LRU score
-	mdc_->registerEventNotify(mdc::event::EventSignalType::FOCUS, [this](mdc::event::EventSignalType,
-			const std::string &id, const mdc::event::EventDataBaseType &state) {
-		const mdc::event::FocusEvent &focus_event = static_cast<const mdc::event::FocusEvent&>(state);
-
-		LOG_TRACE(log, "MDC::FOCUS id = %s, state = %s. Update RM LRU.",
-				id.c_str(), focus_event.state ? "TRUE" : "FALSE");
-
-		// update LRU and focus state
-		if (focus_event.state) {
-			rm->notifyActivity(id);
-			rm->notifyFocus(id);
-			pm->resume(id);
-		}
-	});
-
-	mdc_->registerEventNotify(mdc::event::EventSignalType::FOREGROUND, [this](mdc::event::EventSignalType,
-			const std::string &id, const mdc::event::EventDataBaseType &state) {
-		const mdc::event::ForegroundEvent &event = static_cast<const mdc::event::ForegroundEvent&>(state);
-
-		// update LRU and focus state
-		if (event.state) {
-			rm->notifyActivity(id);
-			rm->notifyForeground(id);
-			pm->resume(id);
-		} else {
-			rm->notifyBackground(id);
-		}
-	});
-
-	mdc_->registerEventNotify(mdc::event::EventSignalType::REGISTERED, [this](mdc::event::EventSignalType,
-							  const std::string &id, const mdc::event::EventDataBaseType &) {
-		string active_pipeline;
-		if(pm->getActivePipeline(id, active_pipeline))
-			rm->setManaged(id);
-	});
-
-	mdc_->registerEventNotify(mdc::event::EventSignalType::SOUND_DISCONNECTED,
-			[this] (mdc::event::EventSignalType, const std::string & id, const mdc::event::EventDataBaseType &) {
-		pm->pause(id);
-	});
-
-	mdc_->registerEventNotify(mdc::event::EventSignalType::PLANE_ID,
-			[this] (mdc::event::EventSignalType, const std::string & id, const mdc::event::EventDataBaseType &state) {
-		const mdc::event::PlaneIdEvent &event =  static_cast<const mdc::event::PlaneIdEvent&>(state);
-		if (event.plane_id >= 0) {
-			auto connection = rm->findConnection(id);
-			if (connection && !connection->is_managed) {
-				/*
-				pbnjson::JValue args = pbnjson::JObject {{"planeID", event.plane_id}};
-				std::string message;
-				if (pbnjson::JGenerator(nullptr).toString(args, pbnjson::JSchema::AllSchema(), message)) {
-					std::string cmd = id + "/SetPlane";
-					connector->sendMessage(cmd, message, nullptr, nullptr);
-				}
-				*/
-			} else {
-				pm->setPlane(id, event.plane_id);
-			}
-		}
-	});
-
+	app_observer_ = new AppObserver(connector, [this](const std::string& app_id, AppLifeStatus status, const std::string& app_window_type, int32_t display_id, int32_t pid) {
+		app_life_manager_->updateAppStatus(app_id, status, app_window_type, display_id, pid);
+	});//TOBE
 } // end uMediaServer
 
 uMediaserver::~uMediaserver()
@@ -308,8 +297,9 @@ uMediaserver::~uMediaserver()
 
 	delete pm;
 	delete rm;
-	delete mdc_;
 	delete connector;
+	delete app_observer_;
+	delete app_life_manager_;
 }
 
 bool uMediaserver::readConfigFile(const string& conf_file, Config& cfg)
@@ -429,7 +419,6 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 		return false;
 	};
 	JDomParser parser;
-
 	string cmd = connector->getMessageText(message);
 	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
 		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. cmd=%s ", cmd.c_str());
@@ -447,7 +436,6 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 
 	string app_id = parsed["payload"]["option"]["appId"].asString();
 	string transport = parsed["payload"]["mediaTransportType"].asString();
-	string payload = JGenerator::serialize(parsed["payload"], pbnjson::JSchema::AllSchema());
 
 	string connection_id;   // id returned by load
 	bool preloaded = false;
@@ -463,6 +451,23 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 	if(preloaded)
 		isPreload = false;
 
+		// add display_id and make a payload again including it
+		string payload;
+		int32_t display_id = 0;
+		if (app_life_manager_->getDisplayId(app_id, &display_id)) {
+			JValue option_parsed = parsed["payload"]["option"];
+			option_parsed.put("displayPath", display_id);
+
+			JValue option_added = Object();
+			option_added.put("option", option_parsed);
+
+			payload = JGenerator::serialize(option_added, pbnjson::JSchema::AllSchema());
+		}
+		else {
+			LOG_ERROR(log, MSGERR_JSON_PARSE, "failed to get DisplayId");
+			payload = JGenerator::serialize(parsed["payload"], pbnjson::JSchema::AllSchema());
+		}
+
 	bool rv = pm->load(connection_id, type, uri, payload, app_id, connector, isPreload);
 
 	if (!parsed["payload"]["option"]["preload"]) {
@@ -472,15 +477,8 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 	if (!preloaded) {
 		// register pipeline as managed with Resource Manager
 		UMSTRACE_BEFORE((connection_id+"_load").c_str());
-		rm->registerPipeline(connection_id, type);
-
-		// register with Media Display Controller
-		if (!is_nabs(transport))
-		{
-			LOG_DEBUG(log, "registerMedia by umediaserver media_id:%s, app_id:%s",
-					connection_id.c_str(), app_id.c_str());
-			mdc_->registerMedia(connection_id, app_id);
-		}
+		rm->registerPipeline(connection_id, type, true, app_life_manager_->isForeground(app_id));
+		app_life_manager_->registerConnection(app_id, connection_id);
 
 		LOG_INFO_EX(log, MSGNFO_LOAD_REQUEST, __KV({ {KVP_MEDIA_ID, connection_id},
 					{KVP_PIPELINE_TYPE, type} }), "");
@@ -620,7 +618,6 @@ bool uMediaserver::unloadCommand(UMSConnectorHandle* sender, UMSConnectorMessage
 	LOG_INFO_EX(log, MSGNFO_UNLOAD_REQUEST, __KV({{KVP_MEDIA_ID, connection_id}}), "");
 
 	// unregister with Media Display Controller
-	mdc_->unregisterMedia(connection_id);
 	acquire_queue.removeWaiter(connection_id);
 	bool rv = pm->unload(connection_id);
 	if (rv) {
@@ -628,6 +625,8 @@ bool uMediaserver::unloadCommand(UMSConnectorHandle* sender, UMSConnectorMessage
 		connector->unrefMessage(connection_message_map_[connection_id]);
 		connection_message_map_.erase(connection_id);
 	}
+
+	bus_route_key_ = std::string();
 
 	string retObject = createRetObject(rv, connection_id);
 	connector->sendResponseObject(sender,message,retObject);
@@ -1111,33 +1110,19 @@ bool uMediaserver::setPlayRateCommand(UMSConnectorHandle* sender, UMSConnectorMe
 	JValue parsed = parser.getDom();
 	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
 	RETURN_IF(!parsed.hasKey("playRate"), false, MSGERR_NO_MEDIA_RATE, "client must specify playback rate");
+	RETURN_IF(!parsed.hasKey("audioOutput"), false, MSGERR_NO_AUDIO_OUTPUT, "client must specify audioOutput");
 
 	string connection_id = parsed["mediaId"].asString();
 	double rate;
+	bool audioOutput;
 	parsed["playRate"].asNumber(rate);
+	parsed["audioOutput"].asBool(audioOutput);
 
 	LOG_TRACE(log, "cmd=%s,connection_id=%s", cmd.c_str(), connection_id.c_str());
 
-	bool rv = pm->setPlayRate(connection_id,rate,true);
+	bool rv = pm->setPlayRate(connection_id,rate,audioOutput);
 	string retObject = createRetObject(rv, connection_id);
 	connector->sendResponseObject(sender,message,retObject);
-	return true;
-}
-
-bool uMediaserver::pipelineCmdEventSetMaster(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
-{
-	uMediaserver *self = static_cast<uMediaserver *>(ctx);
-	const char *receivedMsg = self->connector->getMessageText(message);
-	LOG_DEBUG(self->log, "pipelineCmdEvent command : %s", receivedMsg);
-
-	// reply back the as-is msg to the caller.
-	string retJsonString = receivedMsg;
-	LOG_TRACE(self->log, "createRetObject retObjectString =  %s", retJsonString.c_str());
-	self->connector->sendResponseObject(self->senderForSetMaster, self->messageForSetMaster, retJsonString);
-
-	UMSConnector::unrefMessage(self->messageForSetMaster);
-	self->senderForSetMaster = nullptr;
-	self->messageForSetMaster = nullptr;
 	return true;
 }
 
@@ -1403,6 +1388,77 @@ bool uMediaserver::takeCameraSnapshotCommand(UMSConnectorHandle* sender, UMSConn
   return true;
 }
 
+//getDisplayIdCommand
+bool uMediaserver::getDisplayIdCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctxt)
+{
+	JDomParser parser;
+	JSchemaFragment input_schema("{}");
+	pbnjson::JValue msg = pbnjson::Object();
+	pbnjson::JValue payload = pbnjson::Object();
+
+	string cmd = connector->getMessageText(message);
+	if (!parser.parse(cmd, input_schema)) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",cmd.c_str());
+		return false;
+	}
+
+	JValue parsed = parser.getDom();
+	RETURN_IF(!parsed.hasKey("appId"), false, MSGERR_NO_AUDIO_MODE, "client must specify appId");
+
+	string app_id = parsed["appId"].asString();
+	int32_t display_id = 0;
+	bool rv = app_life_manager_->getDisplayId(app_id, &display_id);
+
+	JValue ret_obj = Object();
+
+	ret_obj.put("display_id", display_id);
+	ret_obj.put("returnValue", rv);
+	std::string retObject = JGenerator::serialize(ret_obj,  pbnjson::JSchema::AllSchema());
+	LOG_DEBUG(log,"payload = %s", retObject.c_str());
+
+	//string retObject = createRetObject(rv, connection_id);
+	connector->sendResponseObject(sender, message, retObject);
+	return true;
+}
+
+// @f getPipelineStateCommand
+// @brief get the json string representing the tracked pipeline state
+//
+// <mediaId> is returned to client from load command
+// luna-send -n 1 palm://com.webos.media/getPipelineState '{mediaId : "<mediaId>"}'
+//
+bool uMediaserver::getPipelineStateCommand(UMSConnectorHandle* sender,
+		UMSConnectorMessage* message, void* ctxt)
+{
+	JDomParser parser;
+	bool retval = false;
+
+	string cmd = connector->getMessageText(message);
+
+	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. cmd=%s ", cmd.c_str());
+		return false;
+	}
+
+	JValue parsed = parser.getDom();
+	string connection_id = parsed["mediaId"].asString();
+
+	LOG_TRACE(log, "uMediaserver get pipeline state. mediaId=%s", connection_id.c_str());
+
+	string state_json;
+	retval = pm->getPipelineState(connection_id, state_json);
+	if ( retval == false) {
+		// id not found, invalid mediaId
+		string retObject = createRetObject(false, connection_id);
+		connector->sendResponseObject(sender,message,retObject);
+		return false;
+	}
+
+	string retObject = createRetObject(true, connection_id, state_json);
+	connector->sendResponseObject(sender,message,retObject);
+	return true;
+}
+
 // @f getActivePipelinesCommand
 // @brief get the json string representing the running pipelines and its resources
 //
@@ -1447,40 +1503,11 @@ bool uMediaserver::getActivePipelinesCommand(UMSConnectorHandle* sender,
 		LOG_DEBUG(log,"\tpolicy_state = %d", i->second.policy_state);
 		LOG_DEBUG(log,"\tis_foreground = %d", i->second.is_foreground);
 
-		// add more information for managed pipeline
-		string active_pipeline_out;
-		if (pm->getActivePipeline(i->second.connection_id, active_pipeline_out)) {
-			JDomParser parser;
-			if (!parser.parse(active_pipeline_out,  pbnjson::JSchema::AllSchema())) {
-				LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. string=%s ", active_pipeline_out.c_str());
-				return false;
-			}
-
-			JValue parsed = parser.getDom();
-			if (parsed.isObject()) {
-				pipeline_obj.put("uri", parsed["uri"].asString());
-				pipeline_obj.put("pid", parsed["pid"]);
-				pipeline_obj.put("processState", parsed["processState"].asString());
-				pipeline_obj.put("mediaState", parsed["mediaState"].asString());
-				pipeline_obj.put("appId", parsed["appId"].asString());
-			}
-		}
-
-		// gather mdc info
-		auto mdc_info = mdc_->getMediaElementState(i->second.connection_id.c_str());
-		std::pair<std::string, std::string> sink_name = mdc_->getConnectedSinkname(i->second.connection_id.c_str());
-		if (mdc_info) {
-			JValue mdc_states = Array();
-			for (const auto & state : mdc_info.states) {
-				mdc_states << state;
-			};
-			JValue mdc_connections = Array();
-			if (mdc_info.connections.first >= 0)
-				mdc_connections << sink_name.first;
-			if (mdc_info.connections.second >= 0)
-				mdc_connections << sink_name.second;
-			JValue mdc_obj = JObject{{"states", mdc_states}, {"connections", mdc_connections}};
-			pipeline_obj.put("mdc", mdc_obj);
+		if (i->second.is_managed)
+			pm->getActivePipeline(i->second.connection_id, pipeline_obj);
+		else {
+			pipeline_obj.put("appId", app_life_manager_->getAppId(i->second.connection_id).c_str());
+			rm->getActivePipeline(i->second.connection_id, pipeline_obj);
 		}
 
 		retObject << pipeline_obj;
@@ -1493,7 +1520,36 @@ bool uMediaserver::getActivePipelinesCommand(UMSConnectorHandle* sender,
 	return true;
 }
 
+// @f getForegroundAppInfo
+// @brief get foreground application information
+//
+bool uMediaserver::getForegroundAppInfoCommand(UMSConnectorHandle* sender, UMSConnectorMessage* message, void* ctxt)
+{
+	bool rv = false;
+	JDomParser parser;
+	JValue retObject = pbnjson::Object();
+	JValue foregroundAppInfoArray = pbnjson::Array();
 
+	string cmd = connector->getMessageText(message);
+	LOG_DEBUG(log, "cmd = %s", cmd.c_str());
+	RETURN_IF(!parser.parse(cmd,  pbnjson::JSchema::AllSchema()), false,
+			MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
+
+	JValue parsed = parser.getDom();
+	bool subscribe = parsed["subscribe"].asBool();
+
+	if (subscribe && connector->addSubscriber(sender, message, "getForegroundAppInfo")) {
+		rv = true;
+	}
+
+	app_life_manager_->getForegroundAppsInfo(foregroundAppInfoArray);
+
+	retObject.put("subscribed", rv);
+	retObject.put("returnValue", true);
+	retObject.put("foregroundAppInfo", foregroundAppInfoArray);
+	connector->sendResponseObject(sender, message, retObject.stringify());
+	return true;
+}
 
 // -------------------------------------
 // ResourceManager API (luna)
@@ -1539,22 +1595,26 @@ bool uMediaserver::registerPipelineCommand(UMSConnectorHandle* sender,
 	}
 
 	JValue parsed = parser.getDom();
+
 	RETURN_IF(!parsed.hasKey("type"), false, MSGERR_NO_CONN_TYPE, "Connection type must be specified");
 	string type = parsed["type"].asString();
+	string app_id = parsed["appId"].asString();
 
 	string connection_id = GenerateUniqueID()();
-	bool rv = rm->registerPipeline(connection_id, type);
+	bool rv = rm->registerPipeline(connection_id, type, false, app_life_manager_->isForeground(app_id));
 	if( rv == false ) {
 		// TODO: do we need to send response or luna will do it for us?
 		connector->sendSimpleResponse(sender,message,rv);
 		return false;
 	}
+	app_life_manager_->registerConnection(app_id, connection_id);
 
 	const char * service = connector->getSenderServiceName(message);
 	if( service == NULL ) {
 		LOG_ERROR(log, MSGERR_NO_SVC_NAME,
 				"Resource Manager connections must specify a service name.");
 		rm->unregisterPipeline(connection_id);
+		app_life_manager_->unregisterConnection(connection_id);
 		connector->sendSimpleResponse(sender,message,rv);
 		return false;
 	}
@@ -1620,7 +1680,9 @@ bool uMediaserver::unregisterPipelineCommand(UMSConnectorHandle* sender,
 	string retObject = createRetObject(true, connection_id);
 	connector->sendResponseObject(sender,message,retObject);
 
-	return rm->unregisterPipeline(connection_id);
+	bool ret = rm->unregisterPipeline(connection_id);
+	app_life_manager_->unregisterConnection(connection_id);
+	return ret;
 }
 
 //->Start of API documentation comment block
@@ -1677,6 +1739,7 @@ bool uMediaserver::acquireCommand(UMSConnectorHandle* sender,
 	// TODO: optimize to avoid double lookup - later we'll do same map
 	// lookup with rm->findConnection(...)
 	rm->setServiceName(connection_id,service);
+	bus_route_key_ = std::string(service);
 
 	// get connection information
 	auto connection = rm->findConnection(connection_id);
@@ -1718,9 +1781,6 @@ void uMediaserver::initAcquireQueue() {
 			// TODO: handle failed case
 			pm->suspend(candidate_id);
 			// TODO: are we expecting policy action denial from managed pipelines?
-			mdc_->contentReady(candidate_id, false);
-			//Need to inform the mdc when pipeline suspended beacuse of policy action
-			mdc_->updatePipelineState(candidate_id, PLAYBACK_STOPPED);
 		}
 
 		auto rm_connection = rm->findConnection(connection_id);
@@ -1859,6 +1919,7 @@ bool uMediaserver::tryAcquireCommand(UMSConnectorHandle* sender,
 	// TODO: optimize to avoid double lookup - later we'll do same map
 	// lookup with rm->findConnection(...)
 	rm->setServiceName(connection_id,service);
+	bus_route_key_ = std::string(service);
 
 	// get connection information
 	auto connection = rm->findConnection(connection_id);
@@ -1969,16 +2030,25 @@ bool uMediaserver::notifyForegroundCommand(UMSConnectorHandle* sender,
 	string connection_id = parsed["connectionId"].asString();
 
 	bool rv = false;
-	// for mdc managed clients we shouldn't update rm directly
-	if (mdc_->getMediaElementState(connection_id)) {
-		mdc_->inAppForegroundEvent(connection_id, true);
-		rv = true;
-	} else {
-		rv = rm->notifyForeground(connection_id);
-		if ( rv == false ) {
-			LOG_ERROR(log, MSGERR_NO_CONN_ID,
+
+	auto conn = rm->findConnection(connection_id);
+
+	if (!conn) {
+		LOG_ERROR(log, MSGERR_NO_CONN_ID,
 					"Resource Manager: connection_id=%s not found",
 					connection_id.c_str());
+	} else {
+		string app_id = app_life_manager_->getAppId(connection_id);
+		if (app_id.empty()) {
+			rv = app_life_manager_->setAppId(connection_id, "", true);
+			if (rv == false) {
+				LOG_ERROR(log, MSGERR_NO_CONN_ID,
+					"Resource Manager: connection_id=%s not found",
+					connection_id.c_str());
+			}
+		} else {
+			app_life_manager_->updateConnectionStatus(connection_id, AppLifeManager::app_status_event_t::FOREGROUND);
+			rv = true;
 		}
 	}
 
@@ -2036,8 +2106,6 @@ bool uMediaserver::notifyBackgroundCommand(UMSConnectorHandle* sender,
 				connection_id.c_str());
 	}
 
-	mdc_->inAppForegroundEvent(connection_id, false);
-
 	connector->sendSimpleResponse(sender, message, rv);
 	return true;
 }
@@ -2089,6 +2157,60 @@ bool uMediaserver::notifyActivityCommand(UMSConnectorHandle* sender,
 		LOG_ERROR(log, MSGERR_NO_CONN_ID,
 				"Resource Manager: connection_id=%s not found",
 				connection_id.c_str());
+	}
+
+	connector->sendSimpleResponse(sender, message, rv);
+	return true;
+}
+
+/**
+@page com_webos_media com.webos.media
+@{
+@section com_webos_media_notifyForeground notifyFocus
+
+Notify of resource manager client is in foreground and may not
+be selected for policy action
+
+@par Parameters
+Name | Required | Type | Description
+-----|--------|------|----------
+connectionId | yes | String  | connection id for this connection.
+
+@par Returns(Call)
+Name | Required | Type | Description
+-----|--------|------|----------
+returnValue | yes | Boolean | true if successful, false otherwise.
+
+@par Returns(Subscription)
+None
+@}
+ */
+//->End of API documentation comment block
+bool uMediaserver::notifyPipelineStatusCommand(UMSConnectorHandle* sender,
+		UMSConnectorMessage* message,
+		void* ctx)
+{
+	JDomParser parser;
+	JSchemaFragment input_schema("{}");
+	pbnjson::JValue msg = pbnjson::Object();
+	pbnjson::JValue payload = pbnjson::Object();
+
+	string cmd = connector->getMessageText(message);
+	if (!parser.parse(cmd, input_schema, NULL)) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",cmd.c_str());
+		return false;
+	}
+
+	JValue parsed = parser.getDom();
+	RETURN_IF(!parsed.hasKey("connectionId"), false, MSGERR_NO_CONN_ID, "connectionId must be specified");
+	string connection_id = parsed["connectionId"].asString();
+	string pipeline_status = parsed["pipelineStatus"].asString();
+	int32_t pid = parsed["pid"].asNumber<int32_t>();
+
+	bool rv = rm->notifyPipelineStatus(connection_id, pipeline_status, pid);
+	if ( rv == false ) {
+		LOG_ERROR(log, MSGERR_NO_CONN_ID, "Resource Manager: connection_id=%s not update, state=%s",
+							connection_id.c_str(), pipeline_status.c_str());
 	}
 
 	connector->sendSimpleResponse(sender, message, rv);
@@ -2174,13 +2296,9 @@ bool uMediaserver::registerMediaCommand(UMSConnectorHandle* handle, UMSConnector
 	string media_id = parsed["mediaId"].asString();
 	string app_id = parsed["appId"].asString();
 
-	auto result = mdc_->registerMedia(media_id, app_id);
+	rm->setAcquireCallback(acquire_callback_);
 
-	// MDC and RM registrations aren't atomic so we should force resource update to avoid races
-	if (result)
-		rm->setAcquireCallback(acquire_callback_);
-
-	connector->sendSimpleResponse(handle, message, result);
+	connector->sendSimpleResponse(handle, message, true);
 	return true;
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -159,6 +159,48 @@ ResourceManagerClient::~ResourceManagerClient()
 bool ResourceManagerClient::subscribeResponse(UMSConnectorHandle* handle,
 		UMSConnectorMessage* message, void* ctx)
 {
+	std::string msg = connector->getMessageText(message);
+
+	pbnjson::JDomParser parser;
+	pbnjson::JSchemaFragment input_schema("{}");
+
+	RETURN_IF( !parser.parse(msg, input_schema), false,
+			MSGERR_JSON_PARSE, "JDomParse. input=%s",msg.c_str());
+
+	pbnjson::JValue parsed = parser.getDom();
+
+	if (parsed.hasKey("subscribed") || parsed.hasKey("returnValue")) {
+		if (!parsed["subscribed"].asBool() || !parsed["returnValue"].asBool()) {
+			return false;
+		}
+
+		if (parsed.hasKey("updateStatus") && updateStatusHandler) {
+			string status = parsed["updateStatus"]["status"].asString();
+			string appType = parsed["updateStatus"]["appType"].asString();
+			updateStatusHandler(status.c_str(), appType.c_str());
+		} else if (parsed.hasKey("updateResourcesStatus") && updateResourcesStatusHandler) {
+			updateResourcesStatusHandler(parsed["updateResourcesStatus"]["available"].asBool(),
+										parsed["updateResourcesStatus"]["resources"].asString().c_str());
+		}
+		return true;
+	}
+
+	pbnjson::JValue value;
+	std::string name;
+	bool rv = getStateData(msg,name,value);
+
+	if (name == "updateStatus") {
+		if (updateStatusHandler) {
+			string status = parsed["updateStatus"]["status"].asString();
+			string appType = parsed["updateStatus"]["appType"].asString();
+			updateStatusHandler(status.c_str(), appType.c_str());
+		}
+	} else if (name == "updateResourcesStatus") {
+		if (updateResourcesStatusHandler) {
+			updateResourcesStatusHandler(value["available"].asBool(), value["resources"].asString().c_str());
+		}
+	}
+
 	return true;
 }
 
@@ -199,7 +241,7 @@ void ResourceManagerClient::subscribe()
  */
 //->End of API documentation comment block
 
-bool ResourceManagerClient::registerPipeline(std::string type)
+bool ResourceManagerClient::registerPipeline(std::string type, const std::string& app_id)
 {
 	Lock l(*api_mutex);
 
@@ -209,6 +251,7 @@ bool ResourceManagerClient::registerPipeline(std::string type)
 	pbnjson::JValue args = pbnjson::Object();
 
 	args.put("type", type);
+	args.put("appId", app_id);
 
 	JGenerator serializer(NULL);   // serialize into string
 	string payload_serialized;
@@ -548,6 +591,58 @@ bool ResourceManagerClient::notifyActivity()
 	return true;
 }
 
+bool ResourceManagerClient::notifyPipelineStatus(const std::string& pipeline_status)
+{
+	Lock l(*api_mutex);
+
+	RETURN_IF(connection_state == CONNECTION_CLOSED, false, MSGERR_CONN_CLOSED, "Connection closed.")
+	pbnjson::JValue args = pbnjson::Object();
+
+	args.put("connectionId", connection_id);
+	args.put("pipelineStatus", pipeline_status);
+	args.put("pid", static_cast<int32_t>(getpid()));
+
+	JGenerator serializer(NULL);   // serialize into string
+	string payload_serialized;
+
+	if (!serializer.toString(args, pbnjson::JSchema::AllSchema(), payload_serialized)) {
+		LOG_ERROR(log, MSGERR_JSON_SERIALIZE, "json object serialization failed");
+		return false;
+	}
+
+	string cmd = resource_manager_connection_id + connection_category + "/notifyPipelineStatus";
+	connector->sendMessage(cmd, payload_serialized, commandResponseCallback, (void*)this);
+
+	return true;
+}
+
+bool ResourceManagerClient::getDisplayId(const std::string &app_id)
+{
+	Lock l(*api_mutex);
+
+	RETURN_IF(connection_state == CONNECTION_CLOSED, false, MSGERR_CONN_CLOSED, "Connection closed.")
+
+	JSchemaFragment inputSchema("{}");
+	pbnjson::JValue args = pbnjson::Object();
+
+	args.put("appId", app_id);
+
+	JGenerator serializer(NULL);   // serialize into string
+	string payload_serialized;
+
+	if (!serializer.toString(args, inputSchema, payload_serialized)) {
+		LOG_ERROR(log, MSGERR_JSON_SERIALIZE, "json object serialization failed");
+		return false;
+	}
+
+	string cmd = resource_manager_connection_id + connection_category + "/getDisplayId";
+	connector->sendMessage(cmd, payload_serialized, getDisplayIdResponseCallback, (void*)this);
+
+	return true;
+}
+
+
+
 //
 // ---- PRIVATE
 //
@@ -705,6 +800,37 @@ bool ResourceManagerClient::commandResponse(UMSConnectorHandle* handle,
 	return true;
 }
 
+//getDisplayIdResponse
+bool ResourceManagerClient::getDisplayIdResponse(UMSConnectorHandle* handle,
+		UMSConnectorMessage* message, void* ctx)
+{
+	std::lock_guard<std::mutex> lk(display_id_mutex);
+
+	JDomParser parser;
+
+	string cmd = connector->getMessageText(message);
+
+	RETURN_IF( !parser.parse(cmd, pbnjson::JSchema::AllSchema()), false,
+			MSGERR_JSON_PARSE, "JDomParse. input=%s",cmd.c_str());
+
+	JValue command_response = parser.getDom();
+
+	RETURN_IF( ! command_response.hasKey("returnValue"), false,
+			MSGERR_JSON_SCHEMA,"no state key in commandResponse");
+
+	int32_t display_id = command_response["display_id"].asNumber<int32_t>();
+
+	LOG_DEBUG(log, "display_id = %d", display_id);
+
+	this->display_id = display_id;
+	is_valid_display_id = true;
+
+	display_id_cv.notify_one();
+
+	return true;
+}
+
+
 // @f informWaiters
 // @brief utility function for informing waiters on resources
 //
@@ -772,4 +898,41 @@ bool ResourceManagerClient::signalEvent(uint32_t *event,
 	pthread_cond_signal(condition);
 	pthread_mutex_unlock(lock);
 	return true;
+}
+
+// @f getStateName
+// @brief return state change name
+//
+bool ResourceManagerClient::getStateData(const std::string& message, std::string& name, pbnjson::JValue &value)
+{
+	JDomParser parser;
+	JSchemaFragment input_schema("{}");
+	if (!parser.parse(message, input_schema)) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "JDomParse. input=%s", message.c_str());
+		return false;
+	}
+
+	JValue state = parser.getDom();
+
+	if ( !(*state.begin()).first.isString() ) {
+		LOG_ERROR(log, MSGERR_JSON_SCHEMA, "error. stateChange name != string");
+		return false;
+	}
+
+	name = (*state.begin()).first.asString();
+	value = state[name];
+
+	return value.isObject() ? true : false;
+}
+
+int32_t ResourceManagerClient::getDisplayID() {
+	std::unique_lock<std::mutex> lk(display_id_mutex);
+	if (!display_id_cv.wait_for(lk, std::chrono::seconds(ACQUIRE_WAIT_TIMEOUT),
+		[this](){ return is_valid_display_id; })) {
+		LOG_ERROR(log, MSGERR_UNLOCK_TIMEOUT,
+			"TIMEOUT: getDisplayID() waited notification for [%d]sec", ACQUIRE_WAIT_TIMEOUT);
+		return -1;
+	}
+	LOG_DEBUG(log, "display_id = %d", display_id);
+	return display_id;
 }

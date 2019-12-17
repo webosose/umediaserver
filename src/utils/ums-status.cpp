@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -190,22 +190,22 @@ bool cb_(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
 
 		if (is_managed) {
 			string uri = parsed[it.i]["uri"].asString();
-			int32_t pid = parsed[it.i]["pid"].asNumber<int32_t>();
 			string processState = parsed[it.i]["processState"].asString();
-			string mediaState = parsed[it.i]["mediaState"].asString();
-			string appId = parsed[it.i]["appId"].asString();
-
 			print_right(ALIGN_INDENT, "uri : "); print_left(ALIGN_INDENT, uri);
-			cout << endl;
-			print_right(ALIGN_INDENT, "pid : "); print_left(ALIGN_INDENT, boost::lexical_cast<string>(pid));
 			cout << endl;
 			print_right(ALIGN_INDENT, "processState : "); print_left(ALIGN_INDENT, processState);
 			cout << endl;
-			print_right(ALIGN_INDENT, "mediaState : "); print_left(ALIGN_INDENT, mediaState);
-			cout << endl;
-			print_right(ALIGN_INDENT, "appId : "); print_left(ALIGN_INDENT, appId);
-			cout << endl;
 		}
+		int32_t pid = parsed[it.i]["pid"].asNumber<int32_t>();
+		string mediaState = parsed[it.i]["mediaState"].asString();
+		string appId = parsed[it.i]["appId"].asString();
+		print_right(ALIGN_INDENT, "pid : "); print_left(ALIGN_INDENT, boost::lexical_cast<string>(pid));
+		cout << endl;
+		print_right(ALIGN_INDENT, "mediaState : "); print_left(ALIGN_INDENT, mediaState);
+		cout << endl;
+		print_right(ALIGN_INDENT, "appId : "); print_left(ALIGN_INDENT, appId);
+		cout << endl;
+
 	}
 
 	return true;

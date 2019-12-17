@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2018 LG Electronics, Inc.
+# Copyright (c) 2008-2019 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ include_directories(
                    ${CMAKE_SOURCE_DIR}/src/pipeline_manager
                    ${CMAKE_SOURCE_DIR}/src/dbi
                    ${CMAKE_SOURCE_DIR}/src/registry
-                   ${CMAKE_SOURCE_DIR}/src/media_display_controller
                    )
 
 set(
@@ -40,10 +39,9 @@ set(
    ums_connector
    ums_connector_impl
    ums_registry
-   media_display_controller
    boost_system
    boost_filesystem
-   
+
    ${GLIB2_LIBRARIES}
    ${LUNA_SERVICE_LIBRARIES}
    ${LIBPBNJSON_LDFLAGS}
@@ -52,13 +50,13 @@ set(
    ${LUNASERVICE_LDFLAGS}
    ${LIBCONFIGPP_LDFLAGS}
    ${PMLOGLIB_LDFLAGS}
-   ${LIBCONFIGPP_LDFLAGS}   
+   ${LIBCONFIGPP_LDFLAGS}
    )
 
 # ---
 # create server executable
 set(SERVER_NAME "umediaserver")
-set(src main.cpp uMediaserver.cpp)
+set(src main.cpp uMediaserver.cpp AppObserver.cpp)
 add_executable (${SERVER_NAME} ${src})
 set_target_properties(${SERVER_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries (${SERVER_NAME} ${LIBS})

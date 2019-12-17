@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -171,6 +171,7 @@ void Pipeline::updatePipelineProcessState(string new_state)
 	JValue procstate = Object();
 	procstate.put("proc_state", marshallstring(new_state));
 	m_pipeline_json_state.update(procstate);
+	signal_pipeline_status_changed();
 }
 
 string Pipeline::getMediaState()
@@ -188,6 +189,7 @@ void Pipeline::updatePipelineMediaState(string new_state)
 	JValue mediastate = Object();
 	mediastate.put("media_state", marshallstring(new_state));
 	m_pipeline_json_state.update(mediastate);
+	signal_pipeline_status_changed();
 }
 
 void Pipeline::setSeekPos(long long seek_pos)
@@ -561,18 +563,18 @@ bool Pipeline::pipelineProcessStateEvent(UMSConnectorHandle* handle, UMSConnecto
 {
 	Pipeline *self = static_cast<Pipeline *>(ctx);
 	string json_message = self->pipeline_connector->getMessageText(message);
-	LOG_TRACE(self->log, "pipelineStateEvent callback : %s, key = %s",
+	LOG_DEBUG(self->log, "pipelineStateEvent callback : %s, key = %s",
 			json_message.c_str(), self->id_.c_str());
-
+	int errCode = 0;
 	self->updateState(json_message);   // track pipeline state
 
 	pbnjson::JDomParser parser;
 	if (parser.parse(json_message,  pbnjson::JSchema::AllSchema())) {
 		pbnjson::JValue json = parser.getDom();
-		if (json.hasKey("error") &&
-			json["error"].hasKey("errorCode") &&
-			601 == json["error"]["errorCode"].asNumber<int>())
-		{
+		if (json.hasKey("error") && json["error"].hasKey("errorCode"))
+			errCode = json["error"]["errorCode"].asNumber<int>();
+
+		if (601 == errCode) {
 			return self->suspend();
 		}
 	}
@@ -584,6 +586,11 @@ bool Pipeline::pipelineProcessStateEvent(UMSConnectorHandle* handle, UMSConnecto
 				self->id_.c_str());
 
 		self->client_connector->sendChangeNotificationJsonString(json_message, self->id_);
+
+		if (104 == errCode)
+		{
+			self->signal_load_failed(self->id_);
+		}
 	}
 	return true;
 }

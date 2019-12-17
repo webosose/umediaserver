@@ -39,8 +39,6 @@
 #define UMS_LOG_CONTEXT_PROCESS_CONTROLLER        "ums.process_ctrl"
 #define UMS_LOG_CONTEXT_CLIENT                    "ums.client"
 #define UMS_LOG_CONTEXT_CONNECTOR                 "ums.connector"
-#define UMS_LOG_CONTEXT_MDC                       "ums.media_display_controller"
-#define UMS_LOG_CONTEXT_AUDIOD                    "ums.audiod"
 
 #define LOG_LEVEL_CRITICAL  "CRIT"
 #define LOG_LEVEL_ERROR     "ERR"

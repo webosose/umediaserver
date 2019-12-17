@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2018 LG Electronics, Inc.
+# Copyright (c) 2008-2019 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@
 include_directories(
                    ${CMAKE_CURRENT_SOURCE_DIR}
                    ${CMAKE_SOURCE_DIR}/src/logger
-                   ${CMAKE_SOURCE_DIR}/src/mdc_client
-                   ${CMAKE_SOURCE_DIR}/src/mdc_content_provider
                    )
 
 # ---
@@ -76,44 +74,6 @@ target_link_libraries (${UMS_TOOL_BIN_NAME}
                        ums_connector_wrapper
                        rt)
 install(TARGETS ${UMS_TOOL_BIN_NAME} DESTINATION ${WEBOS_INSTALL_BINDIR})
-
-# ---
-# test executable MDC Media Client command line tool 
-
-set(MDC_CLIENT_BIN_NAME "mdc_client_official")
-set(MDC_CLIENT_SRC mdc_client.cpp)
-add_executable (${MDC_CLIENT_BIN_NAME} ${MDC_CLIENT_SRC})
-set_target_properties(${MDC_CLIENT_BIN_NAME} PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries (${MDC_CLIENT_BIN_NAME}
-                       ${GLIB2_LDFLAGS}
-                       ${LUNASERVICE_LDFLAGS}
-                       ${LIBPBNJSON_LDFLAGS}
-                       ${PMLOGLIB_LDFLAGS}
-                       mdc_client
-                       ums_connector
-                       ums_connector_impl
-                       ums_connector_wrapper
-                       rt)
-install(TARGETS ${MDC_CLIENT_BIN_NAME} DESTINATION ${WEBOS_INSTALL_BINDIR})
-
-# ---
-# test executable MDC Media Content Provider command line tool
-
-set(MDC_CONTENT_PROVIDER_BIN_NAME "mdc_content_provider_official")
-set(MDC_CONTENT_PROVIDER_SRC mdc_content_provider.cpp)
-add_executable (${MDC_CONTENT_PROVIDER_BIN_NAME} ${MDC_CONTENT_PROVIDER_SRC})
-set_target_properties(${MDC_CONTENT_PROVIDER_BIN_NAME} PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries (${MDC_CONTENT_PROVIDER_BIN_NAME}
-                       ${GLIB2_LDFLAGS}
-                       ${LUNASERVICE_LDFLAGS}
-                       ${LIBPBNJSON_LDFLAGS}
-                       ${PMLOGLIB_LDFLAGS}
-                       mdc_content_provider
-                       ums_connector
-                       ums_connector_impl
-                       ums_connector_wrapper
-                       rt)
-install(TARGETS ${MDC_CONTENT_PROVIDER_BIN_NAME} DESTINATION ${WEBOS_INSTALL_BINDIR})
 
 add_subdirectory(ums-status2)
 

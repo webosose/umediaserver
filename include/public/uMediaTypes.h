@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,18 @@
 
 #ifndef __UMEDIA_TYPES_H
 #define __UMEDIA_TYPES_H
+
+#include <string.h>
+
+namespace uMediaServer {
+namespace pipeline_state {
+const std::string UNLOADED = "unload";
+const std::string LOADED = "load";
+const std::string PLAYING = "play";
+const std::string PAUSED = "pause";
+} // namespace pipeline_state
+} // namespace uMediaServer
+
 
 // TODO move all parameters and enums to "MediaObject.h" file
 typedef enum AudioStreamClass {
@@ -105,5 +117,16 @@ struct VideoBounds {
 	float width;
 	float height;
 };
+
+enum class AppLifeStatus : int {
+	UNKNOWN = -1,
+	STOP = 0,
+	CLOSING,
+	BACKGROUND,
+	LAUNCHING,
+	RELAUNCHING,
+	FOREGROUND
+};
+
 
 #endif // __UMEDIA_TYPES_H

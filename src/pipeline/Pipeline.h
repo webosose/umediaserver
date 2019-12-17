@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -159,6 +159,8 @@ public:
 
 	// Events for PipelineManager observer
 	boost::signals2::signal<void (const std::string &, pid_t, bool)> signal_pid;
+	boost::signals2::signal<void (const std::string &)> signal_load_failed;
+	boost::signals2::signal<void ()> signal_pipeline_status_changed;
 
 private:
 	static std::map<std::string, std::unique_ptr<pbnjson::JSchema>> api_schema;

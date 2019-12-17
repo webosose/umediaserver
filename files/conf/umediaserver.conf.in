@@ -108,36 +108,6 @@
 			"rules" : [
 				{"filter" : "*.*", "output" : "ums-log"}
 			]
-		},
-		{
-			"name" : "ums.media_display_controller",
-			"level" : "info",
-			"logProcessIds" : true,
-			"logThreadIds" : true,
-			"logToConsole" : false,
-			"rules" : [
-				{"filter" : "*.*", "output" : "ums-log"}
-			]
-		},
-		{
-			"name" : "ums.videooutput",
-			"level" : "info",
-			"logProcessIds" : true,
-			"logThreadIds" : true,
-			"logToConsole" : false,
-			"rules" : [
-				{"filter" : "*.*", "output" : "ums-log"}
-			]
-		},
-		{
-			"name" : "ums.audio",
-			"level" : "info",
-			"logProcessIds" : true,
-			"logThreadIds" : true,
-			"logToConsole" : false,
-			"rules" : [
-				{"filter" : "*.*", "output" : "ums-log"}
-			]
 		}
 	]
 }

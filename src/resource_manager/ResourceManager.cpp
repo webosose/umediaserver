@@ -399,7 +399,7 @@ void ResourceManager::setLogLevel(const std::string & level) {
 //              pipeline settings
 // @ return : connection_id
 //
-bool ResourceManager::registerPipeline(const string &connection_id, const string &type)
+bool ResourceManager::registerPipeline (const std::string &connection_id, const std::string &type, bool is_managed, bool is_foreground)
 {
 	if (type.empty()) {
 		LOG_DEBUG(_log, "registerPipeline: type string is empty");
@@ -420,16 +420,21 @@ bool ResourceManager::registerPipeline(const string &connection_id, const string
 	connection.connection_id = connection_id;
 	connection.type = type;
 	connection.timestamp = timeNow();
-	connection.is_managed = false;
+	connection.is_managed = is_managed;
 	connection.policy_state = resource_manager_connection_t::policy_state_t::READY;
-	connection.is_foreground = false;
+	connection.is_foreground = is_foreground;
 	connection.is_focus = false;
 	connection.is_visible = true;
 	connection.priority = priority;
 	connections[connection_id] = connection;
+	connection.playing_state = uMediaServer::pipeline_state::UNLOADED;
 
 	LOG_DEBUG(_log, "connection_id=%s, type=%s, priority: %d",
 			  connection_id.c_str(), type.c_str(), connection.priority);
+
+	if (m_foreground_callback) {
+		m_foreground_callback();
+	}
 
 #if RESOURCE_MANAGER_DEBUG
 	showActivePipelines();
@@ -459,13 +464,14 @@ bool ResourceManager::resetPipeline(const std::string &connection_id)
 
 	if (!connection->resources.empty()) {
 		resource_list_t released = connection->resources;
-		for (const auto & unit : released) {
-			releaseDisplayResource(unit);
-		}
 		system_resources->release(connection->resources);
 		connection->resources.erase(connection->resources.begin(),
 				connection->resources.end());
 		if (m_release_callback) m_release_callback(connection_id, released);
+	}
+
+	if (m_foreground_callback) {
+		m_foreground_callback();
 	}
 
 #if RESOURCE_MANAGER_DEBUG
@@ -588,7 +594,6 @@ bool ResourceManager::acquire(const std::string &connection_id,
 				resource_obj.put("resource", unit.id);
 				resource_obj.put("index", (int)unit.index);
 				resource_obj.put("qty", 1);
-				acquireDisplayResource(unit, resource_obj);
 				resources_array.append(resource_obj);
 
 				addActiveResource(connection->second, unit);
@@ -666,7 +671,6 @@ bool ResourceManager::release(const std::string &connection_id,
 
 	for (const auto & unit : released) {
 		remActiveResource(*connection, unit);
-		releaseDisplayResource(unit);
 	}
 	if (m_release_callback) m_release_callback(connection_id, released);
 
@@ -930,7 +934,6 @@ bool ResourceManager::encodeResourceRequest(const resource_request_t & resources
 		// pbnjson::JValue<uintXX_t>::JValue(const uintXX_t &) ?
 		junit.put("qty", (int32_t)unit.qty);
 		junit.put("index", (int32_t)unit.index);
-		//junit.put("attribute", unit.attribute);
 		root.append(junit);
 	}
 
@@ -1026,38 +1029,6 @@ void ResourceManager::remActiveResource(resource_manager_connection_t & owner,
 		owner.resources.erase(it);
 }
 
-void ResourceManager::acquireDisplayResource(const resource_unit_t & unit, pbnjson::JValue & resource_obj) {
-	int32_t max_qty_idx = -1;
-	if (unit.id.find("DISP") != std::string::npos) {
-		ums::disp_res_t dispRes = {-1,-1,-1};
-		pbnjson::JValue dispattr_obj = pbnjson::Object();
-		max_qty_idx = system_resources->get_max_qty(unit.id) - 1;
-		if (max_qty_idx < 0) {
-			LOG_ERROR(_log, "INVALID_RESOURCE_QUANTITY", "max qty of %s should be more than 0", unit.id.c_str());
-		}
-		if (m_acquire_disp_resource_callback) {
-			m_acquire_disp_resource_callback(unit.id, max_qty_idx - static_cast<int>(unit.index), dispRes);
-		}
-		dispattr_obj.put("plane-id", dispRes.plane_id);
-		dispattr_obj.put("crtc-id", dispRes.crtc_id);
-		dispattr_obj.put("conn-id", dispRes.conn_id);
-		resource_obj.put("display_attr", dispattr_obj);
-	}
-}
-
-void ResourceManager::releaseDisplayResource(const resource_unit_t & unit) {
-	int32_t max_qty_idx = -1;
-	if (unit.id.find("DISP") != std::string::npos) {
-		max_qty_idx = system_resources->get_max_qty(unit.id) - 1;
-		if (max_qty_idx < 0) {
-			LOG_ERROR(_log, "INVALID_RESOURCE_QUANTITY", "max qty of %s should be more than 0", unit.id.c_str());
-			return;
-		}
-		if (m_release_disp_resource_callback)
-			m_release_disp_resource_callback(unit.id, max_qty_idx - static_cast<int>(unit.index));
-		}
-}
-
 bool ResourceManager::notifyActivity(const std::string & id)
 {
 	lock_t l(mutex);
@@ -1101,6 +1072,10 @@ bool ResourceManager::notifyForeground(const std::string & id)
 	// mark current connection as foreground.
 	connection->second.is_foreground = true;
 
+	if (connection->second.subscribed && m_update_status_callback) {
+		m_update_status_callback(id, "foreground", connection->second.sub_type);
+	}
+
 	return true;
 }
 
@@ -1119,6 +1094,10 @@ bool ResourceManager::notifyBackground(const std::string & id)
 
 	LOG_INFO(_log, MSGNFO_BACKGROUND_REQUEST, "+ BACKGROUND: connection_id=%s",id.c_str());
 	connection->second.is_foreground = false;
+
+	if (connection->second.subscribed && m_update_status_callback) {
+		m_update_status_callback(id, "background", connection->second.sub_type);
+	}
 
 	return true;
 }
@@ -1169,6 +1148,38 @@ bool ResourceManager::notifyVisibility(const std::string & id, bool is_visible)
 
 	return true;
 }
+
+// @f notifyPipelineStatus
+// @b indicate playing state
+//
+bool ResourceManager::notifyPipelineStatus(const std::string & id, const std::string& playing_state, const int32_t pid)
+{
+	lock_t l(mutex);
+
+	auto connection = connections.find(id);
+	if(connection == connections.end()) {
+		LOG_CRITICAL(_log, MSGERR_CONN_FIND, "id=%s not found.", id.c_str());
+		return false;
+	}
+
+	LOG_DEBUG(_log,"+ PLAYING_STATE: connection_id=%s, playing_state=%s",id.c_str(), connection->second.playing_state.c_str());
+
+	if (connection->second.playing_state == playing_state) {
+		LOG_WARNING(_log, MSGERR_NO_UPDATE_WARN, "id=%s, state=%s",
+					id.c_str(), connection->second.playing_state.c_str());
+		return false;
+	}
+
+	connection->second.playing_state = playing_state;
+	connection->second.pid = pid;
+
+	if (m_foreground_callback) {
+		m_foreground_callback();
+	}
+
+	return true;
+}
+
 
 bool ResourceManager::selectPolicyCandidates(const std::string &connection_id,
 		const resource_request_t &needed_resources,
@@ -1286,6 +1297,41 @@ bool ResourceManager::selectPolicyCandidates(const std::string &connection_id,
 	return !candidates.empty();
 }
 
+bool ResourceManager::getForegroundInfo(pbnjson::JValue& forground_app_info_out)
+{
+	lock_t l(mutex);
+
+	for (auto conn : connections) {
+		if (conn.second.is_foreground) {
+			pbnjson::JValue conn_obj = pbnjson::Object();
+			conn_obj.put("mediaId", conn.second.connection_id);
+			conn_obj.put("type", conn.second.type);
+			conn_obj.put("mediaState", conn.second.playing_state);
+			conn_obj.put("pid", conn.second.pid);
+			forground_app_info_out.append(conn_obj);
+
+		}
+	}
+
+	return true;
+}
+
+bool ResourceManager::getActivePipeline(const std::string &id, pbnjson::JValue& connection_info_out)
+{
+	lock_t l(mutex);
+
+	auto connection = connections.find(id);
+	if(connection == connections.end()) {
+		LOG_ERROR(_log, MSGERR_CONN_FIND, "id=%s not found.", id.c_str());
+		return false;
+	} else {
+		connection_info_out.put("mediaId", connection->second.connection_id);
+		connection_info_out.put("mediaState", connection->second.playing_state);
+		connection_info_out.put("pid", connection->second.pid);
+		return true;
+	}
+}
+
 bool ResourceManager::isValidType(const std::string &type) {
 	return findType(type);
 }
@@ -1324,6 +1370,16 @@ void ResourceManager::setManaged(const std::string & id) {
 	else
 		connection->second.is_managed = true;
 }
+
+bool ResourceManager::getManaged(const std::string & id) {
+	auto connection = connections.find(id);
+	if(connection == connections.end()) {
+		LOG_ERROR(_log, MSGERR_CONN_FIND, "id=%s not found.", id.c_str());
+		return false;
+	} else
+		return connection->second.is_managed;
+}
+
 
 void ResourceManager::reclaimResources() {
 	if (m_policy_action_callback) {

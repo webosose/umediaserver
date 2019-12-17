@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -54,6 +54,16 @@ void PipelineManager::pipelinePidUpdate(const string &appid, pid_t pid, bool exe
 	pipeline_pid_update(appid, pid, exec);
 }
 
+void PipelineManager::pipelineLoadFailurehandler(const std::string& client_connection_id) {
+	pipeline_load_failed(client_connection_id);
+}
+
+void PipelineManager::pipelineForegroundStatusUpdatehandler() {
+	fg_pipeline_status_update();
+}
+
+
+
 // @f load
 // @brief create new pipeline and load media
 //
@@ -79,6 +89,11 @@ bool PipelineManager::load(std::string &pipeline_id, const std::string &type, co
 	// connect to Pipeline Contoller PID events to track suspend/resume PID changes
 	p->signal_pid.connect(bind(&PipelineManager::pipelinePidUpdate,
 			this, placeholders::_1, placeholders::_2, placeholders::_3));
+
+	p->signal_load_failed.connect(bind(&PipelineManager::pipelineLoadFailurehandler,
+			this, placeholders::_1));
+
+	p->signal_pipeline_status_changed.connect(bind(&PipelineManager::pipelineForegroundStatusUpdatehandler, this));
 
 	p->stateChange(true); // connect client to Pipeline Controller subscription events
 
@@ -743,6 +758,24 @@ bool PipelineManager::getActivePipeline(const std::string &client_connection_id,
 
 	return true;
 }
+
+bool PipelineManager::getActivePipeline(const std::string &client_connection_id, pbnjson::JValue &active_pipeline_out, bool show_app_id)
+{
+	auto it = pipelines.find(client_connection_id);
+	if (it == pipelines.end()) {
+		return false;
+	}
+	//pbnjson::JValue active_pipeline = pbnjson::Object();
+	active_pipeline_out.put("mediaId", it->second->getID().c_str());
+	active_pipeline_out.put("uri", it->second->getURI().c_str());
+	active_pipeline_out.put("pid", it->second->getPID());
+	active_pipeline_out.put("processState", it->second->getProcessState().c_str());
+	active_pipeline_out.put("mediaState",it->second->getMediaState().c_str());
+	if (show_app_id)
+		active_pipeline_out.put("appId", it->second->getAppId().c_str());
+	return true;
+}
+
 
 // @f getActivePipelines
 // @b get list of active pipeline associated with application ID

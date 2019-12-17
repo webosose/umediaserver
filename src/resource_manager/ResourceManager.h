@@ -36,6 +36,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/noncopyable.hpp>
 #include <dto_types.h>
+#include <uMediaTypes.h>
 
 // Convert struct timespec struct to ms resoltion
 #define GET_MS(_time_ ) (_time_.tv_sec * 1000) + (_time_.tv_nsec / 1000000UL)
@@ -278,6 +279,10 @@ struct resource_manager_connection_t {
 	resource_request_t policy_resources;    // resources to free upon policy
 	resource_list_t resources;              // allocated resources
 	uint32_t priority;                      // priority
+	bool subscribed;
+	std::string sub_type;                   // app window type
+	std::string playing_state;
+	int32_t pid;
 };
 
 typedef std::map<std::string, resource_manager_connection_t> resource_manager_connection_map_t;
@@ -343,7 +348,7 @@ public:
 		return connections;
 	}
 
-	bool registerPipeline(const std::string &connection_id, const std::string &type);
+	bool registerPipeline(const std::string &connection_id, const std::string &type, bool is_managed = false, bool is_foreground = false);
 
 	bool unregisterPipeline(const std::string &connection_id);
 
@@ -387,6 +392,8 @@ public:
 	// over another connection that is visible
 	bool notifyVisibility(const std::string & id, bool is_visible);
 
+	bool notifyPipelineStatus(const std::string & id, const std::string& playing_state, const int32_t pid);
+
 	// Policy API
 	bool selectPolicyCandidates(const std::string &connection_id,
 			const resource_request_t &failed_resources,
@@ -400,12 +407,17 @@ public:
 	void setPolicyActionCallback(callback_t callback) {
 		m_policy_action_callback = callback;
 	}
-	void setAcquireDisplayResourceCallback(acquire_plane_callback_t callback) {
-		m_acquire_disp_resource_callback = callback;
+
+	void setForegroundInfoCallback(std::function<void()> callback) {
+		m_foreground_callback = callback;
 	}
 
-	void setReleaseDisplayResourceCallback(release_plane_callback_t callback) {
-		m_release_disp_resource_callback = callback;
+	void setUpdateStatusCallback(std::function<bool(const std::string &, const std::string &, const std::string &)> callback) {
+		m_update_status_callback = callback;
+	}
+
+	void setUpdateResourcesStatusCallback(std::function<bool(const std::string &, const std::string &)> callback) {
+		m_update_resources_status_callback = callback;
 	}
 
 	void addResource(const std::string &id, uint32_t qty);
@@ -441,8 +453,11 @@ public:
 		}
 	}
 
-	void setManaged(const std::string & id);
+	bool getForegroundInfo(pbnjson::JValue& forground_app_info_out);
+	bool getActivePipeline(const std::string &id, pbnjson::JValue& connection_info_out);
 
+	void setManaged(const std::string & id);
+	bool getManaged(const std::string & id);
 	void reclaimResources();
 
 private:
@@ -473,8 +488,6 @@ private:
 						   const resource_unit_t & unit);
 	void remActiveResource(resource_manager_connection_t & owner,
 						   const resource_unit_t & unit);
-	void acquireDisplayResource(const resource_unit_t & unit, pbnjson::JValue & resource_obj);
-	void releaseDisplayResource(const resource_unit_t & unit);
 
 	bool findPriority(const std::string &type, uint32_t *priority);
 	bool findType(const std::string &type);
@@ -495,8 +508,9 @@ private:
 	callback_t m_release_callback;
 	callback_t m_acquire_callback;
 	callback_t m_policy_action_callback;
-	acquire_plane_callback_t m_acquire_disp_resource_callback;
-	release_plane_callback_t m_release_disp_resource_callback;
+	std::function<bool(const std::string&, const std::string&, const std::string&)> m_update_status_callback;
+	std::function<bool(const std::string&, const std::string&)> m_update_resources_status_callback;
+	std::function<void()> m_foreground_callback;
 };
 
 } // namespace uMediaServer

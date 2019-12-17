@@ -61,11 +61,12 @@
 #include <Logger.h>
 #include <PipelineManager.h>
 #include <ResourceManager.h>
-#include <MediaDisplayController.h>
 #include <UMSConnector.h>
 #include <DirectoryWatcher.h>
 #include <AcquireQueue.h>
 #include <Registry.h>
+#include <AppObserver.h>
+#include <AppLifeManager.h>
 
 #define UMEDIASERVER_CONNECTION_ID "com.webos.media"
 
@@ -145,12 +146,16 @@ public:
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setDisplayWindowCallback,setDisplayWindowCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setPlayRateCallback,setPlayRateCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,setVolumeCallback,setVolumeCommand);
+	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,getDisplayIdCallback,getDisplayIdCommand);
 
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,startCameraRecordCallback,startCameraRecordCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,stopCameraRecordCallback,stopCameraRecordCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,takeCameraSnapshotCallback,takeCameraSnapshotCommand);
 
+	// get foreground app info
+	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, getForegroundAppInfoCallback, getForegroundAppInfoCommand);
 	// pipeline state query API
+	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, getPipelineStateCallback, getPipelineStateCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver, getActivePipelinesCallback, getActivePipelinesCommand);
 
 	// Resource Manager API
@@ -166,6 +171,7 @@ public:
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,notifyForegroundCallback,notifyForegroundCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,notifyBackgroundCallback,notifyBackgroundCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,notifyActivityCallback,notifyActivityCommand);
+	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,notifyPipelineStatusCallback,notifyPipelineStatusCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,trackAppProcessesCallback,trackAppProcessesCommand);
 
 	// MDC API
@@ -177,16 +183,16 @@ private:
 	ServiceReadyWatcher * sr_watcher;
 	ResourceManager * rm;
 	PipelineManager * pm;
-	MediaDisplayController * mdc_;
 	AcquireQueue acquire_queue;
+	std::string bus_route_key_;
+	AppObserver* app_observer_;
+	AppLifeManager* app_life_manager;
 
 	static bool policyResponseCallback(UMSConnectorHandle * handle,
 			UMSConnectorMessage * message, void * ctx);
 
 	UMSConnectorHandle* senderForSetMaster;
 	UMSConnectorMessage* messageForSetMaster;
-	static bool pipelineCmdEventSetMaster(UMSConnectorHandle* handle,
-			UMSConnectorMessage* message, void* ctxt);
 
 	void initAcquireQueue();
 

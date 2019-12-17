@@ -84,11 +84,8 @@ endif()
 # ---
 #  build components
 add_subdirectory(src/logger)
-add_subdirectory(src/mdc_client)
-add_subdirectory(src/mdc_content_provider)
 add_subdirectory(src/utils)
 add_subdirectory(src/resource_manager)
-add_subdirectory(src/media_display_controller)
 add_subdirectory(src/ums_connector)
 add_subdirectory(src/pipeline)
 add_subdirectory(src/server)

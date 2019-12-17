@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -103,6 +103,8 @@ public:
 	bool setAudioDualMono(const std::string& client_connection_id, int32_t audioMode);
 
 	void pipelinePidUpdate(const std::string &appid, pid_t pid, bool exec);
+	void pipelineLoadFailurehandler(const std::string& client_connection_id);
+	void pipelineForegroundStatusUpdatehandler();
 	void setLogLevel(const std::string & level) { log.setLogLevel(level); }
 	void setLogLevelPipeline(const std::string &client_connection_id, const std::string& level);
 
@@ -112,6 +114,7 @@ public:
 	bool logPipelineState(const std::string &client_connection_id);
 
 	bool getActivePipeline(const std::string &client_connection_id, std::string &active_pipeline_out);
+	bool getActivePipeline(const std::string &client_connection_id, pbnjson::JValue &active_pipeline_out, bool show_app_id = true);
 	bool getActivePipelines(pbnjson::JValue &active_pipelines_out, bool app_tracking = false);
 	bool getActivePipelines(pipeline_map_t &pipelines_out);
 	int getActivePipelineCount();
@@ -130,7 +133,9 @@ public:
 	// pipeline exited signal
 	boost::signals2::signal<void (const std::string &id)> pipeline_exited;
 	boost::signals2::signal<void (const std::string &id)> pipeline_removed;
+	boost::signals2::signal<void (const std::string &id)> pipeline_load_failed;
 	boost::signals2::signal<void (const std::string &, pid_t, bool)> pipeline_pid_update;
+	boost::signals2::signal<void ()> fg_pipeline_status_update;
 
 private:
 	Logger log;

@@ -160,6 +160,8 @@
 #define MSGERR_POLICY_FAILED     "POLICY_FAILED_ERR"     // failed to send policy action
 #define MSGERR_SEND_ACQUIRE_RESULT "SEND_ACQUIRE_RESULT_ERR" // failed to send acquire result
 #define MSGNFO_POLICY_REQUEST    "POLICY_REQUEST"        // send policy action to candidate
+#define MSGERR_NO_UPDATE_WARN    "NO_UPDATE_WARN"        // no update because of same value
+
 // ums dbi
 #define MSGERR_DBI_ERROR          "DBI_ACCESS_ERR"       // registry access error
 // simulated pipeline

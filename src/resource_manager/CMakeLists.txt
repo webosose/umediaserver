@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2018 LG Electronics, Inc.
+# Copyright (c) 2008-2019 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ include_directories(
 
 # Resource Manager library
 set(RESMGR_LIB_NAME "resource_mgr")
-set(TARGET_SRCS ResourceManager.cpp AcquireQueue.cpp)
+set(TARGET_SRCS ResourceManager.cpp AppLifeManager.cpp AcquireQueue.cpp)
 add_library(${RESMGR_LIB_NAME} SHARED ${TARGET_SRCS})
 set_target_properties(${RESMGR_LIB_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(${RESMGR_LIB_NAME}

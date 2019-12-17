@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 LG Electronics, Inc.
+// Copyright (c) 2015-2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,19 +22,25 @@
 #include <set>
 #include <functional>
 #include <UMSConnector.h>
+#include <uMediaTypes.h>
 
 namespace uMediaServer {
 class AppObserver {
 public:
-	typedef std::function<void(const std::set<std::string> & apps)> fg_state_callback_t;
-	AppObserver(UMSConnector * umc, fg_state_callback_t && fg_state_change_cb);
+	typedef std::function<void(const std::string& app_id, AppLifeStatus status, std::string app_window_type, int32_t display_id, int32_t pid)> app_state_callback_t;
+	AppObserver(UMSConnector * umc, app_state_callback_t && fg_state_change_cb);
+
+  AppLifeStatus unmarshallAppLifeStatus(const std::string& value);
+  std::string convertAppWindowType(const std::string& value);
+
+  bool isEnable();
 
 private:
 	static bool foregroundAppsCallback(UMSConnectorHandle*, UMSConnectorMessage*, void*);
 	static bool appLifeStatusCallback(UMSConnectorHandle*, UMSConnectorMessage*, void*);
 
 	UMSConnector * connector;
-	fg_state_callback_t fg_state_callback;
+	app_state_callback_t fg_state_callback;
 	std::set<std::string> fg_apps;
 	GMainTimer app_state_subscribe_timer;
 };

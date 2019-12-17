@@ -35,6 +35,7 @@ target_link_libraries (${SIMNAME}
                        ${GLIB2_LDFLAGS}
                        ${LUNA_SERVICE_LIBRARIES}
                        ${LUNASERVICE_LDFLAGS}
+                       ${GST_LDFLAGS}
                        ${LIBPBNJSON_LDFLAGS}
                        ${PMLOGLIB_LDFLAGS}
                        ums_connector
