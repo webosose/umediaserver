@@ -186,7 +186,7 @@ private:
 	AcquireQueue acquire_queue;
 	std::string bus_route_key_;
 	AppObserver* app_observer_;
-	AppLifeManager* app_life_manager;
+	AppLifeManager* app_life_manager_;
 
 	static bool policyResponseCallback(UMSConnectorHandle * handle,
 			UMSConnectorMessage * message, void * ctx);
