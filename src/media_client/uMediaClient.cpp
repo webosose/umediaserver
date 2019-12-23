@@ -248,12 +248,13 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 		for (size_t v = 0; v < value["video_streams"].arraySize(); ++v) {
 			const auto & vs = value["video_streams"][v];
 			ums::video_info_t video_info;
-			video_info.codec = vs["codec"].asString();
-			video_info.bit_rate = vs["bitrate"].asNumber<int64_t>();
-			video_info.width = vs["width"].asNumber<int32_t>();
-			video_info.height = vs["height"].asNumber<int32_t>();
-			video_info.frame_rate = ums::rational_t { vs["frame_rate"]["num"].asNumber<int32_t>(),
-													  vs["frame_rate"]["den"].asNumber<int32_t>() };
+
+			video_info.codec = vs["video"]["codec"].asString();
+			video_info.bit_rate = vs["video"]["bit_rate"].asNumber<int64_t>();
+			video_info.width = vs["video"]["width"].asNumber<int32_t>();
+			video_info.height = vs["video"]["height"].asNumber<int32_t>();
+			video_info.frame_rate = ums::rational_t { vs["video"]["frame_rate"]["num"].asNumber<int32_t>(),
+													  vs["video"]["frame_rate"]["den"].asNumber<int32_t>() };
 			source_info.video_streams.push_back(video_info);
 		}
 		for (size_t v = 0; v < value["audio_streams"].arraySize(); ++v) {
@@ -385,12 +386,12 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 	else if (name == "videoInfo") {
 #if UMS_INTERNAL_API_VERSION == 2
 		ums::video_info_t video_info = {};
-		video_info.codec = value["codec"].asString();
-		video_info.bit_rate = value["bitrate"].asNumber<int64_t>();
-		video_info.width = value["width"].asNumber<int32_t>();
-		video_info.height = value["height"].asNumber<int32_t>();
-		video_info.frame_rate.num = value["frame_rate"]["num"].asNumber<int32_t>();
-		video_info.frame_rate.den = value["frame_rate"]["den"].asNumber<int32_t>();
+		video_info.codec = value["video"]["codec"].asString();
+		video_info.bit_rate = value["video"]["bitrate"].asNumber<int64_t>();
+		video_info.width = value["video"]["width"].asNumber<int32_t>();
+		video_info.height = value["video"]["height"].asNumber<int32_t>();
+		video_info.frame_rate.num = value["video"]["frame_rate"]["num"].asNumber<int32_t>();
+		video_info.frame_rate.den = value["video"]["frame_rate"]["den"].asNumber<int32_t>();
 		LOG_INFO(_log, "video_info", "codec=%s, bitrate=%lld, width=%d, height=%d, framerate = %d/%d",
 				video_info.codec.c_str(), video_info.bit_rate, video_info.width, video_info.height, video_info.frame_rate.num, video_info.frame_rate.den);
 
