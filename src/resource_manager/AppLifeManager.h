@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -52,6 +52,11 @@ public:
 		int32_t display_id;
 		int32_t pid;
 		std::set<std::string> connections;
+
+		application_connections_t()
+						: app_id(""), status(AppLifeStatus::UNKNOWN),
+						window_type(""), display_id(-1), pid(-1),
+						connections() {}
 	};
 
 	void registerConnection(const std::string& app_id, const std::string& connection_id, bool reserved = false);

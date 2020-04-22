@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1361,7 +1361,7 @@ bool uMediaserver::takeCameraSnapshotCommand(UMSConnectorHandle* sender, UMSConn
   string location = parsed["location"].asString();
   string format = parsed["format"].asString();
 
-  int32_t width, height, pictureQuality;
+  int32_t width = 0, height = 0, pictureQuality = 0;
   JValue param = parsed["width"];
   if(!param.isNull()) {
       param.asNumber(width);

@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -428,6 +428,8 @@ bool ResourceManager::registerPipeline (const std::string &connection_id, const 
 	connection.priority = priority;
 	connections[connection_id] = connection;
 	connection.playing_state = uMediaServer::pipeline_state::UNLOADED;
+	connection.pid = -1;
+	connection.subscribed = false;
 
 	LOG_DEBUG(_log, "connection_id=%s, type=%s, priority: %d",
 			  connection_id.c_str(), type.c_str(), connection.priority);
