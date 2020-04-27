@@ -426,11 +426,10 @@ bool ResourceManager::registerPipeline (const std::string &connection_id, const 
 	connection.is_focus = false;
 	connection.is_visible = true;
 	connection.priority = priority;
-	connections[connection_id] = connection;
 	connection.playing_state = uMediaServer::pipeline_state::UNLOADED;
 	connection.pid = -1;
 	connection.subscribed = false;
-
+	connections[connection_id] = connection;
 	LOG_DEBUG(_log, "connection_id=%s, type=%s, priority: %d",
 			  connection_id.c_str(), type.c_str(), connection.priority);
 
