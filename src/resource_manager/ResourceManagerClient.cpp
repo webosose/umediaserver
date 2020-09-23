@@ -735,8 +735,10 @@ string ResourceManagerClient::createRetObject(bool returnValue, const string& me
 
 	retObject.put("returnValue", returnValue);
 	retObject.put("mediaId", mediaId);
-	serializer.toString(retObject,  pbnjson::JSchema::AllSchema(), retJsonString);
-
+	if (!serializer.toString(retObject, pbnjson::JSchema::AllSchema(), retJsonString)) {
+		LOG_ERROR(log, MSGERR_JSON_SERIALIZE, "failed to serialize retJsonString.");
+		return std::string();
+	}
 	LOG_TRACE(log, "createRetObject retObjectString =  %s", retJsonString.c_str());
 	return retJsonString;
 }

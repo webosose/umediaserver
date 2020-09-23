@@ -693,19 +693,19 @@ int main(int argc, char *argv[])
 	MediaPlayer mp;
 
 	string cmd;
-	bool exit = false;
+	bool b_exit = false;
 
 	printf("uMediaClient : START\n");
 	printf("COMMANDS: load file:////media_files/rat.mp4 ref {\"option\":{\"appId\":\"app1\"}}, play, pause, unload, exit :  \n");
 	printf("\tenter command : ");
-	while( !exit ) {
+	while( !b_exit ) {
 		try {
 			getline(cin, cmd);
 		}
 		catch (const std::exception& e)
 		{
 			cout << "Exception caught calling getline: " << e.what() << endl;
-			exit;
+			return -1;
 		}
 
 		// split command into arguments
@@ -922,7 +922,7 @@ int main(int argc, char *argv[])
 			if( LOADED == mp.state ) {
 				mp.unload();
 			}
-			exit = true;
+			b_exit = true;
 		}
 		else if( args[0] == "trackAppProcesses") {
 			printf("command :  %s\n",cmd.c_str());

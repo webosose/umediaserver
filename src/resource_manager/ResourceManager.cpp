@@ -568,7 +568,10 @@ bool ResourceManager::acquire(const std::string &connection_id,
 
 	rv = decodeAcquireRequest(acquire_request, resource_request);
 	if( rv == false ) {
-		serializer.toString(response_json,  pbnjson::JSchema::AllSchema(), acquire_response);
+        if (!serializer.toString(response_json, pbnjson::JSchema::AllSchema(), acquire_response)) {
+			LOG_ERROR(_log, MSGERR_JSON_SERIALIZE, "failed to serialize acquire_response.");
+			return false;
+		}
 		LOG_CRITICAL(_log, MSGERR_JSON_PARSE, "decodeResourceRequest error. "
 				"acquire_response=%s", acquire_response.c_str());
 		return false;
@@ -721,7 +724,7 @@ resource_descriptor_t parseResource(const JValue & resource) {
 	if (resource.hasKey("index") && CONV_OK == resource["index"].asNumber(index)) {
 		qty = 1;
 	} else {
-		index = -1;
+		index = std::numeric_limits<size_t>::max();
 	}
 
 	if (! (resource.hasKey("attribute") && CONV_OK == resource["attribute"].asString(attribute)) ) {

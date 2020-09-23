@@ -560,8 +560,10 @@ bool uMediaserver::attachCommand(UMSConnectorHandle* sender,
 	payload.put("state", true);
 	payload.put("mediaId", connection_id);
 	detached_msg.put("detached", payload);
-	JGenerator().toString(detached_msg,  pbnjson::JSchema::AllSchema(), json_message);
-
+	if (!JGenerator().toString(detached_msg,  pbnjson::JSchema::AllSchema(), json_message)){
+		LOG_ERROR(log, MSGERR_JSON_SERIALIZE, "failed to serialize json_message.");
+		return false;
+	}
 	connector->sendChangeNotificationJsonString(json_message, connection_id);
 
 	connector->sendResponseObject(sender,message,retObject);
@@ -2330,8 +2332,10 @@ string uMediaserver::createRetObject(bool returnValue,
 	retObject.put("errorCode", errorCode);
 	retObject.put("errorText", errorText);
 	retObject.put("mediaId", mediaId);
-	serializer.toString(retObject,  pbnjson::JSchema::AllSchema(), retJsonString);
-
+	if (!serializer.toString(retObject, pbnjson::JSchema::AllSchema(), retJsonString)) {
+		LOG_ERROR(log, MSGERR_JSON_SERIALIZE, "failed to serialize retJsonString.");
+		return std::string();
+	}
 	LOG_TRACE(log, "createRetObject retObjectString =  %s", retJsonString.c_str());
 	return retJsonString;
 }
@@ -2352,8 +2356,10 @@ string uMediaserver::createRetObject(bool returnValue, const string& mediaId, co
 	retObject.put("errorText", "No Error"); // no error
 	retObject.put("mediaId", mediaId);
 	retObject.put("data", returnJSONString);
-	serializer.toString(retObject,  pbnjson::JSchema::AllSchema(), retObjectString);
-
+	if (!serializer.toString(retObject, pbnjson::JSchema::AllSchema(), retObjectString)) {
+		LOG_ERROR(log, MSGERR_JSON_SERIALIZE, "failed to serialize retObjectString.");
+		return std::string();
+	}
 	LOG_TRACE(log, "createRetObject retObjectString =  %s", retObjectString.c_str());
 	return retObjectString;
 }

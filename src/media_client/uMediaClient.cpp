@@ -64,13 +64,18 @@ uMediaClient::uMediaClient(bool rawEvents, UMSConnectorBusType bus, const std::s
 {
 	//prefix of uid should be '-' when the client is created under app privileged case
 	std::string uid = GenerateUniqueID()();
-	if(!m_app_connection_id.empty())
+	if (!m_app_connection_id.empty()) {
 		std::replace_if(uid.begin(), uid.begin() + 1, [](char c) { return c == '_'; }, '-');
+		/*Umediaserver receiving app_id as app_id + display_id. So on LSRegister
+		 * call it's failed for the same. So removing display_id from app_id*/
+		m_app_connection_id = m_app_connection_id.substr(0,m_app_connection_id.length()-1);
+	}
 
 	_log.setUniqueId(uid);
 	std::string process_connection_id =
 		(!m_app_connection_id.empty() ? m_app_connection_id : MEDIA_CLIENT_CONNECTION_BASE_ID) + uid;
-	LOG_INFO(_log, "connection-id", "create ums client with connection Id : %s", process_connection_id.c_str());
+	LOG_INFO(_log, "connection-id", "create ums client with connection Id : %s\t app_id : %s",
+			process_connection_id.c_str(), m_app_connection_id.c_str());
 
 	context = g_main_context_new();
 	gmain_loop = g_main_loop_new(context, false);
@@ -241,8 +246,8 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 		source_info.seekable = value["seekable"].asBool();
 		for (size_t p = 0; p < value["programs"].arraySize(); p++) {
 			const auto & program = value["programs"][p];
-			source_info.programs.push_back(ums::program_info_t { program["video_stream"].asNumber<int32_t>(),
-																 program["audio_stream"].asNumber<int32_t>() });
+			source_info.programs.push_back(ums::program_info_t { (uint32_t)program["video_stream"].asNumber<int32_t>(),
+																 (uint32_t)program["audio_stream"].asNumber<int32_t>() });
 		}
 
 		for (size_t v = 0; v < value["video_streams"].arraySize(); ++v) {
