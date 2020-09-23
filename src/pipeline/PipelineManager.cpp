@@ -118,9 +118,17 @@ bool PipelineManager::unload(const string &client_connection_id)
 	auto pit = pipelines.find(client_connection_id);
 	if (pit != pipelines.end()) {
 		// notify pipeline removal for suspended pipeline
-		if (0 == pit->second->getPID())
-			pipeline_removed(client_connection_id);
-		pit->second->unload();
+		try {
+			if (0 == pit->second->getPID())
+				pipeline_removed(client_connection_id);
+		} catch(const boost::bad_function_call &e) {
+			LOG_ERROR(log, MSGERR_NO_CONN_ID, "%s", e.what());
+		}
+		try {
+			pit->second->unload();
+		} catch(const boost::bad_any_cast &e) {
+			LOG_ERROR(log, MSGERR_PIPELINE_FIND, "%s", e.what());
+		}
 		pipelines.erase(pit);
 		return true;
 	}

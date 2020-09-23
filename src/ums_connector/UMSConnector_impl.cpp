@@ -153,9 +153,13 @@ UMSConnector::UMSConnector_impl::~UMSConnector_impl()
 	subscriptionsT *subsc_ptr = NULL;
 
 	if(!m_service.lshandle) {
-		LOG_WARNING_EX((*log), MSGERR_SERVICE_NOTREG,
-					__KV({{KVP_SERVICE, service_name.c_str()}}),
-					"UMSConnector_impl::~UMSConnector_impl");
+		try {
+			LOG_WARNING_EX((*log), MSGERR_SERVICE_NOTREG,
+						__KV({{KVP_SERVICE, service_name.c_str()}}),
+						"UMSConnector_impl::~UMSConnector_impl");
+		} catch(const boost::bad_get &e) {
+			LOG_ERROR((*log), MSGERR_SERVICE_NOTREG, "%s", e.what());
+		}
 		return;
 	}
 

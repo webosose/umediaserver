@@ -152,7 +152,11 @@ Pipeline::~Pipeline()
 		unload_completed.put("unloadCompleted", payload_);
 		std::string json_message;
 		JGenerator().toString(unload_completed,  pbnjson::JSchema::AllSchema(), json_message);
-		client_connector->sendChangeNotificationJsonString(json_message, id_);
+		try {
+			client_connector->sendChangeNotificationJsonString(json_message, id_);
+		} catch(const boost::bad_get &e) {
+			LOG_ERROR(log, MSGERR_JSON_SCHEMA, "%s", e.what());
+		}
 	}
 }
 
@@ -336,8 +340,8 @@ void Pipeline::finishLoading (const string &service_name, Process::ptr_t process
 	process_handle = process;
 	process_connection_id = service_name;
 	m_process_starting = false;
-
-	UMSTRACE_AFTER((id_+"_load_exec").c_str());
+	std::string load_exec = id_ + std::string("_load_exec");
+	UMSTRACE_AFTER(load_exec.c_str());
 
 	updatePipelineProcessState(PIPELINE_RUNNING);
 	signal_pid(appid_, process_handle->pid(), true);
@@ -373,12 +377,14 @@ void Pipeline::finishLoading (const string &service_name, Process::ptr_t process
 	auto payload_serialized = serializeLoadArgs(options);
 
 	pipeline_connector->sendMessage(cmd, payload_serialized, nullptr, nullptr);
-	UMSTRACE_BEFORE((id_+"_load_load").c_str());
+	std::string load_load = id_ + std::string("_load_load");
+	UMSTRACE_BEFORE(load_load.c_str());
 }
 
 bool Pipeline::processLoadCompleted()
 {
-	UMSTRACE_AFTER((id_+"_load_load").c_str());
+	std::string load_load = id_ + std::string("_load_load");
+	UMSTRACE_AFTER(load_load.c_str());
 	string media_state = getMediaState();  // stash
 
 	updatePipelineProcessState(PIPELINE_MEDIA_LOADED);
@@ -533,7 +539,8 @@ bool Pipeline::processLoadCompleted()
 		LOG_DEBUG(log, "media state unknown. state = %s", mediastate.c_str());
 	}
 
-	UMSTRACE_AFTER((id_+"_load").c_str());
+	std::string load = id_ + std::string("_load");
+	UMSTRACE_AFTER(load.c_str());
 	return true;
 }
 
@@ -701,8 +708,10 @@ bool Pipeline::resume()
 	// in the readyEvent
 	m_restarting = true; // This will force state restoration.
 
-	UMSTRACE_BEFORE((id_+"_load").c_str());
-	UMSTRACE_BEFORE((id_+"_load_exec").c_str());
+	std::string load = id_ + std::string("_load");
+	std::string load_exec = id_ + std::string("_load_exec");
+	UMSTRACE_BEFORE(load.c_str());
+	UMSTRACE_BEFORE(load_exec.c_str());
 
 	startProcess();
 
