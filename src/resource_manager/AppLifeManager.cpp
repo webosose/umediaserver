@@ -249,7 +249,7 @@ bool AppLifeManager::getDisplayId(const std::string& app_id, int32_t *display_id
 
 	auto itr = _apps.find(app_id);
 	if (itr != _apps.end()) {
-		*display_id = _apps[app_id].display_id;
+		*display_id = atoi (&app_id.back());
 	} else {
 		rv = false;
 	}

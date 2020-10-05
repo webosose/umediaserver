@@ -6,6 +6,7 @@
     "com.webos.media/focus",
     "com.webos.media/getActivePipelines",
     "com.webos.media/getForegroundAppInfo",
+    "com.webos.media/getDisplayId",
     "com.webos.media/load",
     "com.webos.media/notifyActivity",
     "com.webos.media/notifyBackground",
