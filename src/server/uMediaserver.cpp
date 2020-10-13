@@ -476,7 +476,7 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 
 	if (!preloaded) {
 		// register pipeline as managed with Resource Manager
-		std::string connection_load = connection_id + std::string("_load");
+		std::string connection_load = connection_id + std::string((char*)"_load");
 		UMSTRACE_BEFORE(connection_load.c_str());
 		rm->registerPipeline(connection_id, type, true, app_life_manager_->isForeground(app_id));
 		app_life_manager_->registerConnection(app_id, connection_id);

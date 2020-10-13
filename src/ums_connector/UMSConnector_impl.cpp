@@ -190,10 +190,13 @@ UMSConnector::UMSConnector_impl::~UMSConnector_impl()
 	for (const auto & sub : service_status_subscriptions) {
 		if (! LSCancelServerStatus(getBusHandle(""), sub.second.cookie, &lsError))
 		{
-			LOG_LS_ERROR(MSGERR_UNREGISTER, lsError, "failed LSCancelServerStatus")
+		    try {
+			    LOG_LS_ERROR(MSGERR_UNREGISTER, lsError, "failed LSCancelServerStatus")
+		    } catch(const boost::bad_get &e) {
+			    LOG_ERROR((*log), MSGERR_UNREGISTER, "%s", e.what());
+		    }
 		}
 	}
-
 	// suspending main loop before unregistering from ls hub if we run it
 	if (run_state_altered) {
 		g_main_loop_quit(mainLoop_);
@@ -211,7 +214,7 @@ UMSConnector::UMSConnector_impl::~UMSConnector_impl()
 	if (!LSUnregister(m_service.lshandle, &lsError)) {
 		LOG_LS_ERROR(MSGERR_UNREGISTER, lsError, "failed to unregister from hub")
 	}
-	
+
 	if( mainLoop_ )
 		g_main_loop_unref(mainLoop_);
 

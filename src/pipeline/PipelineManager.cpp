@@ -42,7 +42,11 @@ PipelineManager::~PipelineManager()
 	LOG_DEBUG(log, "Stopping all pipelines:");
 
 	for (auto& it : pipelines) {
-		unload(it.first);
+		try {
+		  unload(it.first);
+		} catch(const boost::bad_function_call &e) {
+			LOG_ERROR(log, MSGERR_SERVICE_NOTREG, "%s", e.what());
+		}
 	}
 }
 
