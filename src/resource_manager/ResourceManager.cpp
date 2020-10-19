@@ -734,7 +734,7 @@ resource_descriptor_t parseResource(const JValue & resource) {
 	if (! (resource.hasKey("min") && CONV_OK == resource["min"].asNumber(min)) ) {
 		min = qty;  // no minimum specified
 	}
-	return {id, (size_t)qty, static_cast<size_t>index, attribute, (size_t)min};
+	return {id, (size_t)qty, static_cast <size_t> (index), attribute, (size_t)min};
 }
 
 resource_request_t parseResourceRequest(const JValue & resources) {
