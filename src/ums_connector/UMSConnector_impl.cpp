@@ -212,7 +212,11 @@ UMSConnector::UMSConnector_impl::~UMSConnector_impl()
 		g_source_remove(idle_task_);
 
 	if (!LSUnregister(m_service.lshandle, &lsError)) {
-		LOG_LS_ERROR(MSGERR_UNREGISTER, lsError, "failed to unregister from hub")
+		try {
+			LOG_LS_ERROR(MSGERR_UNREGISTER, lsError, "failed to unregister from hub")
+		} catch(const boost::bad_get &e) {
+			LOG_ERROR((*log), MSGERR_UNREGISTER, "%s", e.what());
+		}
 	}
 
 	if( mainLoop_ )
