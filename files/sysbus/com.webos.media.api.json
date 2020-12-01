@@ -1,16 +1,18 @@
 {
-  "media": [
+  "media.query": [
+    "com.webos.media/getActivePipelines",
+    "com.webos.media/getDisplayId",
+    "com.webos.media/getForegroundAppInfo"
+  ],
+  "media.devutility": [
+    "com.webos.media/trackAppProcesses"
+  ],
+  "media.operation": [
     "com.webos.media/acquire",
     "com.webos.media/attach",
     "com.webos.media/contentReady",
     "com.webos.media/focus",
-    "com.webos.media/getActivePipelines",
-    "com.webos.media/getForegroundAppInfo",
-    "com.webos.media/getDisplayId",
     "com.webos.media/load",
-    "com.webos.media/notifyActivity",
-    "com.webos.media/notifyBackground",
-    "com.webos.media/notifyForeground",
     "com.webos.media/pause",
     "com.webos.media/play",
     "com.webos.media/registerMedia",
@@ -27,11 +29,13 @@
     "com.webos.media/subscribe",
     "com.webos.media/switchToFullScreen",
     "com.webos.media/takeCameraSnapshot",
-    "com.webos.media/trackAppProcesses",
     "com.webos.media/tryAcquire",
     "com.webos.media/unload",
     "com.webos.media/unregisterMedia",
     "com.webos.media/unregisterPipeline",
-    "com.webos.media/unsubscribe"
+    "com.webos.media/unsubscribe",
+    "com.webos.media/notifyActivity",
+    "com.webos.media/notifyBackground",
+    "com.webos.media/notifyForeground"
   ]
 }

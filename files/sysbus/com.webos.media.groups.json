@@ -1,0 +1,9 @@
+{
+        "allowedNames" : [
+        "com.webos.media",
+        "com.webos.pipelinectrl.*"
+        ],
+        "media.operation": "dev",
+        "media.query": "dev",
+        "media.devutility": "oem"
+}
