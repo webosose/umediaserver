@@ -78,7 +78,8 @@ ResourceManagerClient::ResourceManagerClient() :
 				resource_manager_connection_id(RESOURCE_MANAGER_CONNECTION_ID),
 				connection_state(CONNECTION_CLOSED),
 				log(UMS_LOG_CONTEXT_RESOURCE_MANAGER_CLIENT),
-				api_mutex(new Mutex)
+				api_mutex(new Mutex),
+				display_id(-1)
 {
 	ResourceManagerClientInit();
 }
@@ -100,7 +101,8 @@ ResourceManagerClient::ResourceManagerClient(const string& connection_id_) :
 				resource_manager_connection_id(RESOURCE_MANAGER_CONNECTION_ID),
 				connection_state(CONNECTION_CLOSED),
 				log(UMS_LOG_CONTEXT_RESOURCE_MANAGER_CLIENT),
-				api_mutex(new Mutex)
+				api_mutex(new Mutex),
+				display_id(-1)
 {
 
 	ResourceManagerClientInit();
