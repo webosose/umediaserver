@@ -1,5 +1,5 @@
 {
   "com.webos.rm.client.*": [
-    "media"
+    "media.operation"
   ]
 }

@@ -1,14 +1,11 @@
 {
   "com.webos.media": [
-    "applications.internal",
-    "launcher.status",
-    "surfaces.status",
-    "media",
-    "media.pipeline"
+    "application.operation",
+    "mediapipeline.resourcemanagement",
+    "mediapipeline.operation"
   ],
   "com.webos.pipelinectrl.*": [
-    "media.pipeline"
+    "mediapipeline.resourcemanagement",
+    "mediapipeline.operation"
   ]
-
 }
-
