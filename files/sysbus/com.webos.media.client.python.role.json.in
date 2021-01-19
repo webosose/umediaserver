@@ -1,6 +1,7 @@
 {
     "exeName":"@WEBOS_INSTALL_BINDIR@/python2.7",
     "type": "regular",
+    "trustLevel" : "oem",
     "allowedNames": ["com.webos.media.client.*"],
     "permissions": [
         {

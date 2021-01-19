@@ -1,6 +1,7 @@
 {
     "exeName":"@WEBOS_INSTALL_BINDIR@/ums_rmc",
     "type": "regular",
+    "trustLevel" : "oem",
     "allowedNames": ["com.webos.rm.client.*"],
     "permissions": [
         {

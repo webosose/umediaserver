@@ -1,6 +1,7 @@
 {
     "exeName":"@WEBOS_INSTALL_SBINDIR@/simulated_pipeline",
     "type": "regular",
+    "trustLevel" : "oem",
     "allowedNames": ["com.webos.pipeline.*"],
     "permissions": [
         {

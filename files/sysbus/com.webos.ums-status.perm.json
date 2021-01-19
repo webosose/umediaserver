@@ -1,5 +1,6 @@
 {
   "com.webos.ums-status.*": [
-    "media"
+    "media.query",
+    "media.devutility"
   ]
 }
