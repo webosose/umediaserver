@@ -2,10 +2,14 @@
   "com.webos.media": [
     "application.operation",
     "mediapipeline.resourcemanagement",
-    "mediapipeline.operation"
+    "mediapipeline.operation",
+    "camerapipeline.resourcemanagement",
+    "camerapipeline.operation"
   ],
   "com.webos.pipelinectrl.*": [
     "mediapipeline.resourcemanagement",
-    "mediapipeline.operation"
+    "mediapipeline.operation",
+    "camerapipeline.resourcemanagement",
+    "camerapipeline.operation"
   ]
 }
