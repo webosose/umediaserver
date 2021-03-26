@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -385,7 +385,8 @@ public :
 	bool notifyBackground();
 	bool setPlayRate(double rate, bool audioOutput=true);
 	bool selectTrack(std::string& type, int32_t index);
-	bool startCameraRecord(std::string& location,  std::string& format);
+	bool startCameraRecord(std::string& location,  std::string& format, bool audio,
+				std::string& audioSrc);
 	bool stopCameraRecord();
 	bool takeCameraSnapshot(std::string& location, std::string& format, int32_t width, int32_t height, int32_t pictureQuality);
 	bool setVolume(const int32_t volume);

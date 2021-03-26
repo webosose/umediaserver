@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -480,7 +480,9 @@ bool Pipeline::processLoadCompleted()
 		}
 		else if ( "startCameraRecord" == m_command_queue[i].command ) {
 			startCameraRecord(unmarshallstring(state["startCameraRecord"]["location"]),
-					unmarshallstring(state["startCameraRecord"]["format"]));
+					unmarshallstring(state["startCameraRecord"]["format"]),
+					unmarshallboolean(state["startCameraRecord"]["audio"]),
+					unmarshallstring(state["startCameraRecord"]["audioSrc"]));
 		}
 		else if ( "stopCameraRecord" == m_command_queue[i].command ) {
 			stopCameraRecord();
@@ -1756,12 +1758,15 @@ bool Pipeline::takeCameraSnapshot(const std::string &location, const std::string
 // @b start to record
 //
 //
-bool Pipeline::startCameraRecord(const std::string &location, const std::string &format)
+bool Pipeline::startCameraRecord(const std::string &location, const std::string &format,
+                                    bool audio, const std::string &audioSrc)
 {
 	pbnjson::JValue args = pbnjson::Object();
 
 	args.put("location",marshallstring(location));
 	args.put("format",marshallstring(format));
+    args.put("audio",marshallboolean(audio));
+    args.put("audioSrc",marshallstring(audioSrc));
 
 	JValue stateupdate = Object();
 	stateupdate.put("startCameraRecord", args);
@@ -1781,7 +1786,8 @@ bool Pipeline::startCameraRecord(const std::string &location, const std::string 
 		return false;
 	}
 
-	LOG_DEBUG(log, "startCameraRecord info : location - %s, format - %s", location.c_str(), format.c_str());
+	LOG_DEBUG(log, "startCameraRecord info : location - %s, format - %s, audio - %d, audioSrc - %s",
+                                        location.c_str(), format.c_str(), audio, audioSrc.c_str());
 
 	string cmd = process_connection_id + "/startCameraRecord";
 	pipeline_connector->sendMessage(cmd, payload_serialized, nullptr, nullptr);

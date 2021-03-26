@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -858,13 +858,13 @@ int main(int argc, char *argv[])
 				continue;
 			}
 
-			if( args.size() != 3 ) {
+			if( args.size() != 5 ) {
 				printf("startCameraRecord - usage :  startCameraRecord location format \n");
 				continue;
 			}
 
 			printf("command :  %s\n",cmd.c_str());
-			mp.startCameraRecord(args[1],args[2]);
+			mp.startCameraRecord(args[1],args[2],boost::lexical_cast<bool>(args[3]),args[4]);
 		}
 		else if(args[0] == "stopCameraRecord" ) {
 			if( UNLOADED == mp.state ) {

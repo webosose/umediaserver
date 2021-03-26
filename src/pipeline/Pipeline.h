@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -120,7 +120,8 @@ public:
 	bool setUpdateInterval(std::string key, int32_t value);
 
 	bool takeCameraSnapshot(const std::string &location, const std::string &format, int32_t width, int32_t height, int32_t pictureQuality);
-	bool startCameraRecord(const std::string &location, const std::string &format);
+	bool startCameraRecord(const std::string &location, const std::string &format,
+				bool audio, const std::string &audioSrc);
 	bool stopCameraRecord();
 	bool changeResolution(int32_t width, int32_t height);
 	bool setStreamQuality(int32_t width, int32_t height, int32_t bitRate, bool init);

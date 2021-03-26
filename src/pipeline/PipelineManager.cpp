@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -586,14 +586,15 @@ bool PipelineManager::takeCameraSnapshot(const std::string &client_connection_id
 // @brief start to record
 //
 bool PipelineManager::startCameraRecord(const std::string &client_connection_id,
-		const std::string &location, const std::string &format)
+		const std::string &location, const std::string &format, bool audio,
+        const std::string &audioSrc)
 {
 	Pipeline::ptr_t p = findPipeline(client_connection_id);
 	if( p == nullptr ) {
 		return false;
 	}
 
-	return p->startCameraRecord(location, format);
+	return p->startCameraRecord(location, format, audio, audioSrc);
 }
 
 // @f stopCameraRecord

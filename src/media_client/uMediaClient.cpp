@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1067,12 +1067,15 @@ None
 @}
 */
 //->End of API documentation comment block
-bool uMediaClient::startCameraRecord(std::string& location, std::string& format)
+bool uMediaClient::startCameraRecord(std::string& location, std::string& format,
+                                     bool audio, std::string& audioSrc)
 {
   pbnjson::JValue args = pbnjson::Object();
   args.put("mediaId",getMediaId());
   args.put("location", marshallstring(location));
   args.put("format", marshallstring(format));
+  args.put("audio", marshallboolean(audio));
+  args.put("audioSrc", marshallstring(audioSrc));
 
   dispatchCall("/startCameraRecord", args);
 

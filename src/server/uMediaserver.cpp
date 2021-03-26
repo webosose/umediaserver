@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2020 LG Electronics, Inc.
+// Copyright (c) 2008-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1239,14 +1239,18 @@ bool uMediaserver::startCameraRecordCommand(UMSConnectorHandle* sender, UMSConne
   RETURN_IF(!parsed.hasKey("mediaId"),false, MSGERR_NO_MEDIA_ID,"mediaId must be specified");
   RETURN_IF(!parsed.hasKey("location"),false,MSGERR_NO_LOCATION,"location must be specified");
   RETURN_IF(!parsed.hasKey("format"),false,MSGERR_NO_FORMAT,"format must be specified");
+  RETURN_IF(!parsed.hasKey("audio"),false,MSGERR_NO_FORMAT,"audio must be specified");
+  RETURN_IF(!parsed.hasKey("audioSrc"),false,MSGERR_NO_FORMAT,"audioSrc must be specified");
 
   string connection_id = parsed["mediaId"].asString();
   string location = parsed["location"].asString();
   string format = parsed["format"].asString();
+  bool audio = parsed["audio"].asBool();
+  string audioSrc = parsed["audioSrc"].asString();
 
   LOG_TRACE(log, "cmd=%s,connection_id=%s",cmd.c_str(), connection_id.c_str());
 
-  bool rv = pm->startCameraRecord(connection_id, location, format);
+  bool rv = pm->startCameraRecord(connection_id, location, format, audio, audioSrc);
   string retObject = createRetObject(rv, connection_id);
   if (rv) {
     rm->notifyActivity(connection_id);
