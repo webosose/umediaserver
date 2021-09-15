@@ -25,6 +25,7 @@
 
 #include "uMediaClient.h"
 
+#include <algorithm>
 #include <UMSConnector.h>
 #include <Logger_macro.h>
 #include <stdlib.h>

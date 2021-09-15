@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2019 LG Electronics, Inc.
+// Copyright (c) 2008-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "AppLifeManager.h"
+
+#include <algorithm>
 #include <Logger_id.h>
 #include <Logger_macro.h>
 
@@ -76,7 +78,7 @@ void AppLifeManager::unregisterConnection(const std::string& connection_id) {
 		return (p.second.connections.find(connection_id) != p.second.connections.end());
 	};
 
-	auto itr = find_if(_apps.begin(), _apps.end(), func);
+	auto itr = std::find_if(_apps.begin(), _apps.end(), func);
 	if (itr != _apps.end()) {
 		itr->second.connections.erase(connection_id);
 	}
@@ -90,7 +92,7 @@ AppLifeManager::application_connections_t* AppLifeManager::getAppConnection(cons
 		return (p.second.connections.find(connection_id) != p.second.connections.end());
 	};
 
-	auto itr = find_if(_apps.begin(), _apps.end(), func);
+	auto itr = std::find_if(_apps.begin(), _apps.end(), func);
 	if (itr == _apps.end()) {
 		return nullptr;
 	}
@@ -235,7 +237,7 @@ std::string AppLifeManager::getAppId(const std::string& connection_id)
 		return (p.second.connections.find(connection_id) != p.second.connections.end());
 	};
 
-	auto itr = find_if(_apps.begin(), _apps.end(), func);
+	auto itr = std::find_if(_apps.begin(), _apps.end(), func);
 	if (itr != _apps.end()) {
 		ret = itr->second.app_id;
 	}
