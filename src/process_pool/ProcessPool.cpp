@@ -1,4 +1,4 @@
-// Copyright (c) 2008-2018 LG Electronics, Inc.
+// Copyright (c) 2008-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ void ProcessPool::start(const std::string & type) {
 	std::string cmd = config.bin + " -s" + service_name;
 	using namespace std::placeholders;
 	Process::ptr_t proc = std::make_shared<Process>
-			(cmd, std::bind(&ProcessPool::exited, this, _1 ,_2), config.env_vars);
+			(cmd, std::bind(&ProcessPool::exited, this, std::placeholders::_1 ,std::placeholders::_2), config.env_vars);
 	_started_pool.emplace(std::make_pair(service_name, proc_info_t{type, service_name, proc}));
 
 	LOG_INFO(_log, MSGNFO_PROC_STARTED, "New process %d of type %s started.", proc->pid(), type.c_str());
