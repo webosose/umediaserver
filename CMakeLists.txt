@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2019 LG Electronics, Inc.
+# Copyright (c) 2008-2021 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ if("${WEBOS_TARGET_MACHINE}" STREQUAL "" OR "${WEBOS_TARGET_MACHINE}" MATCHES "r
     message(STATUS "Using INTERNAL API v.2")
     add_definitions(-DUMS_INTERNAL_API_VERSION=2)
 else()
-  if (${WEBOS_TARGET_MACHINE} STREQUAL "qemux86")
+  if (${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
       message(STATUS "Using INTERNAL API v.2")
       add_definitions(-DUMS_INTERNAL_API_VERSION=2)
   else()
