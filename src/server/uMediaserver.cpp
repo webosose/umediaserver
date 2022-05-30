@@ -625,8 +625,12 @@ bool uMediaserver::unloadCommand(UMSConnectorHandle* sender, UMSConnectorMessage
 	bool rv = pm->unload(connection_id);
 	if (rv) {
 		connector->delClientWatcher(sender, message);
-		connector->unrefMessage(connection_message_map_[connection_id]);
-		connection_message_map_.erase(connection_id);
+		if (connection_message_map_.find(connection_id) != connection_message_map_.end()) {
+			connector->unrefMessage(connection_message_map_[connection_id]);
+			connection_message_map_.erase(connection_id);
+		} else {
+			LOG_WARNING_EX(log, MSGNFO_UNLOAD_REQUEST, __KV({{KVP_MEDIA_ID, connection_id}}), "Invalid connection id");
+		}
 	}
 
 	bus_route_key_ = std::string();
