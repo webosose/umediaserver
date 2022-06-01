@@ -1493,7 +1493,7 @@ bool uMediaserver::getActivePipelinesCommand(UMSConnectorHandle* sender,
 		JValue pipeline_obj = Object();
 		JValue resources_array = Array();
 
-		for (auto j : i->second.resources) {
+		for (auto const & j : i->second.resources) {
 			JValue resource_obj = Object();
 			resource_obj.put("resource", j.id);
 			resource_obj.put("index", (int)j.index);

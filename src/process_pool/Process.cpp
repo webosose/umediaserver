@@ -77,7 +77,7 @@ void Process::stop(size_t timeout_ms) {
 }
 
 void Process::setEnvironment(const environment_t &env) const {
-	for (auto e : env) {
+	for (auto const & e : env) {
 		char * cur_val = getenv(e.name.c_str());
 		std::string new_val;
 		if (cur_val && (e.op == "PREPEND" || e.op == "APPEND")) {

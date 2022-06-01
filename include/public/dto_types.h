@@ -21,6 +21,9 @@
 #include <iostream>
 #include <set>
 #include <vector>
+#include <cmath>
+
+#define EPSILON 0.000001
 
 typedef enum PLAYBACK_STATE {
 	PLAYBACK_STOPPED,
@@ -124,6 +127,10 @@ struct ratio_t {
 		return os << r.width << ":" << r.height; }
 };
 
+inline bool areSame(double a, double b) {
+   return fabs(a - b) < EPSILON;
+}
+
 struct video_info_t {
 	video_info_t() : width(0), height(0), frame_rate(0),
 		scan_type("progressive"), bit_rate(0),
@@ -141,7 +148,7 @@ struct video_info_t {
 	std::string content;         // "movie"
 	bool operator == (const video_info_t & other) const {
 		return width == other.width && height == other.height &&
-				frame_rate == other.frame_rate &&
+				areSame(frame_rate, other.frame_rate) &&
 				pixel_aspect_ratio == other.pixel_aspect_ratio &&
 				bit_rate == other.bit_rate &&
 				video3d == other.video3d &&

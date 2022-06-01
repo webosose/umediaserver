@@ -152,7 +152,7 @@ bool cb_(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
 	time_index_map.sort(mru_to_lru);
 
 	int k = 1;
-	for (auto it : time_index_map)
+	for (auto const & it : time_index_map)
 	{
 		string id = parsed[it.i]["id"].asString();
 		string type = parsed[it.i]["type"].asString();
