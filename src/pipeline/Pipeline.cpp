@@ -163,17 +163,17 @@ Pipeline::~Pipeline()
 string Pipeline::getProcessState()
 {
 	JValue state = m_pipeline_json_state.getJsonObj();
-	if (!state.hasKey("proc_state")) {
+	if (!state.hasKey("procState")) {
 		LOG_ERROR(log, MSGERR_JSON_SCHEMA, "Missing proc_state field in state json object.");
 		return "";
 	}
-	return unmarshallstring(state["proc_state"]);
+	return unmarshallstring(state["procState"]);
 }
 
 void Pipeline::updatePipelineProcessState(string new_state)
 {
 	JValue procstate = Object();
-	procstate.put("proc_state", marshallstring(new_state));
+	procstate.put("procState", marshallstring(new_state));
 	m_pipeline_json_state.update(procstate);
 	signal_pipeline_status_changed();
 }
@@ -181,17 +181,17 @@ void Pipeline::updatePipelineProcessState(string new_state)
 string Pipeline::getMediaState()
 {
 	JValue state = m_pipeline_json_state.getJsonObj();
-	if (!state.hasKey("media_state")) {
+	if (!state.hasKey("mediaState")) {
 		LOG_ERROR(log, MSGERR_JSON_SCHEMA, "Missing media_state field in state json object.");
 		return "";
 	}
-	return unmarshallstring(state["media_state"]);
+	return unmarshallstring(state["mediaState"]);
 }
 
 void Pipeline::updatePipelineMediaState(string new_state)
 {
 	JValue mediastate = Object();
-	mediastate.put("media_state", marshallstring(new_state));
+	mediastate.put("mediaState", marshallstring(new_state));
 	m_pipeline_json_state.update(mediastate);
 	signal_pipeline_status_changed();
 }
@@ -199,18 +199,18 @@ void Pipeline::updatePipelineMediaState(string new_state)
 void Pipeline::setSeekPos(long long seek_pos)
 {
 	JValue seekpos = Object();
-	seekpos.put("seek_pos", marshalllonglong(seek_pos));
+	seekpos.put("seekPos", marshalllonglong(seek_pos));
 	m_pipeline_json_state.update(seekpos);
 }
 
 long long Pipeline::getSeekPos()
 {
 	JValue state = m_pipeline_json_state.getJsonObj();
-	if (!state.hasKey("seek_pos")) {
+	if (!state.hasKey("seekPos")) {
 		LOG_ERROR(log, MSGERR_JSON_SCHEMA, "Missing seek_pos field in state json object.");
 		return 0;
 	}
-	return unmarshalllonglong(state["seek_pos"]);
+	return unmarshalllonglong(state["seekPos"]);
 }
 
 void Pipeline::updateState(const string & msg)

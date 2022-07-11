@@ -1414,15 +1414,15 @@ bool uMediaserver::getDisplayIdCommand(UMSConnectorHandle* sender, UMSConnectorM
 	}
 
 	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("appId"), false, MSGERR_NO_AUDIO_MODE, "client must specify appId");
+	RETURN_IF(!parsed.hasKey("instanceId"), false, MSGERR_NO_AUDIO_MODE, "client must specify appId");
 
-	string app_id = parsed["appId"].asString();
+	string app_id = parsed["instanceId"].asString();
 	int32_t display_id = 0;
 	bool rv = app_life_manager_->getDisplayId(app_id, &display_id);
 
 	JValue ret_obj = Object();
 
-	ret_obj.put("display_id", display_id);
+	ret_obj.put("displayId", display_id);
 	ret_obj.put("returnValue", rv);
 	std::string retObject = JGenerator::serialize(ret_obj,  pbnjson::JSchema::AllSchema());
 	LOG_DEBUG(log,"payload = %s", retObject.c_str());

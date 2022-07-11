@@ -2,7 +2,8 @@
   "media.query": [
     "com.webos.media/getActivePipelines",
     "com.webos.media/getDisplayId",
-    "com.webos.media/getForegroundAppInfo"
+    "com.webos.media/getForegroundAppInfo",
+    "com.webos.media/getPipelineState"
   ],
   "media.devutility": [
     "com.webos.media/trackAppProcesses"
@@ -36,6 +37,7 @@
     "com.webos.media/unsubscribe",
     "com.webos.media/notifyActivity",
     "com.webos.media/notifyBackground",
-    "com.webos.media/notifyForeground"
+    "com.webos.media/notifyForeground",
+    "com.webos.media/notifyPipelineStatus"
   ]
 }

@@ -627,7 +627,7 @@ bool ResourceManagerClient::getDisplayId(const std::string &app_id)
 	JSchemaFragment inputSchema("{}");
 	pbnjson::JValue args = pbnjson::Object();
 
-	args.put("appId", app_id);
+	args.put("instanceId", app_id);
 
 	JGenerator serializer(NULL);   // serialize into string
 	string payload_serialized;
@@ -822,7 +822,7 @@ bool ResourceManagerClient::getDisplayIdResponse(UMSConnectorHandle* handle,
 	RETURN_IF( ! command_response.hasKey("returnValue"), false,
 			MSGERR_JSON_SCHEMA,"no state key in commandResponse");
 
-	int32_t display_id = command_response["display_id"].asNumber<int32_t>();
+	int32_t display_id = command_response["displayId"].asNumber<int32_t>();
 
 	LOG_DEBUG(log, "display_id = %d", display_id);
 
