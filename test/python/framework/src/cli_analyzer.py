@@ -44,4 +44,4 @@ for line in log_file:
     except LSMessage.ParseException as e:
         sys.stderr.write(e.args[0] + '\n')
 detector.finalize()
-print detector.summary()
+print(detector.summary())

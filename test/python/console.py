@@ -24,7 +24,7 @@ import argparse
 
 from uMediaServer.uMediaClient import MediaPlayer
 
-print "uMediaClient OO (python)\n"
+print("uMediaClient OO (python)\n")
 
 # commands:
 # load <file/uri>
@@ -40,7 +40,7 @@ done = False
 def ev_worker(q):
     while True:
         (ev, data) = q.get()
-        print "ev '%s' = (%s)" % (ev, data)
+        print("ev '%s' = (%s)" % (ev, data))
 
 def start_ev_wrk(umc):
     q = Queue.Queue()
@@ -59,7 +59,7 @@ start_ev_wrk(umc)
 
 while (not done):
     input_command = raw_input("COMMANDS: 'load file:////media_files/rat.mp4', 'play', 'pause', 'unload', 'exit' : ")
-    print " ", input_command
+    print(" ", input_command)
 
     args = input_command.split(" ")
 
@@ -67,7 +67,7 @@ while (not done):
         if len(args) >= 2:
             umc.load(args[1], args[2], args[3])
         else:
-            print "load command requires <file/uri>"
+            print("load command requires <file/uri>")
 
     if args[0] == "play":
         umc.play()

@@ -9,7 +9,7 @@ from uMediaServer.uMediaClient import MediaPlayer
 def proxy_thr(recv, send):
     while True:
         (ev, data) = recv.get()
-        print "ev '%s' = (%s)" % (ev, data)
+        print("ev '%s' = (%s)" % (ev, data))
         send.put_nowait((ev, data))
 
 def start_proxy(umc, send):
