@@ -8,7 +8,7 @@ from uMediaServer.uMSTest import cmd_line
 def proxy_thr(num, recv, send):
     while True:
         (ev, data) = recv.get()
-        print '!!! %02d -> %s = %s' % (num, ev, data)
+        print('!!! %02d -> %s = %s' % (num, ev, data))
         send.put_nowait((ev, data))
 
 def start_proxy(num, umc, send):
@@ -23,16 +23,16 @@ def play(uri, wait=1, number=3, count=1, verbose=0, timeout=5, media_class="sim"
     def flush_queue(queue):
         while not queue.empty():
             (ev, data) = queue.get_nowait()
-            if verbose > 0: print '<<< %s = %s' % (ev, data)
+            if verbose > 0: print('<<< %s = %s' % (ev, data))
     def parse_reply(queue, tags):
         class Resp: pass
         resp = Resp()
 
-        if verbose > 0: print ">>> wait for", tags
+        if verbose > 0: print(">>> wait for", tags)
         while tags:
             try:
                 (ev, data) = queue.get(timeout = timeout)
-                if verbose > 0: print '>>> %s = %s' % (ev, data)
+                if verbose > 0: print('>>> %s = %s' % (ev, data))
                 if ev != 'unknown':
                     setattr(resp, ev, data)
                 tags.remove(ev)
@@ -43,12 +43,12 @@ def play(uri, wait=1, number=3, count=1, verbose=0, timeout=5, media_class="sim"
     if verbose == 0:
         sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
-    print "Working", ("with" if flush else "without"), "flush"
+    print("Working", ("with" if flush else "without"), "flush")
     queue = []
     umc = []
     for i in xrange(number):
         if verbose > 0:
-            print "load(%d)" % i
+            print("load(%d)" % i)
         else:
             sys.stdout.write("loading %d\n" % (i+1))
         queue.append(Queue.Queue())
@@ -64,7 +64,7 @@ def play(uri, wait=1, number=3, count=1, verbose=0, timeout=5, media_class="sim"
     for k in xrange(count):
         for i in xrange(number):
             if verbose > 0:
-                print "play(%d)" % i
+                print("play(%d)" % i)
             else:
                 sys.stdout.write("->%d" % (i+1))
             if flush:

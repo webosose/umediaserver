@@ -27,6 +27,6 @@ args = cl.get_args()
 conf = cl.get_conf()
 
 for i in xrange(conf.count):
-    if conf.verbose: print 'Test loop #%d' % (i+1)
+    if conf.verbose: print('Test loop #%d' % (i+1))
 
     Test(**args).run()

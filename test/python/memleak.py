@@ -32,7 +32,7 @@ def get_mem_info(pid):
 def print_mem_info_diff(m1, m2):
     for k in m2:
         if m2[k] > m1[k]:
-            print "usage of", k, "increased from", m1[k], "kB to", m2[k], "kB"
+            print("usage of", k, "increased from", m1[k], "kB to", m2[k], "kB")
 
 def get_duration(raw):
     scale = { 's': 1, 'm': 60, 'h': 60*60, 'd': 24*60*60 }
@@ -58,15 +58,15 @@ meminfo_start = get_mem_info(pid)
 meminfo_last  = meminfo_start
 
 if conf.verbose:
-    print "initial mem info:", meminfo_start
+    print("initial mem info:", meminfo_start)
 
 begin = time.time()
 while time.time() - begin < duration:
     test.run()
     meminfo = get_mem_info(pid)
-    if conf.verbose: print "current mem info:", meminfo
+    if conf.verbose: print("current mem info:", meminfo)
     print_mem_info_diff(meminfo_last, meminfo)
     meminfo_last = meminfo
 
-print "--- overal change info ---"
+print("--- overal change info ---")
 print_mem_info_diff(meminfo_start, meminfo_last)

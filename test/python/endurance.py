@@ -54,7 +54,7 @@ else:
     umc = None
 
 for i in xrange(conf.count):
-    if conf.verbose: print 'Test loop #%d' % (i+1)
-    if conf.verbose > 2: print 'umc is', umc
+    if conf.verbose: print('Test loop #%d' % (i+1))
+    if conf.verbose > 2: print('umc is', umc)
 
     Test(umc=umc, **args).run()

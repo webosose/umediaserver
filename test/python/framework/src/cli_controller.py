@@ -83,9 +83,9 @@ def list_sessions(log_file):
             sessions[session].add(parsed['msg']['message'][len(session_binder):])
 
     for sid in sessions:
-        print 'session: ' + sid
+        print('session: ' + sid)
         for pid in sessions[sid]:
-            print '\tpipeline: ' + pid
+            print('\tpipeline: ' + pid)
 
 def filter_log(log_file):
     # session => { pipelines : [], messages : [] }
@@ -152,14 +152,14 @@ def filter_log(log_file):
         if args['pipeline'] in pipelines:
             pipeline = pipelines[args['pipeline']]
             for parsed in pipeline['messages']:
-                print Formatter.format(parsed, args['format']);
+                print(Formatter.format(parsed, args['format']);)
         elif args['session'] in sessions:
             session = sessions[args['session']]
             for parsed in session['messages']:
-                print Formatter.format(parsed, args['format']);
+                print(Formatter.format(parsed, args['format']);)
         else:
             for parsed in unfiltered:
-                 print Formatter.format(parsed, args['format']);
+                 print(Formatter.format(parsed, args['format']);)
 
     for line in log_file:
         process_log_line(line)
