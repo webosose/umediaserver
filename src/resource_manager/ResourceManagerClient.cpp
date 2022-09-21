@@ -377,6 +377,12 @@ bool ResourceManagerClient::tryAcquire(const std::string &resource_request_json,
 	return _acquire(resource_request_json, resource_response_json, false);
 }
 
+bool ResourceManagerClient::reacquire(const std::string &resource_request_json,
+		std::string &resource_response_json)
+{
+	return _reacquire(resource_request_json, resource_response_json);
+}
+
 bool ResourceManagerClient::_acquire(const std::string &resource_request_json,
 		std::string &resource_response_json, bool block)
 {
@@ -494,6 +500,36 @@ bool ResourceManagerClient::release(std::string resources)
 	connector->sendMessage(cmd, payload_serialized, commandResponseCallback, (void*)this);
 
 	return true;
+}
+
+bool ResourceManagerClient::_reacquire(const std::string &resource_request_json,
+		std::string &resource_response_json)
+{
+	Lock l(*api_mutex);
+
+	RETURN_IF(connection_state == CONNECTION_CLOSED, false, MSGERR_CONN_CLOSED, "Connection closed.")
+
+	pbnjson::JValue args = pbnjson::Object();
+
+	args.put("connectionId",connection_id);
+	args.put("resources",resource_request_json);
+
+	JGenerator serializer(NULL);   // serialize into string
+	string payload_serialized;
+
+	if (!serializer.toString(args, pbnjson::JSchema::AllSchema(), payload_serialized)) {
+		LOG_ERROR(log, MSGERR_JSON_SERIALIZE, "failure to serializer.toString()");
+		return false;
+	}
+
+	string reacquire_method = "/reacquire";
+
+	string cmd = resource_manager_connection_id + connection_category + reacquire_method;
+
+	std::unique_lock<std::mutex> outer_lock(acquire_mutex);
+	connector->sendMessage(cmd, payload_serialized, commandResponseCallback, (void*)this);
+
+	return true;//waiter_response.state;
 }
 
 //->Start of API documentation comment block

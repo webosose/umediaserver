@@ -71,6 +71,7 @@ public :
 
 	bool acquire(const std::string &resources, std::string &resource_response_json);
 	bool tryAcquire(const std::string &resources, std::string &resource_response_json);
+	bool reacquire(const std::string &resources, std::string &resource_response_json);
 
 	bool release(std::string resources);
 
@@ -152,6 +153,8 @@ private :
 	bool _acquire(const std::string &resources,
 			std::string &resource_response_json,
 			bool block=true);
+	bool _reacquire(const std::string &resources,
+			std::string &resource_response_json);
 
 	bool informWaiter(std::string waiter, bool state, std::string response);
 

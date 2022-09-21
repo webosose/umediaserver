@@ -273,6 +273,7 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	connector->addEventHandler("acquire",acquireCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("tryAcquire",tryAcquireCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("release",releaseCallback, UMS_CONNECTOR_PRIVATE_BUS);
+	connector->addEventHandler("reacquire",reacquireCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("notifyForeground",notifyForegroundCallback);
 	connector->addEventHandler("notifyBackground",notifyBackgroundCallback);
 	connector->addEventHandler("notifyActivity",notifyActivityCallback);
@@ -1991,6 +1992,63 @@ bool uMediaserver::releaseCommand(UMSConnectorHandle* sender,
 
 	bool ret = true;
 	ret = rm->release(connection_id, resources);
+
+	connector->sendSimpleResponse(sender,message,ret);
+
+	return true;
+}
+
+//->Start of API documentation comment block
+/**
+@page com_webos_media com.webos.media
+@{
+@section com_webos_media_reacquire reacquire
+
+Reacquire resources.
+
+@par Parameters
+Name | Required | Type | Description
+-----|--------|------|----------
+connectionId | yes | String  | connection id for this connection.
+resources    | yes | String  | resource list to be released.
+
+@par Returns(Call)
+Name | Required | Type | Description
+-----|--------|------|----------
+returnValue | yes | Boolean | true if successful, false otherwise.
+
+@par Returns(Subscription)
+None
+@}
+ */
+//->End of API documentation comment block
+bool uMediaserver::reacquireCommand(UMSConnectorHandle* sender,
+		UMSConnectorMessage* message,
+		void* ctx)
+{
+	JDomParser parser;
+	string response;
+	dnf_request_t failed_resources;
+
+	string cmd = connector->getMessageText(message);
+
+	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",cmd.c_str());
+		return false;
+	}
+
+	JValue parsed = parser.getDom();
+	RETURN_IF(!parsed.hasKey("connectionId"), false, MSGERR_NO_CONN_ID,
+			"connectionId must be specified");
+	string connection_id = parsed["connectionId"].asString();
+
+	RETURN_IF(!parsed.hasKey("resources"), false, MSGERR_NO_RESOURCES,
+			"resources must be specified");
+	string resources = parsed["resources"].asString();
+
+	bool ret = true;
+
+	ret = rm->reacquire(connection_id, resources, failed_resources, response);
 
 	connector->sendSimpleResponse(sender,message,ret);
 

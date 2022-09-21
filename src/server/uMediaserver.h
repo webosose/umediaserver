@@ -166,6 +166,7 @@ public:
 
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,acquireCallback,acquireCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,releaseCallback,releaseCommand);
+	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,reacquireCallback,reacquireCommand);
 
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,tryAcquireCallback,tryAcquireCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,notifyForegroundCallback,notifyForegroundCommand);
