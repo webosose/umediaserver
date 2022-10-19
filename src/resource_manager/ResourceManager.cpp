@@ -369,14 +369,12 @@ void ResourceManager::readPipelinePolicies(const Setting &policies_cfg)
 
 void ResourceManager::addResource(const string &id, uint32_t qty)
 {
-	LOG_DEBUG(_log, "******** ResourceManager::addResource ********");
 	LOG_DEBUG(_log, "id=%s,qty=%d",id.c_str(),qty);
 	system_resources->update(id,qty);
 }
 
 void ResourceManager::removeResource(const string &id)
 {
-	LOG_DEBUG(_log, "******** ResourceManager::removeResource ******");
 	LOG_DEBUG(_log, "id=%s",id.c_str());
 	system_resources->update(id,0,true);
 }
@@ -427,7 +425,6 @@ bool ResourceManager::registerPipeline (const std::string &connection_id, const 
 	connection.is_foreground = is_foreground;
 	connection.is_focus = false;
 	connection.is_visible = true;
-	connection.isChangeResolution = false;
 	connection.priority = priority;
 	connection.playing_state = uMediaServer::pipeline_state::UNLOADED;
 	connection.pid = -1;
@@ -555,7 +552,6 @@ bool ResourceManager::acquire(const std::string &connection_id,
 	lock_t l(mutex);
 
 	failed_resources.clear();
-	LOG_DEBUG(_log, "acquire_request=%s", acquire_request.c_str());
 
 	auto connection = connections.find(connection_id);
 	if(connection == connections.end()) {
@@ -607,12 +603,7 @@ bool ResourceManager::acquire(const std::string &connection_id,
 				addActiveResource(connection->second, unit);
 			}
 			// acquire succeeded - wrap up, notify and break
-			if(connection->second.isChangeResolution == false)
-			{
-				LOG_DEBUG(_log, "******** UMS ResourceManager::acquire callback is called********\n");
-				if (m_acquire_callback)
-					m_acquire_callback(connection_id, acquired_resources);
-			}
+			if (m_acquire_callback) m_acquire_callback(connection_id, acquired_resources);
 			failed_resources.clear();
 			break;
 		}
@@ -680,27 +671,12 @@ bool ResourceManager::release(const std::string &connection_id,
 		return false;
 	}
 
-	LOG_DEBUG(_log, "DR ResourceManager::release print to_release\n");
-	LOG_DEBUG(_log, "to_release size: %d", to_release.size());
-	for(auto itr=to_release.begin(); itr != to_release.end(); itr++)
-		LOG_DEBUG(_log, "index: %d", itr->index);
-
 	resource_list_t released = system_resources->release(to_release);
-	LOG_DEBUG(_log, "DR ResourceManager::release print released\n");
-	LOG_DEBUG(_log, "released size: %d", released.size());
-	for(auto itr1=released.begin(); itr1 != released.end(); itr1++)
-		LOG_DEBUG(_log, "index: %d", itr1->index);
 
 	for (const auto & unit : released) {
 		remActiveResource(*connection, unit);
 	}
-	
-	if(connection->isChangeResolution == false)
-	{
-				LOG_DEBUG(_log, "******** UMS ResourceManager::release callback is called********\n");
-		if (m_release_callback)
-			m_release_callback(connection_id, released);
-	}
+	if (m_release_callback) m_release_callback(connection_id, released);
 
 #if RESOURCE_MANAGER_DEBUG
 	showSystemResources();
@@ -708,130 +684,6 @@ bool ResourceManager::release(const std::string &connection_id,
 #endif
 	return true;
 }
-
-
-
-
-
-// @f acquire
-// @brief acquire resources
-//
-// @param connection_id
-//
-// @param resource_request IN list of resources required (JSON)
-//   example request.
-//   [
-//     {
-//        "resource":"VDEC",
-//        "qty":1,
-//        "attribute":"display0",
-//        "index":1
-//     },
-//     {
-//        "resource":"ADEC",
-//        "qty":1
-//     }
-//   ]
-//
-// @param failed_resources OUT list of requested resources which are
-//        not available.  Used to determine if policy candidate
-//        selection is required.
-//
-//
-
-bool ResourceManager::reacquire(const std::string &connection_id,
-		const string &acquire_request,
-		dnf_request_t &failed_resources,
-		string &acquire_response)
-{
-	dnf_request_t to_reacquire;
-	uint32_t old_resources = 0, new_res_size = 0;
-	std::string sub_string = "qty\":";
-	std::string reacquire_request;
-	reacquire_request.assign(acquire_request);
-
-	lock_t l(mutex);
-
-	auto connection = findConnection(connection_id);
-	RETURN_IF(nullptr ==  connection, false, MSGERR_CONN_FIND, "connection not found");
-
-	LOG_DEBUG(_log, "connection_id=%s, acquire_request=%s, reacquire_request=%s",connection_id.c_str(), acquire_request.c_str(), reacquire_request.c_str());
-
-	if (connection->resources.empty()) {
-		LOG_DEBUG(_log, "release: resources empty");
-	}
-
-	old_resources = connection->resources.size();
-	LOG_DEBUG(_log, "ResourceManager::reacquire: old_resources: %d", old_resources);
-
-
-	if (!decodeAcquireRequest(acquire_request, to_reacquire)) {
-		LOG_DEBUG(_log, "release: decodeAcquireRequest fail");
-		return false;
-	}
-
-	LOG_DEBUG(_log, "DR ResourceManager::reacquire print to_reacquire");
-
-	auto new_resources = to_reacquire.front();
-
-	for(auto & res : to_reacquire)
-	{
-		LOG_DEBUG(_log, "ResourceManager::reacquire: qty: %d", res.qty);
-	}
-
-	connection->isChangeResolution = true;
-
-	if(new_resources.qty < old_resources)
-	{
-		JSchemaFragment input_schema("{}");
-		JGenerator serializer(nullptr);
-		pbnjson::JValue releaseRequestArray = pbnjson::Array();
-
-    resource_list_t resrc = connection->resources;
-    LOG_DEBUG(_log, "resource size: %d", resrc.size());
-    uint32_t i=0;
-    for(auto itr=resrc.end(); i < (old_resources - new_resources.qty); i++) {
-      pbnjson::JValue junit = pbnjson::Object();
-      --itr;
-
-      LOG_DEBUG(_log, "resource index: %d", itr->index);
-      junit.put("resource", "VDEC");
-      junit.put("index", (int32_t)itr->index);
-      releaseRequestArray.append(junit);
-    }
-
-    if (serializer.toString(releaseRequestArray, input_schema, reacquire_request))
-      LOG_DEBUG(_log, "DR ResourceManager::reacquire: %s", reacquire_request.c_str());
-    else
-      LOG_DEBUG(_log, "DR ResourceManager::reacquire: Serializer is false");
-
-		release(connection_id, reacquire_request);
-	}
-	else if(new_resources.qty > old_resources)
-	{
-		JSchemaFragment input_schema("{}");
-		JGenerator serializer(nullptr);
-		JValue acquireRequestArray = Array();
-
-		JValue junit = Object();
-		junit.put("resource", "VDEC");
-		junit.put("qty", (int32_t)(new_resources.qty - old_resources));
-		acquireRequestArray << junit;
-
-    if(serializer.toString(acquireRequestArray, input_schema, reacquire_request))
-      LOG_DEBUG(_log, "DR ResourceManager::reacquire_response: serializer returns true");
-    else
-      LOG_DEBUG(_log, "DR ResourceManager::reacquire_response: serializer returns false");
-
-		acquire(connection_id, reacquire_request, failed_resources, acquire_response);
-		LOG_DEBUG(_log, "DR ResourceManager::reacquire_response: %s", acquire_response.c_str());
-	}
-
-	connection->isChangeResolution = false;
-
-	return true;
-}
-
 
 //
 // ---- PRIVATE
@@ -852,7 +704,6 @@ resource_unit_t parseResourceUnit(const JValue & resource) {
 	if (! (resource.hasKey("index") && CONV_OK == resource["index"].asNumber(index)) )
 		throw std::runtime_error("Request parsing failure");
 
-	LOG_DEBUG(_log, "******** UMS parseResourceUnit ********\n");
 	return {id, (size_t)index};
 }
 
@@ -1171,7 +1022,6 @@ void ResourceManager::showActivePipelines()
 
 void ResourceManager::addActiveResource(resource_manager_connection_t & owner,
 		const resource_unit_t & unit) {
-	LOG_DEBUG(_log, "******** ResourceManager::addActiveResource ********\n");
 	owner.resources.push_back(unit);
 }
 
@@ -1180,7 +1030,6 @@ void ResourceManager::remActiveResource(resource_manager_connection_t & owner,
 	auto it = std::find(owner.resources.begin(), owner.resources.end(), unit);
 	if (it != owner.resources.end())
 		owner.resources.erase(it);
-	LOG_DEBUG(_log, "******** ResourceManager::remActiveResource ********\n");
 }
 
 bool ResourceManager::notifyActivity(const std::string & id)

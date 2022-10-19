@@ -203,9 +203,7 @@
 #define MSGERR_SKIPPED_EVENT     "SKIPPED_EVENT_ERR"     // unprocessed mdc event
 #define MSGERR_FG_RESUBSCRIBE    "FG_RESUBSCRIBE_ERR"    // getForegroudnAppInfo Re-Subscription
 #define MSGNFO_ACQUIRE_REQUEST   "ACQUIRE_REQUEST"       // acquire resources
-#define MSGNFO_REACQUIRE_REQUEST   "REACQUIRE_REQUEST"   // reacquire resources
 #define MSGNFO_ACQUIRE_COMPLETED "ACQUIRE_COMPLETED"     // acquire completed
-#define MSGNFO_REACQUIRE_COMPLETED "REACQUIRE_COMPLETED" // reacquire completed
 #define MSGNFO_FOREGROUND_REQUEST "FOREGROUND_REQUEST"   // notifyForeground request
 #define MSGNFO_BACKGROUND_REQUEST "BACKGROUND_REQUEST"   // notifyBackground request
 

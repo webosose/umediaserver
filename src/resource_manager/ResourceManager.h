@@ -283,7 +283,6 @@ struct resource_manager_connection_t {
 	std::string sub_type;                   // app window type
 	std::string playing_state;
 	int32_t pid;
-	bool isChangeResolution;
 };
 
 typedef std::map<std::string, resource_manager_connection_t> resource_manager_connection_map_t;
@@ -359,10 +358,6 @@ public:
 			const std::string &acquire_request,
 			dnf_request_t &failed_resources,
 			std::string &acquire_response);
-	bool reacquire(const std::string &connection_id,
-		const std::string &acquire_request,
-		dnf_request_t &failed_resources,
-		std::string &acquire_response);
 
 	bool release(const std::string &connection_id,const std::string &resource_request);
 
@@ -508,7 +503,6 @@ private:
 
 	bool decodeAcquireRequest(const std::string & acquire_request,
 			dnf_request_t & resources);
-	void replaceResourceInString(std::string &st1, const std::string &st2, uint32_t number);
 
 	std::map<std::string,uint32_t > policy_priority;
 	callback_t m_release_callback;
