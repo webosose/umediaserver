@@ -271,6 +271,7 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	connector->addEventHandler("unregisterPipeline",unregisterPipelineCallback, UMS_CONNECTOR_PRIVATE_BUS);
 
 	connector->addEventHandler("acquire",acquireCallback, UMS_CONNECTOR_PRIVATE_BUS);
+	connector->addEventHandler("reacquire",reacquireCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("tryAcquire",tryAcquireCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("release",releaseCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("notifyForeground",notifyForegroundCallback);
@@ -1762,6 +1763,93 @@ bool uMediaserver::acquireCommand(UMSConnectorHandle* sender,
 	connector->sendSimpleResponse(sender,message,true);
 
 	return true;
+}
+
+//->Start of API documentation comment block
+/**
+@page com_webos_media com.webos.media
+@{
+@section com_webos_media_reacquire reacquire
+
+Reacquire resources.
+
+@par Parameters
+Name | Required | Type | Description
+-----|--------|------|----------
+connectionId | yes | String  | connection id for this connection.
+resources    | yes | String  | resource list to be released and acquired.
+
+@par Returns(Call)
+Name | Required | Type | Description
+-----|--------|------|----------
+returnValue | yes | Boolean | true if successful, false otherwise.
+
+@par Returns(Subscription)
+None
+@}
+ */
+//->End of API documentation comment block
+bool uMediaserver::reacquireCommand(UMSConnectorHandle* sender,
+		UMSConnectorMessage* message,
+		void* ctx)
+{
+    JDomParser parser;
+    pbnjson::JValue msg = pbnjson::Object();
+    pbnjson::JValue payload = pbnjson::Object();
+    string cmd = connector->getMessageText(message);
+
+    if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
+        LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",cmd.c_str());
+        return false;
+    }
+
+    const char * service = connector->getSenderServiceName(message);
+    RETURN_IF(service == NULL, false, MSGERR_NO_RESOURCES,"Unable to obtain service name.");
+
+    JValue parsed = parser.getDom();
+
+    RETURN_IF(!parsed.hasKey("connectionId"),
+            false, MSGERR_NO_CONN_ID, "connectionId must be specified");
+    string connection_id = parsed["connectionId"].asString();
+
+    RETURN_IF(!parsed.hasKey("resources"),
+            false, MSGERR_NO_RESOURCES, "resources must be specified");
+
+    string reaquire_request = parsed["resources"].asString();
+
+    if (!parser.parse(reaquire_request, pbnjson::JSchema::AllSchema())) {
+        LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",reaquire_request.c_str());
+        return false;
+    }
+
+    JValue parsed_resources = parser.getDom();
+    RETURN_IF(!parsed_resources.hasKey("new"),
+            false, MSGERR_NO_RESOURCES, "new resource must be specified");
+
+    RETURN_IF(!parsed_resources.hasKey("old"),
+            false, MSGERR_NO_RESOURCES, "old resources must be specified");
+
+    string acquire_request = parsed_resources["new"].asString();
+    string release_request = parsed_resources["old"].asString();
+
+    bool ret = true;
+    ret = rm->release(connection_id, release_request);
+
+    // TODO: optimize to avoid double lookup - later we'll do same map
+    // lookup with rm->findConnection(...)
+    rm->setServiceName(connection_id,service);
+    bus_route_key_ = std::string(service);
+
+    // get connection information
+    auto connection = rm->findConnection(connection_id);
+    RETURN_IF(nullptr == connection, false, MSGERR_CONN_FIND, "Invalid connection");
+
+    // enqueue resource request
+    acquire_queue.enqueueRequest(connection_id, connection->service_name, acquire_request);
+
+    connector->sendSimpleResponse(sender,message,true);
+
+    return true;
 }
 
 void uMediaserver::initAcquireQueue() {

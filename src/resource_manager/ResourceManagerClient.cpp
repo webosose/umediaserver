@@ -371,14 +371,20 @@ bool ResourceManagerClient::acquire(const std::string &resource_request_json,
 	return _acquire(resource_request_json, resource_response_json);
 }
 
+bool ResourceManagerClient::reacquire(const std::string &resource_request_json,
+		std::string &resource_response_json)
+{
+	return _acquire(resource_request_json, resource_response_json, RESRC_REACQUIRE);
+}
+
 bool ResourceManagerClient::tryAcquire(const std::string &resource_request_json,
 		std::string &resource_response_json)
 {
-	return _acquire(resource_request_json, resource_response_json, false);
+	return _acquire(resource_request_json, resource_response_json, RESRC_TRYACQUIRE);
 }
 
 bool ResourceManagerClient::_acquire(const std::string &resource_request_json,
-		std::string &resource_response_json, bool block)
+		std::string &resource_response_json, resource_acquire_op_t opType)
 {
 	Lock l(*api_mutex);
 
@@ -398,11 +404,13 @@ bool ResourceManagerClient::_acquire(const std::string &resource_request_json,
 	}
 
 	string acquire_method;
-	if ( block ) {
-		acquire_method = "/acquire";
-	}
-	else {
+	if (opType == RESRC_TRYACQUIRE) {
 		acquire_method = "/tryAcquire";
+	}
+	else if (opType == RESRC_REACQUIRE) {
+		acquire_method = "/reacquire";
+	} else {
+		acquire_method = "/acquire";
 	}
 
 	acquire_waiter_t::ptr_t waiter(new acquire_waiter_t);

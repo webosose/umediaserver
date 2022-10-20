@@ -10,6 +10,7 @@
   ],
   "media.operation": [
     "com.webos.media/acquire",
+    "com.webos.media/reacquire",
     "com.webos.media/attach",
     "com.webos.media/contentReady",
     "com.webos.media/focus",

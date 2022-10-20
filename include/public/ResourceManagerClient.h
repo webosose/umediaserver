@@ -44,6 +44,8 @@ namespace uMediaServer {
 
 typedef enum { CONNECTION_OPENED, CONNECTION_CLOSED } connection_state_t;
 
+typedef enum { RESRC_ACQUIRE, RESRC_TRYACQUIRE, RESRC_REACQUIRE } resource_acquire_op_t;
+
 // create static dispatch method to allow object methods to be used as call backs for UMSConnector events
 #define RMC_RESPONSE_HANDLER(_class_, _cb_, _member_) \
 		static bool _cb_(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx) { \
@@ -70,6 +72,7 @@ public :
 	bool unregisterPipeline();
 
 	bool acquire(const std::string &resources, std::string &resource_response_json);
+	bool reacquire(const std::string &resources, std::string &resource_response_json);
 	bool tryAcquire(const std::string &resources, std::string &resource_response_json);
 
 	bool release(std::string resources);
@@ -151,7 +154,7 @@ private :
 
 	bool _acquire(const std::string &resources,
 			std::string &resource_response_json,
-			bool block=true);
+			resource_acquire_op_t opType=RESRC_ACQUIRE);
 
 	bool informWaiter(std::string waiter, bool state, std::string response);
 
