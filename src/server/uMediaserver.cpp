@@ -280,9 +280,6 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	connector->addEventHandler("notifyPipelineStatus",notifyPipelineStatusCallback);
 	connector->addEventHandler("trackAppProcesses", trackAppProcessesCallback, UMS_CONNECTOR_PRIVATE_BUS);
 
-	// MDC API
-	connector->addEventHandler("registerMedia", registerMediaCallback, UMS_CONNECTOR_PUBLIC_BUS);
-
 	// pipeline state query API
 	connector->addEventHandler("getPipelineState", getPipelineStateCallback, UMS_CONNECTOR_PRIVATE_BUS);
 	connector->addEventHandler("getActivePipelines", getActivePipelinesCallback, UMS_CONNECTOR_PRIVATE_BUS);
@@ -2361,43 +2358,6 @@ bool uMediaserver::trackAppProcessesCommand(UMSConnectorHandle* sender,
 	LOG_DEBUG(log,"payload = %s", payload.c_str());
 
 	connector->sendResponseObject(sender,message,payload);
-	return true;
-}
-
-// @f registerMedia
-// @b register new umnanaged media element
-//
-//  command:
-//   {"mediaId":"<MID>", "appId":"<appId>"}
-//
-//  responses:
-//  success = {"returnValue": true,"context : "pipeline_1"}
-//  failure = {
-//     "returnValue": false,
-//     "errorCode": "DISPLAY_ERROR_0000",
-//     "errorText": "Invalid Context",
-//     "context": "pipeline_1"
-//  }
-//
-bool uMediaserver::registerMediaCommand(UMSConnectorHandle* handle, UMSConnectorMessage* message, void*) {
-
-	string cmd = connector->getMessageText(message);
-	LOG_DEBUG(log, "cmd = %s", cmd.c_str());
-
-	JDomParser parser;
-	RETURN_IF(!parser.parse(cmd,  pbnjson::JSchema::AllSchema()), false,
-			  MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ", cmd.c_str());
-
-	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
-	RETURN_IF(!parsed.hasKey("appId"), false, MSGERR_NO_APP_ID, "appId must be specified");
-
-	string media_id = parsed["mediaId"].asString();
-	string app_id = parsed["appId"].asString();
-
-	rm->setAcquireCallback(acquire_callback_);
-
-	connector->sendSimpleResponse(handle, message, true);
 	return true;
 }
 

@@ -17,7 +17,6 @@
     "com.webos.media/load",
     "com.webos.media/pause",
     "com.webos.media/play",
-    "com.webos.media/registerMedia",
     "com.webos.media/registerPipeline",
     "com.webos.media/release",
     "com.webos.media/seek",
