@@ -215,6 +215,9 @@ private:
 	std::function<void(std::string)> unregister_functor_;
 
 	ResourceManager::callback_t acquire_callback_;
+
+	bool parseResourceRequest(const std::string& resource_request, bool isReleaseRequest);
+	bool parseResourceRequest(const std::string& resource_request);
 };
 } // namespace uMediaServer
 

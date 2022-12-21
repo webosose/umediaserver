@@ -1052,7 +1052,8 @@ bool uMediaserver::unsubscribeCommand(UMSConnectorHandle* sender, UMSConnectorMe
 
 	RETURN_IF(!parsed.hasKey("mediaId"), false, MSGERR_NO_MEDIA_ID, "mediaId must be specified");
 
-	string connection_id = parsed["mediaId"].asString();
+	string connection_id;
+	RETURN_IF(CONV_OK != parsed["mediaId"].asString(connection_id), false,	MSGERR_INVALID_MEDIA_ID, "connection_id must be string");
 
 	LOG_TRACE(log, "unSubscribeEvent. cmd=%s,connection_id=%s",
 			cmd.c_str(), connection_id.c_str());
@@ -1793,44 +1794,50 @@ bool uMediaserver::reacquireCommand(UMSConnectorHandle* sender,
     JDomParser parser;
     pbnjson::JValue msg = pbnjson::Object();
     pbnjson::JValue payload = pbnjson::Object();
-    string cmd = connector->getMessageText(message);
+    string release_request;
+    string acquire_request;
+    string retObject;
 
+    string cmd = connector->getMessageText(message);
     if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
         LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",cmd.c_str());
+        retObject = createRetObject(false, "<anonymous>", RESP_ERR_CODE_INVALID_PAYLOAD, RESP_ERR_TEXT_INVALID_PAYLOAD);
+        connector->sendResponseObject(sender,message,retObject);
         return false;
     }
 
     const char * service = connector->getSenderServiceName(message);
-    RETURN_IF(service == NULL, false, MSGERR_NO_RESOURCES,"Unable to obtain service name.");
-
-    JValue parsed = parser.getDom();
-
-    RETURN_IF(!parsed.hasKey("connectionId"),
-            false, MSGERR_NO_CONN_ID, "connectionId must be specified");
-    string connection_id = parsed["connectionId"].asString();
-
-    RETURN_IF(!parsed.hasKey("resources"),
-            false, MSGERR_NO_RESOURCES, "resources must be specified");
-
-    string reaquire_request = parsed["resources"].asString();
-
-    if (!parser.parse(reaquire_request, pbnjson::JSchema::AllSchema())) {
-        LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",reaquire_request.c_str());
+    if (service == NULL) {
+        LOG_ERROR(log, MSGERR_NO_RESOURCES, "Unable to obtain service name.");
+        retObject = createRetObject(false, "<anonymous>", RESP_ERR_CODE_NO_RESRC, RESP_ERR_TEXT_NO_RESRC);
+        connector->sendResponseObject(sender,message,retObject);
         return false;
     }
 
-    JValue parsed_resources = parser.getDom();
-    RETURN_IF(!parsed_resources.hasKey("new"),
-            false, MSGERR_NO_RESOURCES, "new resource must be specified");
+    JValue parsed = parser.getDom();
+    if (!parsed.hasKey("connectionId")) {
+        LOG_ERROR(log, MSGERR_NO_CONN_ID, "connectionId must be specified");
+        retObject = createRetObject(false, "<anonymous>", RESP_ERR_CODE_NO_CONN_ID, RESP_ERR_TEXT_NO_CONN_ID);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
+    string connection_id = parsed["connectionId"].asString();
 
-    RETURN_IF(!parsed_resources.hasKey("old"),
-            false, MSGERR_NO_RESOURCES, "old resources must be specified");
+    if (!parsed.hasKey("resources")) {
+        LOG_ERROR(log, MSGERR_NO_RESOURCES, "resources must be specified");
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_NO_RESRC, RESP_ERR_TEXT_NO_RESRC);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
 
-    string acquire_request = parsed_resources["new"].asString();
-    string release_request = parsed_resources["old"].asString();
+    string resource_request = parsed["resources"].asString();
 
-    bool ret = true;
-    ret = rm->release(connection_id, release_request);
+    if (!parser.parse(resource_request, pbnjson::JSchema::AllSchema())) {
+        LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",resource_request.c_str());
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_INVALID_PAYLOAD, RESP_ERR_TEXT_INVALID_PAYLOAD);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
 
     // TODO: optimize to avoid double lookup - later we'll do same map
     // lookup with rm->findConnection(...)
@@ -1839,7 +1846,68 @@ bool uMediaserver::reacquireCommand(UMSConnectorHandle* sender,
 
     // get connection information
     auto connection = rm->findConnection(connection_id);
-    RETURN_IF(nullptr == connection, false, MSGERR_CONN_FIND, "Invalid connection");
+    if (nullptr == connection) {
+        LOG_ERROR(log, MSGERR_CONN_FIND, "Invalid connection");
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_CONN_FIND, RESP_ERR_TEXT_CONN_FIND);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
+
+	JValue parsed_resources = parser.getDom();
+	// Resources as array means only acquire info is provided
+	// Release info will be calculated internally.
+	if (parsed_resources.isArray()) {
+		acquire_request = resource_request;
+		// Prepare release request
+		resource_list_t released = connection->resources;
+		JSchemaFragment input_schema("{}");
+		JGenerator serializer(nullptr);
+		pbnjson::JValue releaseRequestArray = pbnjson::Array();
+
+		release_request.clear();
+
+		for(auto itr=released.begin(); itr != released.end(); itr++) {
+			if(!itr->id.compare("VDEC")) {
+				pbnjson::JValue junit = pbnjson::Object();
+				junit.put("resource", itr->id);
+				junit.put("index", (int32_t)itr->index);
+				releaseRequestArray.append(junit);
+			}
+		}
+
+		if (!serializer.toString(releaseRequestArray, input_schema, release_request)) {
+			LOG_ERROR(log, MSGERR_JSON_SERIALIZE, "failure to serialize release_request()");
+			retObject = createRetObject(false, connection_id, RESP_ERR_CODE_INTERNAL, RESP_ERR_TEXT_INTERNAL);
+			connector->sendResponseObject(sender,message,retObject);
+			return false;
+		}
+	} else if (parsed_resources.isObject()) {
+		// Resources as object means both acquire and release info is provided
+		// in the form of new and old resource.
+		if (!parsed_resources.hasKey("new") || !parsed_resources.hasKey("old")) {
+			LOG_ERROR(log, MSGERR_NO_RESOURCES, "resources must be specified");
+			retObject = createRetObject(false, connection_id, RESP_ERR_CODE_NO_RESRC, RESP_ERR_TEXT_NO_RESRC);
+			connector->sendResponseObject(sender,message,retObject);
+			return false;
+		}
+		acquire_request = parsed_resources["new"].asString();
+		release_request = parsed_resources["old"].asString();
+	}
+
+    //Check for invalid resource
+    if( !(parseResourceRequest(release_request, true)) || !(parseResourceRequest(acquire_request, false))) {
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_INVALID_RESRC, RESP_ERR_TEXT_INVALID_RESRC);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
+
+    // Release already acquired resources
+    if (!rm->release(connection_id, release_request)) {
+        LOG_ERROR(log, MSGERR_REACQ_REL, "Reacquire Release Failure");
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_RESRC_ALLOC, RESP_ERR_TEXT_RESRC_ALLOC);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
 
     // enqueue resource request
     acquire_queue.enqueueRequest(connection_id, connection->service_name, acquire_request);
@@ -2029,6 +2097,45 @@ bool uMediaserver::tryAcquireCommand(UMSConnectorHandle* sender,
 	return true;
 }
 
+bool uMediaserver::parseResourceRequest(const string & resource_request) {
+	JDomParser parser;
+	JValue parsed_resources;
+	std::string id;
+	int32_t index, qty, min;
+
+	if (!parser.parse(resource_request, JSchema::AllSchema())) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",resource_request.c_str());
+		return false;
+	}
+
+	parsed_resources = parser.getDom();
+
+	if (!parsed_resources.isArray()) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR parsing failure");
+		return false;
+	}
+
+	for (size_t i = 0; i < parsed_resources.arraySize(); ++i) {
+		if (!parsed_resources[i].isObject()) {
+			LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR parsing failure");
+			return false;
+		}
+
+		if (! (parsed_resources[i].hasKey("resource") && CONV_OK == parsed_resources[i]["resource"].asString(id)) ) {
+			LOG_ERROR(log, MSGERR_JSON_PARSE, "resource not provided");
+			return false;
+		}
+
+		// Release request will have index while acquire request will have qty
+		if (! (parsed_resources[i].hasKey("index") && CONV_OK == parsed_resources[i]["index"].asNumber(index)) ) {
+			LOG_ERROR(log, MSGERR_JSON_PARSE, "index not provided");
+			return false;
+		}
+	}
+
+	return true;
+}
+
 //->Start of API documentation comment block
 /**
 @page com_webos_media com.webos.media
@@ -2058,6 +2165,7 @@ bool uMediaserver::releaseCommand(UMSConnectorHandle* sender,
 		void* ctx)
 {
 	JDomParser parser;
+    string retObject;
 
 	string cmd = connector->getMessageText(message);
 	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
@@ -2066,16 +2174,53 @@ bool uMediaserver::releaseCommand(UMSConnectorHandle* sender,
 	}
 
 	JValue parsed = parser.getDom();
-	RETURN_IF(!parsed.hasKey("connectionId"), false, MSGERR_NO_CONN_ID,
-			"connectionId must be specified");
-	string connection_id = parsed["connectionId"].asString();
 
-	RETURN_IF(!parsed.hasKey("resources"), false, MSGERR_NO_RESOURCES,
-			"resources must be specified");
-	string resources = parsed["resources"].asString();
+	if (!parsed.hasKey("connectionId")) {
+        LOG_ERROR(log, MSGERR_NO_CONN_ID, "connectionId must be specified");
+        retObject = createRetObject(false, "<anonymous>", RESP_ERR_CODE_NO_CONN_ID, RESP_ERR_TEXT_NO_CONN_ID);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
+    string connection_id = parsed["connectionId"].asString();
+
+    if (!parsed.hasKey("resources")) {
+        LOG_ERROR(log, MSGERR_NO_RESOURCES, "resources must be specified");
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_NO_RESRC, RESP_ERR_TEXT_NO_RESRC);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
+
+    string resource_request = parsed["resources"].asString();
+
+    if (!parser.parse(resource_request, pbnjson::JSchema::AllSchema())) {
+        LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",resource_request.c_str());
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_INVALID_PAYLOAD, RESP_ERR_TEXT_INVALID_PAYLOAD);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
+
+	auto connection = rm->findConnection(connection_id);
+	if (nullptr == connection) {
+        LOG_ERROR(log, MSGERR_CONN_FIND, "Invalid connection");
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_CONN_FIND, RESP_ERR_TEXT_CONN_FIND);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
+
+	if( !(parseResourceRequest(resource_request))) {
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_INVALID_RESRC, RESP_ERR_TEXT_INVALID_RESRC);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+   }
 
 	bool ret = true;
-	ret = rm->release(connection_id, resources);
+	// Release already acquired resources
+    if (!(ret = rm->release(connection_id, resource_request))) {
+        LOG_ERROR(log, MSGERR_REACQ_REL, "Reacquire Release Failure");
+        retObject = createRetObject(false, connection_id, RESP_ERR_CODE_RESRC_RELEASE, RESP_ERR_TEXT_RESRC_RELEASE);
+        connector->sendResponseObject(sender,message,retObject);
+        return false;
+    }
 
 	connector->sendSimpleResponse(sender,message,ret);
 
@@ -2420,4 +2565,49 @@ string uMediaserver::createRetObject(bool returnValue, const string& mediaId, co
 	}
 	LOG_TRACE(log, "createRetObject retObjectString =  %s", retObjectString.c_str());
 	return retObjectString;
+}
+
+bool uMediaserver::parseResourceRequest(const string & resource_request, bool isReleaseRequest) {
+	JDomParser parser;
+	JValue parsed_resources;
+	std::string id;
+	int32_t index, qty, min;
+
+	if (!parser.parse(resource_request, JSchema::AllSchema())) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR JDomParser.parse. raw=%s ",resource_request.c_str());
+		return false;
+	}
+
+	parsed_resources = parser.getDom();
+
+	if (!parsed_resources.isArray()) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR parsing failure");
+		return false;
+	}
+
+	for (size_t i = 0; i < parsed_resources.arraySize(); ++i) {
+		if (!parsed_resources[i].isObject()) {
+			LOG_ERROR(log, MSGERR_JSON_PARSE, "ERROR parsing failure");
+			return false;
+		}
+
+		if (! (parsed_resources[i].hasKey("resource") && CONV_OK == parsed_resources[i]["resource"].asString(id)) ) {
+			LOG_ERROR(log, MSGERR_JSON_PARSE, "resource not provided");
+			return false;
+		}
+
+		// Release request will have index while acquire request will have qty
+		if(isReleaseRequest) {
+			if (! (parsed_resources[i].hasKey("index") && CONV_OK == parsed_resources[i]["index"].asNumber(index)) ) {
+				LOG_ERROR(log, MSGERR_JSON_PARSE, "index not provided");
+				return false;
+			}
+		} else {
+			if (! (parsed_resources[i].hasKey("qty") && CONV_OK == parsed_resources[i]["qty"].asNumber(qty))) {
+				LOG_ERROR(log, MSGERR_NO_RESOURCES, "qty not provided");
+				return false;
+			}
+		}
+	}
+	return true;
 }

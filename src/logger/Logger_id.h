@@ -161,6 +161,7 @@
 #define MSGERR_SEND_ACQUIRE_RESULT "SEND_ACQUIRE_RESULT_ERR" // failed to send acquire result
 #define MSGNFO_POLICY_REQUEST    "POLICY_REQUEST"        // send policy action to candidate
 #define MSGERR_NO_UPDATE_WARN    "NO_UPDATE_WARN"        // no update because of same value
+#define MSGERR_REACQ_REL         "REACQUIRE_RELEASE_ERR" // failed to acquire resources
 
 // ums dbi
 #define MSGERR_DBI_ERROR          "DBI_ACCESS_ERR"       // registry access error
@@ -259,3 +260,25 @@
 #define KVP_RES_REQ_QTY          "RES_REQ_QTY"           // resource requested quantity
 #define KVP_DATA                 "DATA"                  // some data
 #define KVP_REASON               "REASON"                // error reason
+
+// Response Object Error Code
+// Server
+#define RESP_ERR_CODE_RESRC_ALLOC      601                 // resource allocation error
+#define RESP_ERR_CODE_INVALID_PAYLOAD  602                 // invalid payload
+#define RESP_ERR_CODE_NO_RESRC         603                 // resource parameter not provided
+#define RESP_ERR_CODE_NO_CONN_ID       604                 // connectionId parameter not provided
+#define RESP_ERR_CODE_CONN_FIND        605                 // connectionId not available
+#define RESP_ERR_CODE_INTERNAL         606                 // internal error
+#define RESP_ERR_CODE_INVALID_RESRC    607                 // invalid resources provided
+#define RESP_ERR_CODE_RESRC_RELEASE    608                 // resource release error
+
+// Response Object Error Text
+// Server
+#define RESP_ERR_TEXT_INVALID_PAYLOAD "Invalid Payload"           // invalid payload
+#define RESP_ERR_TEXT_NO_RESRC        "Resources Not Provided"    // resource parameter not provided
+#define RESP_ERR_TEXT_NO_CONN_ID      "ConnectionId Not Provided" // connectionId parameter not provided
+#define RESP_ERR_TEXT_CONN_FIND       "Invalid Connection"        // connectionId not available
+#define RESP_ERR_TEXT_INTERNAL        "Internal Error"            // internal error
+#define RESP_ERR_TEXT_RESRC_ALLOC     "Resource Allocation Error" // resource allocation error
+#define RESP_ERR_TEXT_INVALID_RESRC   "Invalid Resource"          // invalid resources provided
+#define RESP_ERR_TEXT_RESRC_RELEASE   "Resource Release Error"    // resource release error
