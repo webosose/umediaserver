@@ -66,8 +66,9 @@ uMediaClient::uMediaClient(bool rawEvents, UMSConnectorBusType bus, const std::s
   //prefix of uid should be '-' when the client is created under app privileged case
   std::string uid = GenerateUniqueID()();
   if (!m_app_connection_id.empty()) {
-    string::iterator nextElement = uid.begin() + 1;
-    std::replace_if(uid.begin(), std::min(nextElement,uid.end()), [](char c) { return c == '_'; }, '-');
+    size_t nextIndex = 1;
+    string::iterator nextElement = uid.begin() + min(nextIndex, uid.size());
+    std::replace_if(uid.begin(), nextElement, [](char c) { return c == '_'; }, '-');
     /*Umediaserver receiving app_id as app_id + display_id. So on LSRegister
      * call it's failed for the same. So removing display_id from app_id*/
     m_app_connection_id = m_app_connection_id.substr(0,m_app_connection_id.length()-1);
@@ -1439,6 +1440,11 @@ void uMediaClient::run()
 void uMediaClient::stop()
 {
   connection->stop();
+}
+
+void uMediaClient::waitForStop() {
+  stop();
+  pthread_join(message_thread, NULL);
 }
 
 // -----------------------------------------------

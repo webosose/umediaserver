@@ -414,6 +414,7 @@ public :
 
 	void run();
 	void stop();
+	void waitForStop();
 
 protected :
 	UMSConnector *connection;
