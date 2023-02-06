@@ -175,9 +175,6 @@ public:
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,notifyPipelineStatusCallback,notifyPipelineStatusCommand);
 	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,trackAppProcessesCallback,trackAppProcessesCommand);
 
-	// MDC API
-	UMSCONNECTOR_EVENT_HANDLER(uMediaserver,registerMediaCallback,registerMediaCommand);
-
 private:
 	Logger log;
 	UMSConnector * connector;
