@@ -145,7 +145,7 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 	log->setLogLevel(kPmLogLevel_Debug);
 }
 
-UMSConnector::UMSConnector_impl::~UMSConnector_impl()
+UMSConnector::UMSConnector_impl::~UMSConnector_impl() noexcept(false)
 {
 	ls_error_t lsError;
 

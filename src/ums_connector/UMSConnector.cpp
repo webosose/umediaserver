@@ -73,7 +73,7 @@ UMSConnector::UMSConnector(const string& name,
 	pImpl = new UMSConnector_impl(name, mainLoop_, user_data, use_default_context, app_id);
 }
 
-UMSConnector::~UMSConnector() {
+UMSConnector::~UMSConnector() noexcept(false) {
 	LOG_TRACE(log, "called");
 
 	delete pImpl;

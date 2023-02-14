@@ -98,7 +98,7 @@ uMediaClient::uMediaClient(const std::string &appConnId)
 {
 }
 
-uMediaClient::~uMediaClient()
+uMediaClient::~uMediaClient() noexcept(false)
 {
   connection->stop();
   pthread_join(message_thread,NULL);
@@ -209,6 +209,10 @@ bool uMediaClient::getStateData(const string & message, string &name, JValue &va
 bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* message, void* ctx)
 {
   const char *msg = connection->getMessageText(message);
+  if (msg == NULL) {
+    LOG_ERROR(log, MSGERR_JSON_PARSE, "status is NULL");
+    return false;
+  }
 
   std::string name;
   JValue value = Object();
@@ -1455,6 +1459,10 @@ bool uMediaClient::loadResponse(UMSConnectorHandle* handle, UMSConnectorMessage*
   JDomParser parser;
 
   const char *status = connection->getMessageText(message);
+  if (status == NULL) {
+    LOG_ERROR(log, MSGERR_JSON_PARSE, "status is NULL");
+    return false;
+  }
 
   if (!parser.parse(status, pbnjson::JSchema::AllSchema())) {
     LOG_ERROR(_log, MSGERR_JSON_PARSE,"JDomParser.parse. status=%s ", status);
@@ -1497,6 +1505,10 @@ bool uMediaClient::attachResponse(UMSConnectorHandle* handle, UMSConnectorMessag
   JDomParser parser;
 
   const char *status = connection->getMessageText(message);
+  if (status == NULL) {
+    LOG_ERROR(log, MSGERR_JSON_PARSE, "status is NULL");
+    return false;
+  }
 
   if (!parser.parse(status, pbnjson::JSchema::AllSchema())) {
     LOG_ERROR(_log, MSGERR_JSON_PARSE,"JDomParser.parse. status=%s ", status);
@@ -1525,6 +1537,11 @@ bool uMediaClient::commandResponse(UMSConnectorHandle* handle, UMSConnectorMessa
 {
   // not used for normal commands but left in place for future uMediaServer return status
   const char *msg = connection->getMessageText(message);
+  if (msg == NULL) {
+    LOG_ERROR(log, MSGERR_JSON_PARSE, "msg is NULL");
+    return false;
+  }
+
   std::string name;
   JValue value = Object();
   bool rv = getStateData(msg,name,value);

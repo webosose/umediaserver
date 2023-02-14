@@ -146,7 +146,7 @@ void ResourceManagerClient::ResourceManagerClientInit()
 	startMessageThread();
 }
 
-ResourceManagerClient::~ResourceManagerClient()
+ResourceManagerClient::~ResourceManagerClient() noexcept(false)
 {
 	pthread_cond_destroy(&open_condition);
 	pthread_mutex_destroy(&mutex);
@@ -161,7 +161,13 @@ ResourceManagerClient::~ResourceManagerClient()
 bool ResourceManagerClient::subscribeResponse(UMSConnectorHandle* handle,
 		UMSConnectorMessage* message, void* ctx)
 {
-	std::string msg = connector->getMessageText(message);
+	const char *t_msg = connector->getMessageText(message);
+	if (t_msg == NULL) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "t_msg is NULL");
+		return false;
+	}
+
+	std::string msg(t_msg);
 
 	pbnjson::JDomParser parser;
 	pbnjson::JSchemaFragment input_schema("{}");
@@ -413,7 +419,7 @@ bool ResourceManagerClient::_acquire(const std::string &resource_request_json,
 		acquire_method = "/acquire";
 	}
 
-	acquire_waiter_t::ptr_t waiter(new acquire_waiter_t);
+	acquire_waiter_t::ptr_t waiter = std::make_shared<acquire_waiter_t>();
 	acquire_waiters[connection_id] = waiter;
 
 	string cmd = resource_manager_connection_id + connection_category + acquire_method;
@@ -662,7 +668,13 @@ bool ResourceManagerClient::openConnectionResponse(UMSConnectorHandle* handle,
 {
 	JDomParser parser;
 
-	string cmd = connector->getMessageText(message);
+	const char *t_cmd = connector->getMessageText(message);
+	if (t_cmd == NULL) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "t_cmd is NULL");
+		return false;
+	}
+
+	string cmd(t_cmd);
 
 	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
 		LOG_ERROR(log, MSGERR_JSON_PARSE, "JDomParser.parse. raw=%s ",cmd.c_str());
@@ -692,7 +704,13 @@ bool ResourceManagerClient::policyActionResponse(UMSConnectorHandle* handle,
 {
 	JDomParser parser;
 
-	string cmd = connector->getMessageText(message);
+	const char *t_cmd = connector->getMessageText(message);
+	if (t_cmd == NULL) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "t_cmd is NULL");
+		return false;
+	}
+
+	string cmd(t_cmd);
 
 	if (!parser.parse(cmd, pbnjson::JSchema::AllSchema())) {
 		LOG_ERROR(log, MSGERR_JSON_PARSE, "JDomParse. input=%s",cmd.c_str());
@@ -762,7 +780,13 @@ bool ResourceManagerClient::acquireCompleteResponse(UMSConnectorHandle* handle,
 {
 	JDomParser parser;
 
-	string cmd = connector->getMessageText(message);
+	const char *t_cmd = connector->getMessageText(message);
+	if (t_cmd == NULL) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "t_cmd is NULL");
+		return false;
+	}
+
+	string cmd(t_cmd);
 
 	RETURN_IF( !parser.parse(cmd, pbnjson::JSchema::AllSchema()), false,
 			MSGERR_JSON_PARSE, "JDomParse. input=%s",cmd.c_str());
@@ -789,7 +813,13 @@ bool ResourceManagerClient::commandResponse(UMSConnectorHandle* handle,
 {
 	JDomParser parser;
 
-	string cmd = connector->getMessageText(message);
+	const char *t_cmd = connector->getMessageText(message);
+	if (t_cmd == NULL) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "t_cmd is NULL");
+		return false;
+	}
+
+	string cmd(t_cmd);
 
 	RETURN_IF( !parser.parse(cmd, pbnjson::JSchema::AllSchema()), false,
 			MSGERR_JSON_PARSE, "JDomParse. input=%s",cmd.c_str());
@@ -820,7 +850,13 @@ bool ResourceManagerClient::getDisplayIdResponse(UMSConnectorHandle* handle,
 
 	JDomParser parser;
 
-	string cmd = connector->getMessageText(message);
+	const char *t_cmd = connector->getMessageText(message);
+	if (t_cmd == NULL) {
+		LOG_ERROR(log, MSGERR_JSON_PARSE, "t_cmd is NULL");
+		return false;
+	}
+
+	string cmd(t_cmd);
 
 	RETURN_IF( !parser.parse(cmd, pbnjson::JSchema::AllSchema()), false,
 			MSGERR_JSON_PARSE, "JDomParse. input=%s",cmd.c_str());

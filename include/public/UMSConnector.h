@@ -99,7 +99,7 @@ public:
 	static void refMessage(UMSConnectorMessage * message);
 	static void unrefMessage(UMSConnectorMessage * message);
 
-	~UMSConnector();
+	~UMSConnector() noexcept(false);
 
 private:
 	class UMSConnector_impl;

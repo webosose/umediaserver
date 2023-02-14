@@ -65,7 +65,7 @@ public :
 
 	ResourceManagerClient(const std::string& connection_id);
 
-	virtual ~ ResourceManagerClient();
+	virtual ~ ResourceManagerClient() noexcept(false);
 
 	bool registerPipeline(std::string type, const std::string& app_id = std::string());
 

@@ -322,7 +322,7 @@ public :
 
 	uMediaClient(bool rawEvents = false, UMSConnectorBusType bus = UMS_CONNECTOR_PUBLIC_BUS, const std::string &appConnId = "");
 	uMediaClient(const std::string &appConnId);
-	virtual ~ uMediaClient();
+	virtual ~ uMediaClient() noexcept(false);
 
 	// virtual methods:  Override messages/events as needed. See test.cpp for example.
 	virtual bool onLoadCompleted() { return true; }
