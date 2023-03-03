@@ -155,17 +155,18 @@ typedef boost::variant<
 > kvp_val_t;
 typedef std::map<kvp_key_t, kvp_val_t> __KV;
 
-template <typename... Args>
 inline void __log_print_ex(const uMediaServer::LogContext & ctx, PmLogLevel level,
 		const char * msgid, const __KV & kvp,
 		const char * file, const char * func, const int & line,
-		const char * format, const Args& ... args) {
+		const char * format, ...) {
 	PmLogLevel global_level;
 	if (PmLogGetContextLevel(ctx.ctx, &global_level) == kPmLogErr_None &&
 		ctx.level >= level && global_level >= level) {
 		char codepoint[MAX_CP_SIZE]; __CODEPOINT(codepoint, file, func, line);
 		char timestamp[MAX_TS_SIZE]; __TIMESTAMP(timestamp);
 		std::stringstream kvpstream;
+		va_list args;
+		va_start(args, format);
 		kvpstream << "{";
 		if (ctx.uid[0])
 			kvpstream << "\"" << KVP_SESSION_ID << "\":\"" << ctx.uid << "\",";
@@ -183,7 +184,9 @@ inline void __log_print_ex(const uMediaServer::LogContext & ctx, PmLogLevel leve
 			}
 		}
 		kvpstream << "}";
-		char message[MAX_FT_SIZE]; snprintf(message, MAX_FT_SIZE, format, args...);
+		char message[MAX_FT_SIZE];
+		vsnprintf(message, MAX_FT_SIZE, format, args);
+		va_end(args);
 		const char * str = kvpstream.str().c_str();
 		PmLogString(ctx.ctx, level, msgid, kvpstream.str().c_str(), message);
 	}
