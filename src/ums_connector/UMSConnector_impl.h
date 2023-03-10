@@ -62,7 +62,7 @@ public:
 			bool use_default_context = false,
 			const std::string &app_id = "");
 
-	~UMSConnector_impl();
+	~UMSConnector_impl() ;
 	GMainLoop * getMainLoop() {	return mainLoop_; }
 
 	// implementation of interface

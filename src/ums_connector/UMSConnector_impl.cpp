@@ -145,9 +145,11 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 	log->setLogLevel(kPmLogLevel_Debug);
 }
 
-UMSConnector::UMSConnector_impl::~UMSConnector_impl()
+UMSConnector::UMSConnector_impl::~UMSConnector_impl() 
 {
-	ls_error_t lsError;
+	//sujeet
+	try{
+  ls_error_t lsError;
 
 	LOG_DEBUG((*log), "Disconnecting from luna service bus.");
 	subscriptionsT *subsc_ptr = NULL;
@@ -230,6 +232,9 @@ UMSConnector::UMSConnector_impl::~UMSConnector_impl()
 	}
 	eventHandlers.erase(eventHandlers.begin(),eventHandlers.end());
 	m_callbackManager.reset();
+ }catch (...) {
+        LOG_ERROR((*log),MSGERR_UNREGISTER, "Unknown exception in UMSConnector_impl::~UMSConnector_impl.");
+    }
 }
 
 bool UMSConnector::UMSConnector_impl::wait()
