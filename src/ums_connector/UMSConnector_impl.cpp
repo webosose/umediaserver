@@ -479,7 +479,7 @@ size_t UMSConnector::UMSConnector_impl::subscribe(const string &uri, const std::
 	new_subscr->evtHandler = context;
 	m_subscriptions.push_back(new_subscr);
 
-	LOG_DEBUG((*log), "subscribe success: %s,%d", new_subscr->scall.c_str(), new_subscr->stoken);
+	LOG_DEBUG((*log), "subscribe success: %s,%lu", new_subscr->scall.c_str(), new_subscr->stoken);
 
 	JDomParser parser;
 	if (parser.parse(payload,  pbnjson::JSchema::AllSchema())) {
@@ -506,11 +506,11 @@ bool UMSConnector::UMSConnector_impl::processDeferredSubscriptionCancellations()
       ret_val = true;
       if (!LSCallCancel((*iter)->shandle, (*iter)->stoken, &error)) {
         // if LSCallCancel fails, log a warning here
-        LOG_WARNING((*log), MSGERR_UNREGISTER, "LSCallCancel failed: %s,%d", (*iter)->scall.c_str(), (*iter)->stoken);
+        LOG_WARNING((*log), MSGERR_UNREGISTER, "LSCallCancel failed: %s,%lu", (*iter)->scall.c_str(), (*iter)->stoken);
       }
       // whether call succeeds or fails, it should be safe to unregister
       // because we are in the idle loop
-      LOG_DEBUG((*log), "unregisterSubscriptionHandler: %s,%d", (*iter)->scall.c_str(), (*iter)->stoken);
+      LOG_DEBUG((*log), "unregisterSubscriptionHandler: %s,%lu", (*iter)->scall.c_str(), (*iter)->stoken);
       m_callbackManager->unregisterSubscriptionHandler((*iter)->evtHandler);
       delete *iter;
       m_subscriptions.erase(iter);
@@ -534,18 +534,18 @@ void UMSConnector::UMSConnector_impl::unsubscribe(const string &uri, size_t toke
 		return s->scall == uri && s->stoken == token;
 	});
 	if (iter == m_subscriptions.end()) {
-		LOG_WARNING((*log), MSGERR_SUBS_FIND, "Subscription: %s,%d not found", uri.c_str(), token);
+		LOG_WARNING((*log), MSGERR_SUBS_FIND, "Subscription: %s,%lu not found", uri.c_str(), token);
 	} else {
 		ls_error_t error;
 		if (LSCallCancel((*iter)->shandle, (*iter)->stoken, &error)) {
-	          LOG_DEBUG((*log), "unsubscribe: unreg right away : %s,%d", (*iter)->scall.c_str(), (*iter)->stoken);
+	          LOG_DEBUG((*log), "unsubscribe: unreg right away : %s,%lu", (*iter)->scall.c_str(), (*iter)->stoken);
 		  m_callbackManager->unregisterSubscriptionHandler((*iter)->evtHandler);
 		  delete *iter;
 		  m_subscriptions.erase(iter);
 		} else {
 		  // if LSCallCancel is not successful, we cannot delete the object
 		  // set a flag here and delete the object in the idle function
-	          LOG_DEBUG((*log), "unsubscribe: defer unreg: %s,%d", (*iter)->scall.c_str(), (*iter)->stoken);
+	          LOG_DEBUG((*log), "unsubscribe: defer unreg: %s,%lu", (*iter)->scall.c_str(), (*iter)->stoken);
 		  (*iter)->deferred_cancel = true;
 		  if (idle_task_ == 0)
 		    idle_task_ = g_idle_add(idle_func, reinterpret_cast<gpointer>(this));

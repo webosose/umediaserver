@@ -520,10 +520,10 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 
   else if (name == "activeRegion") {
     rect_t active_rc {
-      unmarshalllong(value["x"]),
-      unmarshalllong(value["y"]),
-      unmarshalllong(value["width"]),
-      unmarshalllong(value["height"])
+      (int)unmarshalllong(value["x"]),
+      (int)unmarshalllong(value["y"]),
+      (int)unmarshalllong(value["width"]),
+      (int)unmarshalllong(value["height"])
     };
     return onActiveRegion(active_rc);
   }
