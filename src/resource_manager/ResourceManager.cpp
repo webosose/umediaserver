@@ -673,6 +673,11 @@ bool ResourceManager::release(const std::string &connection_id,
 
 	resource_list_t released = system_resources->release(to_release);
 
+	if(released.empty())
+	{
+		return false;
+	}
+
 	for (const auto & unit : released) {
 		remActiveResource(*connection, unit);
 	}
