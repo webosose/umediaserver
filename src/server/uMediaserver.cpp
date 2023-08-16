@@ -2133,6 +2133,7 @@ bool uMediaserver::notifyForegroundCommand(UMSConnectorHandle* sender,
 		LOG_ERROR(log, MSGERR_NO_CONN_ID,
 					"Resource Manager: connection_id=%s not found",
 					connection_id.c_str());
+		return false;
 	} else {
 		string app_id = app_life_manager_->getAppId(connection_id);
 		if (app_id.empty()) {
