@@ -174,7 +174,7 @@ resource_list_t ResourcePool::acquire(const resource_request_t & resources,
 	// second pass; try anonymous requests; put results in order
 	for (const auto & order : allocation_order) {
 
-		LOG_DEBUG(_log, "available=%d, qty=%d, min=%d",
+		LOG_DEBUG(_log, "available=%lu, qty=%lu, min=%lu",
 				  order.pool_it->second.qty(), order.from->qty, order.from->min);
 
 		size_t need_more = order.from->qty;
