@@ -284,37 +284,37 @@ public :
 #endif // UMS_INTERNAL_API_VERSION == 2
 
 	void set_load_completed_callback(generic_callback_t && handler) {
-		_load_completed_callback = handler;
+		_load_completed_callback = std::move(handler);
 	}
 	void set_unload_completed_callback(generic_callback_t && handler) {
-		_unload_completed_callback = handler;
+		_unload_completed_callback = std::move(handler);
 	}
 	void set_playing_callback(generic_callback_t && handler) {
-		_playing_callback = handler;
+		_playing_callback = std::move(handler);
 	}
 	void set_paused_callback(generic_callback_t && handler) {
-		_paused_callback = handler;
+		_paused_callback = std::move(handler);
 	}
 	void set_eos_callback(generic_callback_t && handler) {
-		_eos_callback = handler;
+		_eos_callback = std::move(handler);
 	}
 	void set_focus_callback(flag_callback_t && handler) {
-		_focus_callback = handler;
+		_focus_callback = std::move(handler);
 	}
 	void set_source_info_callback(source_info_callback_t && handler) {
-		_source_info_callback = handler;
+		_source_info_callback = std::move(handler);
 	}
 	void set_stream_time_callback(time_update_callback_t && handler) {
-		_stream_time_callback = handler;
+		_stream_time_callback = std::move(handler);
 	}
 	void set_video_info_callback(video_info_callback_t && handler) {
-		_video_info_callback = handler;
+		_video_info_callback = std::move(handler);
 	}
 	void set_audio_info_callback(audio_info_callback_t && handler) {
-		_audio_info_callback = handler;
+		_audio_info_callback = std::move(handler);
 	}
 	void set_error_callback(error_callback_t && handler) {
-		_error_callback = handler;
+		_error_callback = std::move(handler);
 	}
 
 #endif // USE_CALLBACKS_API

@@ -130,7 +130,7 @@ void AcquireQueue::processRequest() {
 		if (rm->selectPolicyCandidates(request.connection_id, shortage, candidates)) {
 			// prefer to bother as less as possible  policy candidates
 			if (request.candidates.empty() || request.candidates.size() > candidates.size()) {
-				request.candidates = candidates;
+				request.candidates = std::move(candidates);
 			}
 		}
 	}

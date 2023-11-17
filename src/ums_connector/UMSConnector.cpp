@@ -128,7 +128,7 @@ bool UMSConnector::addEventHandler(string event,UMSConnectorEventFunction func, 
 bool UMSConnector::addEventHandler(string event,UMSConnectorEventFunction func, UMSConnectorBusType bus, const string &category)
 {
 	if( pImpl ) {
-		return pImpl->addEventHandler(event, func, bus, category);
+		return pImpl->addEventHandler(std::move(event), func, bus, category);
 	}
 	return false;
 }

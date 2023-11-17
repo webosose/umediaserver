@@ -140,7 +140,7 @@ private:
 		friend class CallbackManager;
 	private:
 		CommandCategory(void * context, std::shared_ptr<const uMediaServer::Logger> log)
-			: CallbackWrapper(context, log) {}
+			: CallbackWrapper(context, std::move(log)) {}
 		void registerHandler(const std::string & method, UMSConnectorEventFunction handler) {
 			m_handlers[method] = handler;
 		}
@@ -156,7 +156,7 @@ private:
 		             void * context,
 		             std::shared_ptr<const uMediaServer::Logger> log,
 				         UMSConnectorEventFunction handler)
-			: CallbackWrapper(context, log), m_ls_uri(ls_uri), m_handler(handler) {}
+			: CallbackWrapper(context, std::move(log)), m_ls_uri(ls_uri), m_handler(handler) {}
 		bool handleEvent(LSHandle * handle, LSMessage * message);
 
 		std::string m_ls_uri;
@@ -169,7 +169,7 @@ private:
 		ReplyHandler(CallbackManager * manager, void * context,
 				std::shared_ptr<const uMediaServer::Logger> log,
 				UMSConnectorEventFunction handler)
-			: CallbackWrapper(context, log), m_handler(handler), m_manager(manager) {}
+			: CallbackWrapper(context, std::move(log)), m_handler(handler), m_manager(manager) {}
 		bool handleEvent(LSHandle * handle, LSMessage * message);
 
 		UMSConnectorEventFunction m_handler;

@@ -67,7 +67,7 @@ bool UMSConnectorAddEventHandler(UMSConnectorHandle *handle, string event, UMSCo
 {
 	UMSConnector * connector = reinterpret_cast<UMSConnector *>(handle);
 	if (connector) {
-		return connector->addEventHandler( event, func );
+		return connector->addEventHandler( std::move(event), func );
 	}
 	return false;
 }

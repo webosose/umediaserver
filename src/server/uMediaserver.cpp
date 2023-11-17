@@ -1857,7 +1857,7 @@ bool uMediaserver::reacquireCommand(UMSConnectorHandle* sender,
 	// Resources as array means only acquire info is provided
 	// Release info will be calculated internally.
 	if (parsed_resources.isArray()) {
-		acquire_request = resource_request;
+		acquire_request = std::move(resource_request);
 		// Prepare release request
 		resource_list_t released = connection->resources;
 		JSchemaFragment input_schema("{}");

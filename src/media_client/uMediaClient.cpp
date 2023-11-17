@@ -736,6 +736,7 @@ bool uMediaClient::load(const std::string& uri, const std::string& type, const s
 {
   pthread_mutex_lock(&mutex);
   bool result = loadAsync(uri, type, mediaPayload);
+  int ret = 0;
   if (result) {
     struct timespec ts;
     struct timeval tp;
@@ -743,10 +744,12 @@ bool uMediaClient::load(const std::string& uri, const std::string& type, const s
     // Convert from timeval to timespec + 10 sec timeout
     ts.tv_sec  = tp.tv_sec + LOAD_TIMEOUT_SECONDS;
     ts.tv_nsec = tp.tv_usec * 1000;
-    auto ret = pthread_cond_timedwait(&load_state_cond, &mutex, &ts);
-    if (ret == ETIMEDOUT) {
-      LOG_ERROR(_log, MSGERR_COND_TIMEDWAIT, "Load timeout.");
-      result = false;
+
+    while ((result) && (ret = pthread_cond_timedwait(&load_state_cond, &mutex, &ts))) {
+      if (ret == ETIMEDOUT) {
+        LOG_ERROR(_log, MSGERR_COND_TIMEDWAIT, "Load timeout.");
+        result = false;
+      }
     }
   }
   pthread_mutex_unlock(&mutex);

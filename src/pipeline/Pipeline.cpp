@@ -230,7 +230,7 @@ void Pipeline::updateState(const string & msg)
 	else if (stateupdate.hasKey("loadCompleted"))
 		processLoadCompleted();
 
-	m_pipeline_json_state.update(stateupdate);
+	m_pipeline_json_state.update(std::move(stateupdate));
 
 	return;
 }
@@ -290,9 +290,9 @@ void Pipeline::startProcess() {
         } else {
 	  weak_ptr_t weak_this = shared_from_this();
 	  process_pool.hire(type_, id_, [weak_this](const std::string & service, Process::ptr_t p){
-		ptr_t shared_this = weak_this.lock();
+		ptr_t shared_this (std::move(weak_this).lock());
 		if (shared_this) {
-			shared_this->finishLoading(service, p);
+			shared_this->finishLoading(service, std::move(p));
 		}
 	  });
        }
@@ -337,7 +337,7 @@ std::string Pipeline::serializeLoadArgs(const JValue & options) {
 
 void Pipeline::finishLoading (const string &service_name, Process::ptr_t process)
 {
-	process_handle = process;
+	process_handle = std::move(process);
 	process_connection_id = service_name;
 	m_process_starting = false;
 	std::string load_exec = id_ + std::string((char*)"_load_exec");
@@ -899,7 +899,7 @@ bool Pipeline::setSlave(const std::string &ip, int32_t port, const std::string b
 	JValue stateupdate = Object();
 	stateupdate.put("setSlave", args);
 
-	m_pipeline_json_state.update(stateupdate);
+	m_pipeline_json_state.update(std::move(stateupdate));
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
 		LOG_ERROR(log, "CLOCK_SYNC", "Pipeline is not loaded yet.");
@@ -935,7 +935,7 @@ bool Pipeline::setMaster(const std::string &ip, int32_t port, UMSConnectorEventF
 	JValue stateupdate = Object();
 	stateupdate.put("setMaster", args);
 
-	m_pipeline_json_state.update(stateupdate);
+	m_pipeline_json_state.update(std::move(stateupdate));
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
 		LOG_ERROR(log, "CLOCK_SYNC", "Pipeline is not loaded yet.");
@@ -980,7 +980,7 @@ bool Pipeline::selectTrack(const string &type, int32_t index)
 
 	JValue stateupdate = Object();
 	stateupdate.put("selectTrack", args);
-	m_pipeline_json_state.update(stateupdate);
+	m_pipeline_json_state.update(std::move(stateupdate));
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
 		LOG_DEBUG(log, "caching track info : type - %s, index - %d", type.c_str(), index);
@@ -1720,7 +1720,7 @@ bool Pipeline::takeCameraSnapshot(const std::string &location, const std::string
 
 	JValue stateupdate = Object();
 	stateupdate.put("takeCameraSnapshot", args);
-	m_pipeline_json_state.update(stateupdate);
+	m_pipeline_json_state.update(std::move(stateupdate));
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
 		LOG_DEBUG(log, "caching takeCameraSnapshot info : location - %s, format - %s, width - %d, height - %d, pq - %d",
@@ -1770,7 +1770,7 @@ bool Pipeline::startCameraRecord(const std::string &location, const std::string 
 
 	JValue stateupdate = Object();
 	stateupdate.put("startCameraRecord", args);
-	m_pipeline_json_state.update(stateupdate);
+	m_pipeline_json_state.update(std::move(stateupdate));
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
 		LOG_DEBUG(log, "caching startCameraRecord info : location - %s, format - %s", location.c_str(), format.c_str());
@@ -1982,7 +1982,7 @@ bool Pipeline::setVolume(int32_t volume, int32_t duration, EaseType type)
 
 	JValue stateupdate = Object();
 	stateupdate.put("setVolume", args);
-	m_pipeline_json_state.update(stateupdate);
+	m_pipeline_json_state.update(std::move(stateupdate));
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
 		LOG_TRACE(log, "caching volume : volume - %d, ease duration - %d and type - %s",
@@ -2167,7 +2167,7 @@ bool Pipeline::PipelineState::update(JValue update_arg) {
 	if (serializer.toString(tempstate, schema, statestring)) {
 		if (parser.parse(statestring, schema)) {
 			// All good
-			m_state_object = tempstate;
+			m_state_object = std::move(tempstate);
 			LOG_TRACE(log, "Json state: %s", statestring.c_str());
 		}
 		else {

@@ -54,7 +54,7 @@ bool CallbackManager::SubscriptionHandlerProxy(LSHandle * handle, LSMessage * me
 }
 
 CallbackManager::CallbackManager(void * context, std::shared_ptr<const uMediaServer::Logger> log)
-		: m_context(context), m_log(log) {
+		: m_context(context), m_log(std::move(log)) {
 }
 
 CallbackManager::~CallbackManager() {

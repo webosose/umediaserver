@@ -884,7 +884,7 @@ bool ResourceManagerClient::getDisplayIdResponse(UMSConnectorHandle* handle,
 //
 bool ResourceManagerClient::informWaiter(string waiter, bool state, string response)
 {
-	std::lock_guard<std::mutex> lk(acquire_mutex);
+	std::unique_lock<std::mutex> lk(acquire_mutex);
 
 	auto it = acquire_waiters.find(waiter);
 	if(it != acquire_waiters.end()) {

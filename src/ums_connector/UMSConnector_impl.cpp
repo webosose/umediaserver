@@ -266,7 +266,7 @@ bool UMSConnector::UMSConnector_impl::stop()
 
 bool UMSConnector::UMSConnector_impl::addEventHandler(string event, UMSConnectorEventFunction func, const std::string &category)
 {
-	return addEventHandler(event, func, UMS_CONNECTOR_DUAL_BUS, category);
+	return addEventHandler(std::move(event), func, UMS_CONNECTOR_DUAL_BUS, category);
 }
 
 bool UMSConnector::UMSConnector_impl::addEventHandler(string event, UMSConnectorEventFunction func, UMSConnectorBusType bus, const std::string &category)

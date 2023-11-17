@@ -32,7 +32,7 @@ Logger _log(UMS_LOG_CONTEXT_SERVER);
 }
 
 AppObserver::AppObserver(UMSConnector * umc, app_state_callback_t && fg_state_change_cb)
-	: connector(umc), fg_state_callback(fg_state_change_cb) {
+	: connector(umc), fg_state_callback(std::move(fg_state_change_cb)) {
 	connector->subscribe(sam_app_life_status_call, subscription_message, appLifeStatusCallback, this);
 }
 

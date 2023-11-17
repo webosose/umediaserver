@@ -78,7 +78,7 @@ void AppLifeManager::unregisterConnection(const std::string& connection_id) {
 		return (p.second.connections.find(connection_id) != p.second.connections.end());
 	};
 
-	auto itr = std::find_if(_apps.begin(), _apps.end(), func);
+	auto itr = std::find_if(_apps.begin(), _apps.end(), std::move(func));
 	if (itr != _apps.end()) {
 		itr->second.connections.erase(connection_id);
 	}
@@ -107,7 +107,7 @@ bool AppLifeManager::getForegroundAppsInfo(pbnjson::JValue& forground_app_info_o
 			pbnjson::JValue conn_array = pbnjson::Array();
 			app_obj.put("appId",app.second.app_id);
 			app_obj.put("displayId",app.second.display_id);
-			for (auto conn : app.second.connections) {
+			for (const auto &conn : app.second.connections) {
 				pbnjson::JValue conn_obj = pbnjson::Object();
 				if (pipeline_status_callback)
 					pipeline_status_callback(conn, conn_obj);
@@ -163,7 +163,7 @@ void AppLifeManager::updateAppStatus(const std::string app_id, AppLifeStatus sta
 					}
 					break;
 				case AppLifeStatus::BACKGROUND:
-					for (auto conn: _apps[app_id].connections) {
+					for (const auto &conn: _apps[app_id].connections) {
 						connection_status_changed_callback(conn, app_status_event_t::BACKGROUND, _apps[app_id].window_type);
 					}
 					break;
@@ -185,7 +185,7 @@ void AppLifeManager::updateAppStatus(const std::string app_id, AppLifeStatus sta
 			app.display_id = display_id;
 			app.pid = pid;
 			app.window_type = app_window_type;
-			_apps[app_id] = app;
+			_apps[app_id] = std::move(app);
 		}
 	}
 	notifyForegroundAppsInfo();
@@ -237,7 +237,7 @@ std::string AppLifeManager::getAppId(const std::string& connection_id)
 		return (p.second.connections.find(connection_id) != p.second.connections.end());
 	};
 
-	auto itr = std::find_if(_apps.begin(), _apps.end(), func);
+	auto itr = std::find_if(_apps.begin(), _apps.end(), std::move(func));
 	if (itr != _apps.end()) {
 		ret = itr->second.app_id;
 	}

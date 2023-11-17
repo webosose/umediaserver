@@ -345,6 +345,7 @@ public:
 
 	resource_manager_connection_t * findConnection(const std::string &connection_id);
 	const resource_manager_connection_map_t& getConnections() const {
+		lock_t l(mutex);
 		return connections;
 	}
 
@@ -405,7 +406,7 @@ public:
 	}
 	void setAcquireCallback(callback_t callback);
 	void setPolicyActionCallback(callback_t callback) {
-		m_policy_action_callback = callback;
+		m_policy_action_callback = std::move(callback);
 	}
 
 	void setForegroundInfoCallback(std::function<void()> callback) {
@@ -462,7 +463,7 @@ public:
 
 private:
 	std::string key_source;   // character source for unique id generation
-	std::recursive_mutex mutex;
+	mutable std::recursive_mutex mutex;
 	typedef std::lock_guard<std::recursive_mutex> lock_t;
 
 	// connections to resource manager

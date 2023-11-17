@@ -26,7 +26,7 @@
 namespace uMediaServer {
 
 Process::Process(const std::string & cmd, exit_callback_t && exit_cb,
-				 const environment_t & env)	: _exit_cb(exit_cb), _watcher_tag(0) {
+				 const environment_t & env)	: _exit_cb(std::move(exit_cb)), _watcher_tag(0) {
 	_pid = fork();
 	if (0 == _pid) {
 		setEnvironment(env);
@@ -48,7 +48,7 @@ Process::Process(const std::string & cmd, exit_callback_t && exit_cb,
 }
 
 Process::Process(std::function<void()> && proc, exit_callback_t && exit_cb,
-				 const environment_t & env) : _exit_cb(exit_cb) {
+				 const environment_t & env) : _exit_cb(std::move(exit_cb)) {
 	_pid = fork();
 	if (0 == _pid) {
 		setEnvironment(env);

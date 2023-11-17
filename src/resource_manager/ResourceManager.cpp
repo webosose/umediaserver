@@ -965,6 +965,7 @@ void ResourceManager::showSystemResources() const
 //
 void ResourceManager::showConnections()
 {
+	lock_t l(mutex);
 	if( connections.empty()) {
 		LOG_DEBUG(_log, "connections map: EMPTY\n");
 		return;
@@ -1002,6 +1003,7 @@ resource_manager_connection_t * ResourceManager::findConnection(const string &co
 
 void ResourceManager::showActivePipelines()
 {
+	lock_t l(mutex);
 	if ( connections.empty()) {
 		LOG_DEBUG(_log, "active_pipelines: EMPTY\n");
 		return;
@@ -1372,6 +1374,7 @@ void ResourceManager::removePriority(const std::string & type) {
 }
 
 void ResourceManager::setManaged(const std::string & id) {
+	lock_t l(mutex);
 	auto connection = connections.find(id);
 	if(connection == connections.end())
 		LOG_ERROR(_log, MSGERR_CONN_FIND, "id=%s not found.", id.c_str());
@@ -1380,6 +1383,7 @@ void ResourceManager::setManaged(const std::string & id) {
 }
 
 bool ResourceManager::getManaged(const std::string & id) {
+	lock_t l(mutex);
 	auto connection = connections.find(id);
 	if(connection == connections.end()) {
 		LOG_ERROR(_log, MSGERR_CONN_FIND, "id=%s not found.", id.c_str());

@@ -29,7 +29,7 @@ namespace {
 }
 
 ProcessPool::ProcessPool(IServiceReadyWatcher & watcher, exited_cb_t && exited_cb)
-	: _watcher(watcher), _exited_cb(exited_cb) {
+	: _watcher(watcher), _exited_cb(std::move(exited_cb)) {
 	// Initialize Pipeline Pool
 	auto & sql = *Reg::Registry::instance()->dbi();
 	std::list<pipeline_cfg_t> pipeline_configs;
@@ -82,7 +82,7 @@ void ProcessPool::hire(const std::string & type, const std::string & id, dispatc
 		}
 	}
 	// start new process and enqueue request
-	_wait_list.push_back({type, id, cb});
+	_wait_list.push_back({type, id, std::move(cb)});
 	start(type);
 }
 
@@ -95,7 +95,7 @@ void ProcessPool::retire(Process::ptr_t p, const std::string &service_name) {
 	}
 	// is process still running?
 	if (0 == kill(p->pid(), 0)) {
-		_retired_pool[p->pid()] = {id, service_name, p};
+		_retired_pool[p->pid()] = {std::move(id), service_name, p};
 		p->stop();
 	}
 }
