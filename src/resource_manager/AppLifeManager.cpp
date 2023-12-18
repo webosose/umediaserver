@@ -149,16 +149,16 @@ void AppLifeManager::updateAppStatus(const std::string app_id, AppLifeStatus sta
 
 			switch (status) {
 				case AppLifeStatus::FOREGROUND:
-					for (auto conn: _apps[RESERVED_APP].connections) {
+					for (const auto &conn: _apps[RESERVED_APP].connections) {
 						connection_status_changed_callback(conn, app_status_event_t::BACKGROUND, _apps[RESERVED_APP].window_type);
 					}
-					for (auto conn: _apps[app_id].connections) {
+					for (const auto &conn: _apps[app_id].connections) {
 						connection_status_changed_callback(conn, app_status_event_t::FOREGROUND, _apps[app_id].window_type);
 					}
 					break;
 				case AppLifeStatus::LAUNCHING:
 				case AppLifeStatus::RELAUNCHING:
-					for (auto conn: _apps[app_id].connections) {
+					for (const auto &conn: _apps[app_id].connections) {
 						connection_status_changed_callback(conn, app_status_event_t::DELAY, _apps[app_id].window_type);
 					}
 					break;
@@ -170,7 +170,7 @@ void AppLifeManager::updateAppStatus(const std::string app_id, AppLifeStatus sta
 				case AppLifeStatus::CLOSING:
 					break;
 				case AppLifeStatus::STOP:
-					for (auto conn: _apps[app_id].connections) {
+					for (const auto &conn: _apps[app_id].connections) {
 						connection_status_changed_callback(conn, app_status_event_t::BACKGROUND, _apps[app_id].window_type);
 					}
 					_apps.erase(app_id);

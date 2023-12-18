@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(crash_process) {
 		std::cout << "process " << p->pid() << "(" << service_name << ") ready..." << std::endl;
 		dispatched = true;
 		new GMainTimer(500, [loop](){ g_main_loop_quit(loop); });
-		proc = p;
+		proc = std::move(p);
 	});
 	g_main_loop_run(loop);
 	g_main_loop_unref(loop);
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(retire_process) {
 	pool.hire("file", id, [&](const std::string & service_name, Process::ptr_t p){
 		std::cout << "process " << (pid = p->pid()) << "(" << service_name << ") ready..." << std::endl;
 		dispatched = true;
-		pool.retire(p);
+		pool.retire(std::move(p));
 		new GMainTimer(500, [loop](){ g_main_loop_quit(loop); });
 	});
 	g_main_loop_run(loop);

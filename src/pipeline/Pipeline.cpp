@@ -2209,6 +2209,7 @@ string Pipeline::PipelineState::getJsonString() {
 
 	JGenerator serializer;
 	string statestring;
+	lock_guard<mutex> lock(state_mutex);
 	if (!serializer.toString(m_state_object, schema, statestring)) {
 		LOG_ERROR(log, MSGERR_JSON_SERIALIZE,
 				"Failed to generate json state string, returning empty object");
@@ -2233,6 +2234,7 @@ const pbnjson::JSchema & Pipeline::getSchema(const std::string & schema_path) {
 
 void Pipeline::PipelineState::printState() {
 	LOG_DEBUG(log, " pipeLineState : {");
+	lock_guard<mutex> lock(state_mutex);
 	printFields(m_state_object);
 	LOG_DEBUG(log, " }");
 }
