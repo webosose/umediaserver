@@ -64,7 +64,7 @@ void AppLifeManager::registerConnection(const std::string& app_id, const std::st
 			app.status = AppLifeStatus::UNKNOWN;
 			app.window_type = DEFAULT_TYPE;
 			app.connections.insert(connection_id);
-			_apps[app_id] = app;
+			_apps[app_id] = std::move(app);
 		}
 	}
 	LOG_DEBUG(_log, "registerConnection done. app_id : %s, connection_id : %s, reserved : %d", app_id.c_str(), connection_id.c_str(), reserved);

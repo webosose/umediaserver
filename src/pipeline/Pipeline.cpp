@@ -2020,7 +2020,7 @@ bool Pipeline::setMasterClock(const std::string& ip, int32_t port)
 
 	JValue stateupdate = Object();
 	stateupdate.put("setMasterClock", args);
-	m_pipeline_json_state.update(stateupdate);
+	m_pipeline_json_state.update(std::move(stateupdate));
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
 		LOG_DEBUG(log, "caching master clock : ip - %s, port - %d",
