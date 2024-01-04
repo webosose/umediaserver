@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2018 LG Electronics, Inc.
+# Copyright (c) 2008-2024 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 # Default settings used for device. Target-specific overrides are done below.
 # If you change a value here, check to see if the overrides below are still necessary.
-
-webos_machine_impl_dep()
 
 set(CONF_UMS_LOG_FILE "${WEBOS_INSTALL_LOGDIR}/ums.log")
 

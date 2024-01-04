@@ -1,4 +1,4 @@
-# Copyright (c) 2008-2021 LG Electronics, Inc.
+# Copyright (c) 2008-2024 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -64,22 +64,8 @@ if (PMTRACE_FOUND)
 	set(PMTRACE_LDFLAGS -ldl ${PMTRACE_LDFLAGS})
 endif ()
 
-if("${WEBOS_TARGET_MACHINE}" STREQUAL "" OR "${WEBOS_TARGET_MACHINE}" MATCHES "raspberrypi*")
-    message(STATUS "Using INTERNAL API v.2")
-    add_definitions(-DUMS_INTERNAL_API_VERSION=2)
-else()
-  if (${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
-      message(STATUS "Using INTERNAL API v.2")
-      add_definitions(-DUMS_INTERNAL_API_VERSION=2)
-  else()
-      message(STATUS "Using INTERNAL API v.1")
-  endif()
-endif()
-
-if("${WEBOS_TARGET_MACHINE}" MATCHES "raspberrypi*")
-    message(STATUS "Using raspberry machine")
-    add_definitions(-DUSE_RPI_RESOURCE)
-endif()
+message(STATUS "Using INTERNAL API v.2")
+add_definitions(-DUMS_INTERNAL_API_VERSION=2)
 
 # ---
 #  build components
