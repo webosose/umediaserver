@@ -2056,7 +2056,7 @@ bool Pipeline::setSlaveClock(const std::string& ip, int32_t port, int64_t baseTi
 
 	JValue stateupdate = Object();
 	stateupdate.put("setSlaveClock", args);
-	m_pipeline_json_state.update(stateupdate);
+	m_pipeline_json_state.update(std::move(stateupdate));
 
 	if (getProcessState() != PIPELINE_MEDIA_LOADED) {
 		LOG_DEBUG(log, "caching slave clock : ip - %s, port - %d, baseTime - %lld",
