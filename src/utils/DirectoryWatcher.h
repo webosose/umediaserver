@@ -19,7 +19,8 @@ public:
 	virtual const char* what() const throw()
 	{
 		std::string retval = "inotify exception, can't watch directory" + dir_;
-		return retval.c_str();
+		const char *ret_str = strdup(retval.c_str());
+		return ret_str;
 	}
 };
 
