@@ -16,6 +16,7 @@
 //
 
 #include "AcquireQueue.h"
+#include <algorithm>
 #include <Logger.h>
 #include <Logger_id.h>
 #include <Logger_macro.h>
