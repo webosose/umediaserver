@@ -158,10 +158,13 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 		acquire_queue.removeWaiter(connection_id);
 		pm->stateChange(connection_id, false);
 		if (pm->unload(connection_id)) {
-			connector->unrefMessage(connection_message_map_[connection_id]);
-			connection_message_map_.erase(connection_id);
+			if (connection_message_map_.find(connection_id) != connection_message_map_.end()) {
+				connector->unrefMessage(connection_message_map_[connection_id]);
+				connection_message_map_.erase(connection_id);
+			} else {
+				LOG_WARNING_EX(log, MSGNFO_UNLOAD_REQUEST, __KV({{KVP_MEDIA_ID, connection_id}}), "Invalid connection id");
+			}
 		}
-
 	};
 	unregister_functor_ = [this] (std::string connection_id) {
 		LOG_DEBUG(log, "RM Client disconnected. Unregister(%s).", connection_id.c_str());
