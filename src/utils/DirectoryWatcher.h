@@ -13,14 +13,14 @@ class dwexception : public std::exception
 {
 private:
 	std::string dir_;
+	mutable std::string retval;
 public:
 	dwexception(std::string dir) : dir_(dir) {};
 	~dwexception() throw() {};
 	virtual const char* what() const throw()
 	{
-		std::string retval = "inotify exception, can't watch directory" + dir_;
-		const char *ret_str = strdup(retval.c_str());
-		return ret_str;
+		retval = "inotify exception, can't watch directory" + dir_;
+		return retval.c_str();
 	}
 };
 
