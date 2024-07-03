@@ -32,13 +32,13 @@ using namespace std;
 //
 // create media player client
 //
-class MediaPlayer : public uMediaClient {
+class MediaPlayerClient : public uMediaClient {
 public:
-	MediaPlayer(UMSConnectorBusType bus = UMS_CONNECTOR_PUBLIC_BUS) : uMediaClient(false, bus) {
+	MediaPlayerClient(UMSConnectorBusType bus = UMS_CONNECTOR_PUBLIC_BUS) : uMediaClient(false, bus) {
 		startInputMessageThread();
 	};
 
-	~MediaPlayer() {
+	~MediaPlayerClient() {
 		stop();   // exit uMS API event loop
 		pthread_join(input_process_thread,NULL);
 	};
@@ -49,7 +49,7 @@ public:
 
 	// Thread to run event loop for subscription and command messages
 	static void * inputThread(void *ctx) {
-		MediaPlayer * self = static_cast<MediaPlayer *>(ctx);
+		MediaPlayerClient * self = static_cast<MediaPlayerClient *>(ctx);
 		self->run();
 		return NULL;
 	}
@@ -69,7 +69,7 @@ private:
 
 uMediaClientHandle * uMediaClientCreate()
 {
-	MediaPlayer *mp = new MediaPlayer(UMS_CONNECTOR_PUBLIC_BUS);
+	MediaPlayerClient *mp = new MediaPlayerClient(UMS_CONNECTOR_PUBLIC_BUS);
 	if ( mp == NULL ) {
 		return NULL;
 	}
@@ -78,7 +78,7 @@ uMediaClientHandle * uMediaClientCreate()
 
 uMediaClientHandle * uMediaClientCreatePrivate()
 {
-	MediaPlayer *mp = new MediaPlayer(UMS_CONNECTOR_PRIVATE_BUS);
+	MediaPlayerClient *mp = new MediaPlayerClient(UMS_CONNECTOR_PRIVATE_BUS);
 	if ( mp == NULL ) {
 		return NULL;
 	}
@@ -93,44 +93,44 @@ int uMediaClientLoad(uMediaClientHandle hdl,
 						AudioStreamClass audioClass,
 						char * payload)
 {
-	MediaPlayer * mp = reinterpret_cast<MediaPlayer *>(hdl);
+	MediaPlayerClient * mp = reinterpret_cast<MediaPlayerClient *>(hdl);
 	return mp->load(uri,audioClass,payload);
 }
 
 int uMediaClientAttach(uMediaClientHandle hdl,
 						char * mediaId)
 {
-	MediaPlayer * mp = reinterpret_cast<MediaPlayer *>(hdl);
+	MediaPlayerClient * mp = reinterpret_cast<MediaPlayerClient *>(hdl);
 	return mp->attach(mediaId);
 }
 
 int uMediaClientUnload(uMediaClientHandle hdl)
 {
-	MediaPlayer * mp = reinterpret_cast<MediaPlayer *>(hdl);
+	MediaPlayerClient * mp = reinterpret_cast<MediaPlayerClient *>(hdl);
 	return mp->unload();
 }
 
 int uMediaClientPlay(uMediaClientHandle hdl)
 {
-	MediaPlayer * mp = reinterpret_cast<MediaPlayer *>(hdl);
+	MediaPlayerClient * mp = reinterpret_cast<MediaPlayerClient *>(hdl);
 	return mp->play();
 }
 
 int uMediaClientPause(uMediaClientHandle hdl)
 {
-	MediaPlayer * mp = reinterpret_cast<MediaPlayer *>(hdl);
+	MediaPlayerClient * mp = reinterpret_cast<MediaPlayerClient *>(hdl);
 	return mp->pause();
 }
 
 int uMediaClientSeek(uMediaClientHandle hdl, long position)
 {
-	MediaPlayer * mp = reinterpret_cast<MediaPlayer *>(hdl);
+	MediaPlayerClient * mp = reinterpret_cast<MediaPlayerClient *>(hdl);
 	return mp->seek(position);
 }
 
 int uMediaClientDestroy(uMediaClientHandle hdl)
 {
-	MediaPlayer * mp = reinterpret_cast<MediaPlayer *>(hdl);
+	MediaPlayerClient * mp = reinterpret_cast<MediaPlayerClient *>(hdl);
 	delete mp;
 	return 1;
 }
