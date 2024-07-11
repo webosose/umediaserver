@@ -148,7 +148,7 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 			};
 			dynamic_config_dir_watcher_.reset(new DirectoryWatcher<function<void()>>(dynamic_config_dir.string(), cb));
 		}
-		catch (dwexception ex) {
+		catch (dwexception &ex) {
 			LOG_ERROR(log, MSGERR_CONFIG, "%s", ex.what());
 		}
 	}
