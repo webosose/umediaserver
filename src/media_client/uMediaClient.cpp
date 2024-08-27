@@ -82,8 +82,14 @@ uMediaClient::uMediaClient(bool rawEvents, UMSConnectorBusType bus, const std::s
 
   context = g_main_context_new();
   gmain_loop = g_main_loop_new(context, false);
-  connection = new UMSConnector(process_connection_id, gmain_loop,
-      static_cast<void*>(this), bus, false, m_app_connection_id);
+  try {
+    connection = new UMSConnector(process_connection_id, gmain_loop,
+        static_cast<void*>(this), bus, false, m_app_connection_id);
+  } catch (const std::runtime_error& e) {
+    LOG_DEBUG(_log, "Failed to initialize UMSConnector: %s", e.what());
+    g_main_context_unref(context);
+    g_main_loop_unref(gmain_loop);
+  }
 
   pthread_cond_init(&load_state_cond,NULL);
   pthread_mutex_init(&mutex,NULL);
@@ -267,7 +273,7 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
       video_info.height = vs["video"]["height"].asNumber<int32_t>();
       video_info.frame_rate = ums::rational_t { vs["video"]["frame_rate"]["num"].asNumber<int32_t>(),
                             vs["video"]["frame_rate"]["den"].asNumber<int32_t>() };
-      source_info.video_streams.push_back(video_info);
+      source_info.video_streams.push_back(std::move(video_info));
     }
     for (size_t v = 0; v < value["audio_streams"].arraySize(); ++v) {
       const auto & as = value["audio_streams"][v];
@@ -275,7 +281,7 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
       audio_info.codec = as["codec"].asString();
       audio_info.bit_rate = as["bit_rate"].asNumber<int64_t>();
       audio_info.sample_rate = as["sample_rate"].asNumber<int32_t>();
-      source_info.audio_streams.push_back(audio_info);
+      source_info.audio_streams.push_back(std::move(audio_info));
     }
     if (_source_info_callback)
       _source_info_callback(source_info);
@@ -315,7 +321,7 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
             audioTrackInfo.trackId    = unmarshalllong(programInfoValue["audioTrackInfo"][j]["trackId"]);
             audioTrackInfo.role    = unmarshallstring(programInfoValue["audioTrackInfo"][j]["role"]);
             audioTrackInfo.adaptationSetId  = unmarshalllong(programInfoValue["audioTrackInfo"][j]["adaptationSetId"]);
-            programInfo.audioTrackInfo.push_back(audioTrackInfo);
+            programInfo.audioTrackInfo.push_back(std::move(audioTrackInfo));
           }
         }
 
@@ -611,7 +617,7 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
     uint32_t error_code = value["errorCode"].asNumber<int32_t>();
     std::string error_text = value["errorText"].asString();
     if (_error_callback) {
-      _error_callback({error_code, error_text});
+      _error_callback({error_code, std::move(error_text)});
       return true;
     }
     return onError(error_code, error_text);
@@ -627,7 +633,7 @@ bool uMediaClient::stateChange(UMSConnectorHandle* handle, UMSConnectorMessage* 
 
         JValue trackInfoValue = tracksInfoArray[i];
         trackInfo.description = unmarshallstring(trackInfoValue["description"]);
-        extsubtrackInfo.tracks.push_back(trackInfo);
+        extsubtrackInfo.tracks.push_back(std::move(trackInfo));
       }
     }
     extsubtrackInfo.hitEncoding=unmarshallstring(value["hitEncoding"]);

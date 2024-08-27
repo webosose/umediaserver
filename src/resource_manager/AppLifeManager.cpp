@@ -247,8 +247,12 @@ std::string AppLifeManager::getAppId(const std::string& connection_id)
 
 bool AppLifeManager::getDisplayId(const std::string& app_id, int32_t *display_id)
 {
-	*display_id = atoi (&app_id.back());
-	return true;
+    if (!app_id.empty()) {
+        *display_id = atoi(&app_id.back());
+        return true;
+    } else {
+        return false;
+    }
 }
 
 

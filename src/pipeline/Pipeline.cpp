@@ -135,8 +135,12 @@ Pipeline::Pipeline(const string & type, ProcessPool & pool)
 
 	std::string connection_id = PIPELINE_CONTROLLER_CONNECTION_BASE_ID + id_;
 	// Use default main loop and default context of uMS Core
-	pipeline_connector = new UMSConnector(connection_id, nullptr,
-			static_cast<void*>(this), UMS_CONNECTOR_PRIVATE_BUS, true);
+	try {
+            pipeline_connector = new UMSConnector(connection_id, nullptr,
+                static_cast<void*>(this), UMS_CONNECTOR_PRIVATE_BUS, true);
+        } catch (const std::runtime_error& e) {
+            LOG_DEBUG(log, "Failed to create UMSConnector: %s", e.what());
+        }
 }
 
 Pipeline::~Pipeline()
@@ -340,7 +344,7 @@ void Pipeline::finishLoading (const string &service_name, Process::ptr_t process
 	process_handle = std::move(process);
 	process_connection_id = service_name;
 	m_process_starting = false;
-	std::string load_exec = id_ + std::string((char*)"_load_exec");
+	std::string load_exec = id_ + "_load_exec";
 	UMSTRACE_AFTER(load_exec.c_str());
 
 	updatePipelineProcessState(PIPELINE_RUNNING);
@@ -377,13 +381,13 @@ void Pipeline::finishLoading (const string &service_name, Process::ptr_t process
 	auto payload_serialized = serializeLoadArgs(options);
 
 	pipeline_connector->sendMessage(cmd, payload_serialized, nullptr, nullptr);
-	std::string load_load = id_ + std::string((char*)"_load_load");
+	std::string load_load = id_ + "_load_load";
 	UMSTRACE_BEFORE(load_load.c_str());
 }
 
 bool Pipeline::processLoadCompleted()
 {
-	std::string load_load = id_ + std::string((char*)"_load_load");
+	std::string load_load = id_ + "_load_load";
 	UMSTRACE_AFTER(load_load.c_str());
 	string media_state = getMediaState();  // stash
 
@@ -541,7 +545,7 @@ bool Pipeline::processLoadCompleted()
 		LOG_DEBUG(log, "media state unknown. state = %s", mediastate.c_str());
 	}
 
-	std::string load = id_ + std::string((char*)"_load");
+	std::string load = id_ + "_load";
 	UMSTRACE_AFTER(load.c_str());
 	return true;
 }
@@ -710,8 +714,8 @@ bool Pipeline::resume()
 	// in the readyEvent
 	m_restarting = true; // This will force state restoration.
 
-	std::string load = id_ + std::string((char*)"_load");
-	std::string load_exec = id_ + std::string((char*)"_load_exec");
+	std::string load = id_ + "_load";
+	std::string load_exec = id_ + "_load_exec";
 	UMSTRACE_BEFORE(load.c_str());
 	UMSTRACE_BEFORE(load_exec.c_str());
 

@@ -140,41 +140,46 @@ uMediaserver::uMediaserver(const std::string& conf_file)
 	initAcquireQueue();
 
 	if (!dynamic_config_dir.empty()) {
-		readDynamicPipelineConfigs();
-		try {
-			auto cb = [this] {
-				removeDynamicPipelines();
-				readDynamicPipelineConfigs();
-			};
-			dynamic_config_dir_watcher_.reset(new DirectoryWatcher<function<void()>>(dynamic_config_dir.string(), cb));
-		}
-		catch (dwexception &ex) {
-			LOG_ERROR(log, MSGERR_CONFIG, "%s", ex.what());
-		}
-	}
+    try {
+        readDynamicPipelineConfigs();
+        auto cb = [this] {
+            removeDynamicPipelines();
+            try {
+                readDynamicPipelineConfigs();
+            } catch (const uMediaServer::DBI::RangeError& ex) {
+                LOG_ERROR(log, MSGERR_CONFIG, "Error reading dynamic pipeline configs: %s", ex.what());
+            }
+        };
+        dynamic_config_dir_watcher_.reset(new DirectoryWatcher<function<void()>>(dynamic_config_dir.string(), cb));
+    } catch (const uMediaServer::DBI::RangeError& ex) {
+        LOG_ERROR(log, MSGERR_CONFIG, "Error reading dynamic pipeline configs: %s", ex.what());
+    } catch (const std::exception& ex) {
+        LOG_ERROR(log, MSGERR_CONFIG, "Unexpected error: %s", ex.what());
+    }
+}
 
 	unload_functor_ = [this] (string connection_id) {
-		LOG_DEBUG(log, "unloadFunctor(%s)", connection_id.c_str());
-		acquire_queue.removeWaiter(connection_id);
-		pm->stateChange(connection_id, false);
-		if (pm->unload(connection_id)) {
-			if (connection_message_map_.find(connection_id) != connection_message_map_.end()) {
-				connector->unrefMessage(connection_message_map_[connection_id]);
-				connection_message_map_.erase(connection_id);
-			} else {
-				LOG_WARNING_EX(log, MSGNFO_UNLOAD_REQUEST, __KV({{KVP_MEDIA_ID, connection_id}}), "Invalid connection id");
-			}
-		}
-	};
-	unregister_functor_ = [this] (std::string connection_id) {
-		LOG_DEBUG(log, "RM Client disconnected. Unregister(%s).", connection_id.c_str());
-		rm->unregisterPipeline(connection_id);
-		app_life_manager_->unregisterConnection(connection_id);
-	};
+        LOG_DEBUG(this->log, "unloadFunctor(%s)", connection_id.c_str());
+        this->acquire_queue.removeWaiter(connection_id);
+        this->pm->stateChange(connection_id, false);
+        if (this->pm->unload(connection_id)) {
+            if (this->connection_message_map_.find(connection_id) != this->connection_message_map_.end()) {
+                this->connector->unrefMessage(this->connection_message_map_[connection_id]);
+                this->connection_message_map_.erase(connection_id);
+            } else {
+                LOG_WARNING_EX(this->log, MSGNFO_UNLOAD_REQUEST, __KV({{KVP_MEDIA_ID, connection_id}}), "Invalid connection id");
+            }
+        }
+    };
+    unregister_functor_ = [this] (std::string connection_id) {
+        LOG_DEBUG(this->log, "RM Client disconnected. Unregister(%s).", connection_id.c_str());
+        this->rm->unregisterPipeline(connection_id);
+        this->app_life_manager_->unregisterConnection(connection_id);
+    };
 
 	acquire_callback_ = [this](const std::string & id, const resource_list_t & resources) {
 		// notify mdc
-		std::string pipeline_service = pm->getPipelineServiceName(id);
+		std::string pipeline_service = this->pm->getPipelineServiceName(id);
 	};
 
 	rm->setAcquireCallback(acquire_callback_);
@@ -477,7 +482,7 @@ bool uMediaserver::loadCommand(UMSConnectorHandle* sender,
 
 	if (!preloaded) {
 		// register pipeline as managed with Resource Manager
-		std::string connection_load = connection_id + std::string((char*)"_load");
+		std::string connection_load = connection_id + "_load";
 		UMSTRACE_BEFORE(connection_load.c_str());
 		rm->registerPipeline(connection_id, type, true, app_life_manager_->isForeground(app_id));
 		app_life_manager_->registerConnection(app_id, connection_id);

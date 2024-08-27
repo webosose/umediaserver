@@ -73,7 +73,7 @@ public:
 		fd_ = inotify_init();
 		if (inotify_add_watch(fd_, directory.c_str(), IN_CLOSE_WRITE | IN_DELETE) < 0) {
 			close(fd_);
-			throw dwexception(directory);
+			throw dwexception(std::move(directory));
 		}
 		bufsiz_ = sizeof(struct inotify_event) + PATH_MAX + 1;
 		event_ = static_cast<inotify_event*>(malloc(bufsiz_));

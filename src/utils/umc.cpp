@@ -351,7 +351,7 @@ public:
 							videoTrackInfo.role		= unmarshallstring(programInfoValue["videoTrackInfo"][j]["role"]);
 							videoTrackInfo.adaptationSetId	= unmarshalllong(programInfoValue["videoTrackInfo"][j]["adaptationSetId"]);
 							videoTrackInfo.orgCodec 	= unmarshallstring(programInfoValue["videoTrackInfo"][j]["orgCodec"]);
-							programInfo.videoTrackInfo.push_back(videoTrackInfo);
+							programInfo.videoTrackInfo.push_back(std::move(videoTrackInfo));
 						}
 					}
 
@@ -369,11 +369,11 @@ public:
 							subtitleTrackInfo.ancilaryPageId 	= unmarshalllong(programInfoValue["subtitleTrackInfo"][j]["ancilaryPageId"]);
 							subtitleTrackInfo.hearingImpared 	= unmarshallboolean(programInfoValue["subtitleTrackInfo"][j]["hearingImpared"]);
 							subtitleTrackInfo.trackId 	= unmarshallboolean(programInfoValue["subtitleTrackInfo"][j]["trackId"]);
-							programInfo.subtitleTrackInfo.push_back(subtitleTrackInfo);
+							programInfo.subtitleTrackInfo.push_back(std::move(subtitleTrackInfo));
 						}
 					}
 
-					sourceInfo.programInfo.push_back(programInfo);
+					sourceInfo.programInfo.push_back(std::move(programInfo));
 				}
 			}
 			else {
@@ -391,7 +391,7 @@ public:
 					downloadableFontInfo.url = unmarshallstring(value["downloadableFontInfo"][i]["url"]);
 					downloadableFontInfo.mimeType = unmarshallstring(value["downloadableFontInfo"][i]["mimeType"]);
 					downloadableFontInfo.fontFamily = unmarshallstring(value["downloadableFontInfo"][i]["fontFamily"]);
-					sourceInfo.downloadableFontInfo.push_back(downloadableFontInfo);
+					sourceInfo.downloadableFontInfo.push_back(std::move(downloadableFontInfo));
 				}
 			}
 
@@ -597,7 +597,7 @@ public:
 
 					pbnjson::JValue trackInfoValue = tracksInfoArray[i];
 					trackInfo.description = unmarshallstring(trackInfoValue["description"]);
-					extsubtrackInfo.tracks.push_back(trackInfo);
+					extsubtrackInfo.tracks.push_back(std::move(trackInfo));
 				}
 			}
 			extsubtrackInfo.hitEncoding=unmarshallstring(value["hitEncoding"]);

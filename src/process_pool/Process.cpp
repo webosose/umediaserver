@@ -36,8 +36,11 @@ Process::Process(const std::string & cmd, exit_callback_t && exit_cb,
 		char **argv = new char *[tokens.size() + 1];
 		size_t v = 0;
 		for (const auto & token : tokens) {
-			argv[v] = new char[token.size() + 1];
-			strncpy(argv[v++], token.c_str(),token.size()+1);
+			if (v < tokens.size()) {
+				argv[v] = new char[token.size() + 1];
+				strncpy(argv[v], token.c_str(), token.size() + 1);
+				v++;
+        		}
 		}
 		argv[v] = nullptr;
 		execv(argv[0], argv);

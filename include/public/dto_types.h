@@ -226,8 +226,8 @@ struct res_info_t {
 	void add_resource(const std::string & unit, size_t index) {
 		res_t res(unit, index);
 		switch (res.type) {
-			case res_t::VIDEO: vdecs.insert(res); break;
-			case res_t::AUDIO: adecs.insert(res); break;
+			case res_t::VIDEO: vdecs.insert(std::move(res)); break;
+			case res_t::AUDIO: adecs.insert(std::move(res)); break;
 		}
 	}
 

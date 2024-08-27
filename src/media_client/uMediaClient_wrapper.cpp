@@ -69,20 +69,24 @@ private:
 
 uMediaClientHandle * uMediaClientCreate()
 {
-	MediaPlayerClient *mp = new MediaPlayerClient(UMS_CONNECTOR_PUBLIC_BUS);
-	if ( mp == NULL ) {
-		return NULL;
-	}
-	return reinterpret_cast<uMediaClientHandle *>(mp);
+    try {
+        MediaPlayerClient *mp = new MediaPlayerClient(UMS_CONNECTOR_PUBLIC_BUS);
+        return reinterpret_cast<uMediaClientHandle *>(mp);
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Exception caught in uMediaClientCreate: " << e.what() << std::endl;
+        return NULL;
+    }
 }
 
 uMediaClientHandle * uMediaClientCreatePrivate()
 {
-	MediaPlayerClient *mp = new MediaPlayerClient(UMS_CONNECTOR_PRIVATE_BUS);
-	if ( mp == NULL ) {
-		return NULL;
-	}
-	return reinterpret_cast<uMediaClientHandle *>(mp);
+    try {
+        MediaPlayerClient *mp = new MediaPlayerClient(UMS_CONNECTOR_PRIVATE_BUS);
+        return reinterpret_cast<uMediaClientHandle *>(mp);
+    } catch (const std::runtime_error& e) {
+        std::cerr << "Exception caught in uMediaClientCreatePrivate: " << e.what() << std::endl;
+        return NULL;
+    }
 }
 
 // @f uMediaClientLoad

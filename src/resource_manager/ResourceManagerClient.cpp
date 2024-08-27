@@ -81,7 +81,11 @@ ResourceManagerClient::ResourceManagerClient() :
 				api_mutex(new Mutex),
 				display_id(-1)
 {
-	ResourceManagerClientInit();
+	try {
+            ResourceManagerClientInit();
+        } catch (const std::exception& e) {
+            LOG_DEBUG(log, "Failed to initialize ResourceManagerClient: %s", e.what());
+        }
 }
 
 //->Start of API documentation comment block
@@ -105,12 +109,15 @@ ResourceManagerClient::ResourceManagerClient(const string& connection_id_) :
 				display_id(-1)
 {
 
-	ResourceManagerClientInit();
-
-	connection_state = CONNECTION_OPENED;
-	connection_id = connection_id_;
-	LOG_DEBUG(log, "managed client. connection_id=%s",
-			connection_id.c_str());
+	try {
+          ResourceManagerClientInit();
+          connection_state = CONNECTION_OPENED;
+          connection_id = connection_id_;
+          LOG_DEBUG(log, "managed client. connection_id=%s", connection_id.c_str());
+        } catch (const std::runtime_error& e) {
+          LOG_DEBUG(log, "Failed to initialize ResourceManagerClient: %s", e.what());
+		connection_state = CONNECTION_CLOSED;
+        }
 }
 
 void ResourceManagerClient::ResourceManagerClientInit()
@@ -129,14 +136,17 @@ void ResourceManagerClient::ResourceManagerClientInit()
 	} catch (const std::runtime_error & e) {
 		LOG_ERROR_EX(log, MSGERR_UMC_CREATE, __KV({{KVP_ERROR, e.what()}}),
 				"Failed to instantiate a UMSConnector object");
-		throw;
+		connector = nullptr;
+                return;
 	}
 
-	// handle policy event
-	connector->addEventHandler("policyAction",policyActionCallback);
+        if (connector != nullptr) {
+        	// handle policy event
+        	connector->addEventHandler("policyAction",policyActionCallback);
 
-	// acquire complete
-	connector->addEventHandler("acquireComplete",acquireCompleteCallback);
+        	// acquire complete
+        	connector->addEventHandler("acquireComplete",acquireCompleteCallback);
+        }
 
 	pthread_cond_init(&open_condition,NULL);
 	pthread_mutex_init(&mutex,NULL);

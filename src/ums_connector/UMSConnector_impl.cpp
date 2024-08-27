@@ -99,7 +99,6 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 		ls_error_t lserr;
 		if (!LSSubscriptionSetCancelFunction(h, UMSConnector::UMSConnector_impl::_CancelCallback, this, &lserr)) {
 			LOG_ERROR((*log), MSGERR_COMM_SUBSCRIBE, "LSSubscriptionSetCancelFunction FAILED: %s", lserr.message);
-			throw std::runtime_error("LSSubscriptionSetCancelFunction FAILED");
 		}
 	};
 
@@ -111,7 +110,6 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 	if (!ret) {
 		LOG_LS_ERROR(MSGERR_SERVICE_REGISTER, lserror,
 				"LSRegister FAILED for name=%s !!", name.c_str());
-		throw std::runtime_error("LSRegister FAILED");
 	}
 
 	LOG_DEBUG((*log), "LSRegister was successful - returned m_service=%p name=%s",
@@ -121,7 +119,6 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 	if (!ret) {
 		LOG_LS_ERROR(MSGERR_CATEGORY_REGISTER, lserror,
 				"LSRegister FAILED for name=%s !!", name.c_str());
-		throw std::runtime_error("LSRegister FAILED");
 	}
 
 	if( user_data ) {
@@ -129,7 +126,6 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 		if (!ret) {
 			LOG_LS_ERROR(MSGERR_CATEGORY_DATA, lserror,
 					"LSCategorySetData() FAILED for name=%s !!", name.c_str());
-			throw std::runtime_error("LSCategorySetData FAILED");
 		}
 	}
 
@@ -137,7 +133,6 @@ UMSConnector::UMSConnector_impl::UMSConnector_impl(const string& name,
 	if( !ret ) {
 		LOG_LS_ERROR(MSGERR_GMAIN_ATTACH, lserror,
 				"LSGmainAttach FAILED for name=%s !!", name.c_str());
-		throw std::runtime_error("LSGmainAttach FAILED");
 	}
 	f_set_sub_cancel(m_service.lshandle);
 

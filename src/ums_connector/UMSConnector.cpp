@@ -70,7 +70,12 @@ UMSConnector::UMSConnector(const string& name,
 	: log(UMS_LOG_CONTEXT_CONNECTOR), name(name) {
 	LOG_TRACE(log, "UMSConnector interface initialized");
 
-	pImpl = new UMSConnector_impl(name, mainLoop_, user_data, use_default_context, app_id);
+	try {
+            pImpl = new UMSConnector_impl(name, mainLoop_, user_data, use_default_context, app_id);
+        } catch (const std::runtime_error& e) {
+            LOG_ERROR(log, "UMSConnectorError", "Failed to initialize UMSConnector_impl: %s", e.what());
+            pImpl = nullptr;
+        }
 }
 
 UMSConnector::~UMSConnector() noexcept(false) {

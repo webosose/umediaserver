@@ -173,6 +173,15 @@ resource_list_t ResourcePool::acquire(const resource_request_t & resources,
 
 	// second pass; try anonymous requests; put results in order
 	for (const auto & order : allocation_order) {
+		if (order.pool_it == pool.end()) {
+			LOG_DEBUG(_log, "Invalid iterator: pool_it is out of bounds for id %s",
+					  order.from->id.c_str());
+			continue;
+		}
+		if (order.from == resources.cend()) {
+			LOG_DEBUG(_log, "Invalid iterator: order.from is out of bounds");
+			continue;
+		}
 
 		LOG_DEBUG(_log, "available=%lu, qty=%lu, min=%lu",
 				  order.pool_it->second.qty(), order.from->qty, order.from->min);
