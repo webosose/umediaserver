@@ -21,8 +21,10 @@ public:
 class MediaPlayer : public uMediaClient {
 public:
 	MediaPlayer() : uMediaClient(false, UMS_CONNECTOR_PRIVATE_BUS), queue_(NULL) {
+#if PY_VERSION_HEX < 0x03070000
 		if (!PyEval_ThreadsInitialized())
 			PyEval_InitThreads();
+#endif
 
 		pthread_create(&in_thr_, NULL, inputThread, this);
 	}

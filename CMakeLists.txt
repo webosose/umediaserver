@@ -14,7 +14,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 3.5.0)
 project(umediaserver C CXX)
 include(webOS/webOS)
 webos_modules_init(1 0 0 QUALIFIER RC4)

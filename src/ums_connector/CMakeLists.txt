@@ -34,8 +34,7 @@ target_link_libraries(${LIB_IMPL_NAME}
                       ${GLIB2_LDFLAGS}
                       ${LUNASERVICE_LDFLAGS}
                       ${LIBPBNJSON_LDFLAGS}
-                      ${PMLOGLIB_LDFLAGS}
-                      ums_connector_impl)
+                      ${PMLOGLIB_LDFLAGS})
 webos_build_library(NAME ${LIB_IMPL_NAME})
 
 # Interface library
@@ -48,7 +47,7 @@ target_link_libraries(${LIB_NAME}
                       ${LUNASERVICE_LDFLAGS}
                       ${LIBPBNJSON_LDFLAGS}
                       ${PMLOGLIB_LDFLAGS}
-                      ums_connector_impl)
+                      ${LIB_IMPL_NAME})
 webos_build_library(NAME ${LIB_NAME})
 
 # Wrapper
